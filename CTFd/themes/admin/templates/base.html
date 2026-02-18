@@ -40,7 +40,7 @@
 <body>
 	<nav class="navbar navbar-expand-md navbar-dark bg-dark fixed-top">
 		<div class="container">
-			<a href="{{ url_for('views.static_html', route='/') }}" class="navbar-brand">CTFd</a>
+			<a href="{{ url_for('views.static_html', route='/') }}" class="navbar-brand">Teck-Vision</a>
 			<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#base-navbars"
 					aria-controls="base-navbars" aria-expanded="false" aria-label="Toggle navigation">
 				<span class="navbar-toggler-icon"></span>
@@ -108,7 +108,7 @@
 				</ul>
 				<ul class="nav navbar-nav navbar-right">
 					<li class="nav-item">
-						<a class="nav-link" href="https://docs.ctfd.io/" target="_blank">
+						<a class="nav-link" href="#" target="_blank">
 							<i class="far fa-question-circle"></i>
 						</a>
 					</li>
@@ -119,11 +119,11 @@
 
 	<main role="main">
 		{% if get_config('version_latest') %}
-		<div class="container-fluid bg-warning text-center py-3">
+		<div class="container-fluid bg-info text-center py-3" style="display:none;">
 			<div class="row">
 				<div class="col-md-12">
-					<a class="btn btn-warning" href="{{ get_config('version_latest') }}">
-						A new CTFd version is available!
+					<a class="btn btn-info" href="#">
+						Teck-Vision - Plateforme CTF DevSecOps
 					</a>
 				</div>
 			</div>
@@ -135,11 +135,9 @@
 
 	<footer class="footer pt-2">
 		<div class="container text-center">
-			<a href="https://ctfd.io" class="text-secondary">
-				<small class="text-muted">
-					Powered by CTFd
-				</small>
-			</a>
+			<small class="text-muted">
+				Powered by Teck-Vision
+			</small>
 			<span>
 				<small class="text-muted"><br> Version {{ get_config('ctf_version') }}</small>
 			</span>
