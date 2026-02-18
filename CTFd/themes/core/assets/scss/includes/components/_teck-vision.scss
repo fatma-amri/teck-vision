@@ -103,39 +103,6 @@ body {
   }
 }
 
-// Jumbotron hero section
-.jumbotron {
-  background: linear-gradient(135deg, $tv-background-light 0%, $tv-background 100%) !important;
-  border-bottom: 1px solid rgba($tv-primary, 0.2);
-  position: relative;
-  overflow: hidden;
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba($tv-primary, 0.1) 0%, transparent 50%);
-    animation: pulse 15s ease-in-out infinite;
-  }
-  
-  h1 {
-    background: $tv-gradient;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    font-weight: 700;
-    text-shadow: 0 0 40px rgba($tv-primary, 0.3);
-  }
-}
-
-@keyframes pulse {
-  0%, 100% { transform: scale(1); opacity: 0.5; }
-  50% { transform: scale(1.1); opacity: 0.8; }
-}
-
 // Cards stylisées
 .card {
   background: $tv-background-card !important;
@@ -198,27 +165,96 @@ body {
   }
 }
 
-// Challenge buttons
+// Challenge buttons - Creative card design
 .challenge-button {
-  background: $tv-background-card !important;
-  border: 1px solid rgba($tv-primary, 0.3) !important;
-  border-radius: 10px !important;
-  transition: all 0.3s ease;
+  background: linear-gradient(145deg, $tv-background-card 0%, darken($tv-background-card, 3%) 100%) !important;
+  border: 1px solid rgba($tv-primary, 0.2) !important;
+  border-radius: 12px !important;
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+  
+  // Subtle top accent
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, $tv-primary, $tv-secondary);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+  
+  .challenge-inner {
+    p {
+      font-weight: 600;
+      color: $tv-text;
+      margin-bottom: 0.5rem;
+    }
+    
+    span {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: $tv-secondary;
+    }
+  }
   
   &:hover {
-    background: rgba($tv-primary, 0.15) !important;
-    border-color: $tv-primary !important;
-    transform: scale(1.02);
-    box-shadow: 0 8px 25px rgba($tv-primary, 0.25);
+    border-color: rgba($tv-primary, 0.5) !important;
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    
+    &::before {
+      opacity: 1;
+    }
   }
   
   &.challenge-solved {
-    background: linear-gradient(135deg, #00c853, #00e676) !important;
-    border-color: $tv-success !important;
-    box-shadow: 0 4px 20px rgba($tv-success, 0.3);
+    background: linear-gradient(145deg, rgba($tv-secondary, 0.15) 0%, rgba($tv-secondary, 0.1) 100%) !important;
+    border-color: rgba($tv-secondary, 0.4) !important;
+    
+    &::before {
+      background: $tv-secondary;
+      opacity: 1;
+    }
+    
+    .challenge-inner span {
+      color: $tv-secondary;
+    }
     
     &:hover {
-      background: linear-gradient(135deg, #00e676, #69f0ae) !important;
+      border-color: $tv-secondary !important;
+      box-shadow: 0 10px 30px rgba($tv-secondary, 0.2);
+    }
+  }
+}
+
+// Category headers
+.category-header {
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba($tv-text-muted, 0.15);
+  
+  h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: $tv-text;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    
+    &::before {
+      content: '';
+      display: inline-block;
+      width: 4px;
+      height: 1em;
+      background: $tv-primary;
+      margin-right: 0.75rem;
+      border-radius: 2px;
     }
   }
 }
@@ -439,4 +475,153 @@ pre, code {
   border: 1px solid rgba($tv-primary, 0.2) !important;
   color: $tv-secondary !important;
   border-radius: 6px !important;
+}
+
+// Setup page styles
+.nav-pills {
+  .nav-link {
+    color: $tv-text-muted !important;
+    border-radius: 8px;
+    padding: 0.8rem 1.2rem;
+    transition: all 0.3s ease;
+    
+    &:hover {
+      color: $tv-primary !important;
+      background: rgba($tv-primary, 0.1) !important;
+    }
+    
+    &.active {
+      background: $tv-gradient !important;
+      color: white !important;
+      box-shadow: 0 4px 15px rgba($tv-primary, 0.4);
+    }
+  }
+}
+
+// Input labels
+label, .form-label {
+  color: $tv-text !important;
+  font-weight: 500;
+}
+
+// Small text/hints
+.form-text, small {
+  color: $tv-text-muted !important;
+}
+
+// Improved list styles
+ul li {
+  color: $tv-text-muted;
+}
+
+// Toast/Snackbar improvements
+.snackbar {
+  background: $tv-background-card !important;
+  border: 1px solid rgba($tv-primary, 0.3) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5) !important;
+}
+
+// Settings cards
+.settings-card {
+  background: $tv-background-card;
+  border: 1px solid rgba($tv-primary, 0.15);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    border-color: rgba($tv-primary, 0.3);
+  }
+}
+
+// Tab content
+.tab-content {
+  background: rgba($tv-background-card, 0.5);
+  border-radius: 12px;
+  padding: 2rem;
+  margin-top: 1rem;
+}
+
+// Form check/radio buttons
+.form-check-input {
+  background-color: $tv-background-light !important;
+  border-color: rgba($tv-text-muted, 0.3) !important;
+  
+  &:checked {
+    background-color: $tv-primary !important;
+    border-color: $tv-primary !important;
+  }
+  
+  &:focus {
+    box-shadow: 0 0 0 3px rgba($tv-primary, 0.25) !important;
+  }
+}
+
+// Empty state messages - Clean and minimal
+.min-vh-25, .min-vh-50 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px !important;
+  
+  h3 {
+    color: #6a6a8a !important;
+    font-weight: 400;
+    font-size: 1.1rem;
+    text-align: center;
+  }
+}
+
+// Profile badges - Refined
+.badge.bg-primary {
+  background: $tv-primary !important;
+  font-weight: 500;
+}
+
+.badge.bg-secondary {
+  background: rgba($tv-secondary, 0.15) !important;
+  color: $tv-secondary !important;
+  font-weight: 500;
+}
+
+.badge.rounded-pill {
+  font-size: 0.75rem;
+  padding: 0.3rem 0.6rem;
+}
+
+// Horizontal rule
+hr {
+  border-color: rgba($tv-text-muted, 0.2) !important;
+  opacity: 1;
+  margin: 1rem 0;
+}
+
+// Container spacing
+.container {
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem;
+}
+
+// Spinner styling
+.fa-spin.spinner, .fa-circle-notch {
+  color: $tv-primary !important;
+}
+
+// Progress bars
+.progress {
+  background: rgba($tv-background-light, 0.8) !important;
+  border-radius: 8px !important;
+  height: 8px;
+  
+  .progress-bar {
+    border-radius: 8px !important;
+  }
+}
+
+// Graphs container
+#score-graph {
+  min-height: 300px;
+  padding: 1rem 0;
 }

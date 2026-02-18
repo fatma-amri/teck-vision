@@ -1,4 +1,4 @@
-/* Jumbotron styles - Teck-Vision Enhanced
+/* Jumbotron styles - Teck-Vision Clean & Modern
 -------------------------------------------------- */
 
 // Move down content because we have a fixed navbar that is 3.5rem tall
@@ -7,97 +7,109 @@ main {
 }
 
 .jumbotron {
-  padding: 4rem 2rem;
+  padding: 2rem 1rem;
   margin-bottom: 0;
   text-align: center;
   position: relative;
-  overflow: hidden;
-
-  // Gradient background
-  background: linear-gradient(135deg, #252542 0%, #1a1a2e 50%, #16213e 100%);
-  color: #e8e8e8;
   
-  // Animated gradient border at bottom
-  border-bottom: 3px solid;
-  border-image: linear-gradient(90deg, #ff6b6b, #ff8e53, #4ecdc4, #ff6b6b) 1;
-  animation: border-flow 3s linear infinite;
+  // Subtle gradient background
+  background: linear-gradient(180deg, rgba(37, 37, 66, 0.8) 0%, transparent 100%);
   
-  // Decorative elements
-  &::before {
+  // Accent line at bottom
+  &::after {
     content: '';
     position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle at 30% 50%, rgba(255, 107, 107, 0.08) 0%, transparent 50%),
-                radial-gradient(circle at 70% 50%, rgba(78, 205, 196, 0.08) 0%, transparent 50%);
-    pointer-events: none;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, #ff6b6b, transparent);
+    border-radius: 2px;
   }
   
-  // Main title styling
   h1 {
-    font-size: 3.5rem;
-    font-weight: 800;
-    letter-spacing: 4px;
-    margin-bottom: 1rem;
-    position: relative;
-    z-index: 1;
-    
-    // Text gradient
-    background: linear-gradient(135deg, #ffffff 0%, #e8e8e8 50%, #ff6b6b 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    
-    // Glow effect
-    text-shadow: 0 0 30px rgba(255, 107, 107, 0.3);
-  }
-  
-  // Subtitle/paragraph styling
-  p {
-    font-size: 1.2rem;
-    color: #a0a0b8;
-    max-width: 600px;
-    margin: 0 auto;
-    position: relative;
-    z-index: 1;
-  }
-  
-  // CTF Name special styling
-  .ctf-name {
-    display: inline-block;
+    font-size: 1.6rem;
     font-weight: 700;
-    background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-}
-
-@keyframes border-flow {
-  0% { border-image: linear-gradient(90deg, #ff6b6b, #ff8e53, #4ecdc4, #ff6b6b) 1; }
-  33% { border-image: linear-gradient(90deg, #ff8e53, #4ecdc4, #ff6b6b, #ff8e53) 1; }
-  66% { border-image: linear-gradient(90deg, #4ecdc4, #ff6b6b, #ff8e53, #4ecdc4) 1; }
-  100% { border-image: linear-gradient(90deg, #ff6b6b, #ff8e53, #4ecdc4, #ff6b6b) 1; }
-}
-
-@media (min-width: 576px) {
-  .jumbotron {
-    padding: 5rem 2rem;
+    letter-spacing: 1px;
+    margin: 0;
+    color: #e8e8e8;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
     
-    h1 {
-      font-size: 4rem;
+    i {
+      color: #ff6b6b;
+      font-size: 1.3rem;
+    }
+  }
+  
+  p, .lead {
+    font-size: 0.95rem;
+    color: #8a8aa8;
+    margin: 0.5rem 0 0;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  
+  // Profile pages - user name styling
+  h2, h3 {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #a0a0b8;
+    margin: 0.4rem 0;
+    
+    .badge {
+      font-size: 0.75rem;
+      font-weight: 500;
+      padding: 0.35rem 0.7rem;
+      border-radius: 20px;
+    }
+  }
+  
+  // Score display
+  h2.text-center {
+    font-size: 1.3rem !important;
+    font-weight: 700;
+    color: #4ecdc4 !important;
+    margin: 0.3rem 0 !important;
+    
+    small {
+      font-size: 0.7rem;
+      font-weight: 400;
+      color: #8a8aa8;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+  }
+  
+  // Social icons
+  .fa-2x {
+    font-size: 1.2rem !important;
+    color: #8a8aa8;
+    transition: color 0.2s;
+    
+    &:hover {
+      color: #ff6b6b;
     }
   }
 }
 
-@media (min-width: 992px) {
+@media (min-width: 768px) {
   .jumbotron {
-    padding: 6rem 2rem;
+    padding: 2.5rem 2rem;
     
     h1 {
-      font-size: 4.5rem;
+      font-size: 1.8rem;
+      
+      i {
+        font-size: 1.5rem;
+      }
+    }
+    
+    &::after {
+      width: 150px;
     }
   }
 }

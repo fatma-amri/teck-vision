@@ -4,9 +4,9 @@
 {{ super() }}
 <style>
 	.card-radio:checked+.card {
-		background-color: transparent !important;
-		border-color: #a3d39c;
-		box-shadow: 0 0 0 0.1rem #a3d39c;
+		background-color: rgba(255, 107, 107, 0.1) !important;
+		border-color: #ff6b6b !important;
+		box-shadow: 0 0 0 0.2rem rgba(255, 107, 107, 0.3);
 		transition: background-color 0.3s, border-color 0.3s;
 	}
 
@@ -16,6 +16,45 @@
 
 	.card:hover {
 		cursor: pointer;
+		border-color: rgba(255, 107, 107, 0.5) !important;
+	}
+	
+	.setup-container {
+		max-width: 900px;
+		margin: 0 auto;
+	}
+	
+	.setup-header {
+		text-align: center;
+		padding: 2rem 0;
+	}
+	
+	.setup-header h1 {
+		font-size: 3rem;
+		font-weight: 800;
+		background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%);
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+		background-clip: text;
+	}
+	
+	.setup-header p {
+		color: #a0a0b8;
+		font-size: 1.1rem;
+	}
+	
+	.nav-pills {
+		background: rgba(42, 42, 74, 0.5);
+		border-radius: 12px;
+		padding: 0.5rem;
+	}
+	
+	hr {
+		border-color: rgba(255, 107, 107, 0.2) !important;
+	}
+	
+	b {
+		color: #e8e8e8;
 	}
 </style>
 {% endblock %}
@@ -23,11 +62,12 @@
 {% block content %}
 <div class="jumbotron">
 	<div class="container">
-		<h1>{% trans %}Setup{% endtrans %}</h1>
+		<h1><i class="fas fa-cog me-3"></i>{% trans %}Setup{% endtrans %}</h1>
+		<p class="lead text-muted">{% trans %}Configure your CTF platform{% endtrans %}</p>
 	</div>
 </div>
 <div class="container">
-	<div class="col-md-8 offset-md-2">
+	<div class="col-md-10 offset-md-1">
 		{% include "components/errors.html" %}
 
 		{% with form = Forms.setup.SetupForm() %}

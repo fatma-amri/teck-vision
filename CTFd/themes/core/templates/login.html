@@ -3,125 +3,87 @@
 {% block stylesheets %}
   {{ super() }}
   <style>
-    .login-container {
-      min-height: calc(100vh - 56px);
+    .auth-page {
+      min-height: calc(100vh - 56px - 80px);
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 2rem 0;
+      padding: 2rem 1rem;
     }
     
-    .login-card {
-      background: rgba(42, 42, 74, 0.95);
-      backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 107, 107, 0.2);
-      border-radius: 20px;
-      padding: 3rem;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-      position: relative;
-      overflow: hidden;
-      max-width: 450px;
+    .auth-card {
+      background: rgba(42, 42, 74, 0.6);
+      border: 1px solid rgba(255, 107, 107, 0.1);
+      border-radius: 12px;
+      padding: 2.5rem;
+      max-width: 400px;
       width: 100%;
+      position: relative;
     }
     
-    .login-card::before {
+    /* Accent line at bottom - matches jumbotron style */
+    .auth-card::after {
       content: '';
       position: absolute;
-      top: -50%;
-      left: -50%;
-      width: 200%;
-      height: 200%;
-      background: radial-gradient(circle, rgba(255, 107, 107, 0.1) 0%, transparent 50%);
-      animation: rotate 20s linear infinite;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 120px;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, #ff6b6b, transparent);
+      border-radius: 2px;
     }
     
-    @keyframes rotate {
-      100% { transform: rotate(360deg); }
-    }
-    
-    .login-card > * {
-      position: relative;
-      z-index: 1;
-    }
-    
-    .login-logo {
+    .auth-header {
       text-align: center;
       margin-bottom: 1.5rem;
     }
     
-    .login-logo-text {
-      font-size: 2.5rem;
-      font-weight: 800;
-      letter-spacing: 2px;
+    .auth-title {
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: #e8e8e8;
+      margin: 0 0 0.3rem;
     }
     
-    .login-logo-text .teck {
-      background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+    .auth-title i {
+      color: #ff6b6b;
+      margin-right: 0.5rem;
     }
     
-    .login-logo-text .vision {
-      background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    
-    .login-logo-icon {
-      font-size: 3rem;
-      margin-bottom: 0.5rem;
-      background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      filter: drop-shadow(0 0 15px rgba(255, 107, 107, 0.5));
-    }
-    
-    .login-title {
-      text-align: center;
-      font-size: 2rem;
-      font-weight: 700;
-      background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin-bottom: 0.5rem;
-    }
-    
-    .login-subtitle {
-      text-align: center;
-      color: #a0a0b8;
-      margin-bottom: 2rem;
+    .auth-subtitle {
+      color: #8a8aa8;
+      font-size: 0.9rem;
+      margin: 0;
     }
     
     .form-group {
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.25rem;
     }
     
     .form-group label {
       display: block;
       color: #a0a0b8;
-      font-size: 0.9rem;
-      margin-bottom: 0.5rem;
+      font-size: 0.85rem;
+      margin-bottom: 0.4rem;
       font-weight: 500;
     }
     
     .form-group label i {
       color: #ff6b6b;
-      margin-right: 0.5rem;
+      margin-right: 0.4rem;
+      width: 16px;
     }
     
     .form-group .form-control {
-      background: rgba(26, 26, 46, 0.8) !important;
-      border: 1px solid rgba(255, 107, 107, 0.2) !important;
-      border-radius: 12px !important;
-      padding: 1rem;
+      background: rgba(26, 26, 46, 0.6) !important;
+      border: 1px solid rgba(160, 160, 184, 0.15) !important;
+      border-radius: 8px !important;
+      padding: 0.8rem 1rem;
       height: auto;
       color: #e8e8e8 !important;
-      width: 100%;
-      font-size: 1rem;
+      font-size: 0.95rem;
+      transition: border-color 0.2s;
     }
     
     .form-group .form-control::placeholder {
@@ -130,61 +92,62 @@
     
     .form-group .form-control:focus {
       border-color: #ff6b6b !important;
-      box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.2) !important;
+      box-shadow: none !important;
       outline: none;
     }
     
-    .btn-login {
+    .btn-auth {
       width: 100%;
-      padding: 1rem;
-      font-size: 1.1rem;
+      padding: 0.8rem;
+      font-size: 0.95rem;
       font-weight: 600;
       border: none;
-      border-radius: 12px;
-      background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%);
+      border-radius: 8px;
+      background: #ff6b6b;
       color: white;
       cursor: pointer;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+      transition: background 0.2s;
+      margin-top: 0.5rem;
     }
     
-    .btn-login:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 25px rgba(255, 107, 107, 0.5);
+    .btn-auth:hover {
+      background: #ff5252;
     }
     
-    .login-links {
+    .auth-links {
       margin-top: 1.5rem;
       text-align: center;
+      font-size: 0.85rem;
+      color: #6a6a8a;
     }
     
-    .login-links a {
+    .auth-links a {
       color: #ff6b6b;
       text-decoration: none;
-      transition: all 0.3s ease;
+      transition: color 0.2s;
     }
     
-    .login-links a:hover {
-      color: #ff8e8e;
+    .auth-links a:hover {
+      color: #4ecdc4;
     }
     
-    .divider {
+    .auth-divider {
       display: flex;
       align-items: center;
-      margin: 1.5rem 0;
-      color: #a0a0b8;
+      margin: 1.25rem 0;
+      color: #6a6a8a;
+      font-size: 0.8rem;
     }
     
-    .divider::before, .divider::after {
+    .auth-divider::before, .auth-divider::after {
       content: '';
       flex: 1;
       height: 1px;
-      background: rgba(255, 107, 107, 0.2);
+      background: rgba(160, 160, 184, 0.15);
     }
     
-    .divider span {
+    .auth-divider span {
       padding: 0 1rem;
-      font-size: 0.9rem;
     }
     
     .jumbotron { display: none !important; }
@@ -192,55 +155,46 @@
 {% endblock %}
 
 {% block content %}
-  {% include "components/particles.html" %}
-  
-  <div class="login-container">
-    <div class="login-card">
-      <div class="login-logo">
-        <div class="login-logo-icon"><i class="fas fa-shield-alt"></i></div>
-        <div class="login-logo-text"><span class="teck">TECK</span><span class="vision">-VISION</span></div>
+  <div class="auth-page">
+    <div class="auth-card">
+      <div class="auth-header">
+        <h1 class="auth-title"><i class="fas fa-sign-in-alt"></i>{% trans %}Login{% endtrans %}</h1>
+        <p class="auth-subtitle">{% trans %}Sign in to continue{% endtrans %}</p>
       </div>
-      
-      <h1 class="login-title">{% trans %}Welcome Back{% endtrans %}</h1>
-      <p class="login-subtitle">{% trans %}Sign in to continue your adventure{% endtrans %}</p>
       
       {% include "components/errors.html" %}
       
       {% if integrations.mlc() %}
-        <a class="btn btn-secondary btn-lg w-100 mb-3" href="{{ url_for('auth.oauth_login') }}">
-          <i class="fas fa-shield-alt me-2"></i>Login with Major League Cyber
+        <a class="btn btn-secondary w-100 mb-3" href="{{ url_for('auth.oauth_login') }}">
+          <i class="fas fa-shield-alt me-2"></i>Login with MLC
         </a>
-        <div class="divider"><span>{% trans %}or{% endtrans %}</span></div>
+        <div class="auth-divider"><span>{% trans %}or{% endtrans %}</span></div>
       {% endif %}
       
       {% with form = Forms.auth.LoginForm() %}
-        <form method="post" accept-charset="utf-8">
+        <form method="post" accept-charset="utf-8" role="form">
           <div class="form-group">
             <label><i class="fas fa-user"></i>{{ form.name.label.text }}</label>
-            {{ form.name(class="form-control", value=name, autocomplete="username email", placeholder="Enter your username or email") }}
+            {{ form.name(class="form-control", value=name, autocomplete="username", placeholder="Username or email") }}
           </div>
           
           <div class="form-group">
             <label><i class="fas fa-lock"></i>{{ form.password.label.text }}</label>
-            {{ form.password(class="form-control", value=password, autocomplete="current-password", placeholder="Enter your password") }}
+            {{ form.password(class="form-control", value=password, autocomplete="current-password", placeholder="Password") }}
           </div>
           
-          <button type="submit" class="btn-login">
+          {{ form.nonce() }}
+          
+          <button type="submit" class="btn-auth">
             <i class="fas fa-sign-in-alt me-2"></i>{% trans %}Login{% endtrans %}
           </button>
-          
-          {{ form.nonce() }}
         </form>
       {% endwith %}
       
-      <div class="login-links">
-        <a href="{{ url_for('auth.reset_password') }}">
-          <i class="fas fa-key me-1"></i>{% trans %}Forgot your password?{% endtrans %}
-        </a>
-        <span class="mx-2 text-muted">|</span>
-        <a href="{{ url_for('auth.register') }}">
-          <i class="fas fa-user-plus me-1"></i>{% trans %}Create account{% endtrans %}
-        </a>
+      <div class="auth-links">
+        <a href="{{ url_for('auth.reset_password') }}">{% trans %}Forgot password?{% endtrans %}</a>
+        <span class="mx-2">•</span>
+        <a href="{{ url_for('auth.register') }}">{% trans %}Create account{% endtrans %}</a>
       </div>
     </div>
   </div>
