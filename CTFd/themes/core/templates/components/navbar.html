@@ -9,13 +9,9 @@
             height="25"
         >
       {% else %}
-        <img
-            class="img-responsive ctf_logo"
-            src="{{ url_for('views.themes', path='img/logo.png') }}"
-            alt="Teck-Vision"
-            height="28"
-            style="margin-right: 8px;"
-        >
+        <span class="brand-text">
+          <span class="brand-teck">Teck</span><span class="brand-vision">-Vision</span>
+        </span>
       {% endif %}
     </a>
 

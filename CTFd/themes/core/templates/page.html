@@ -1,7 +1,232 @@
 {% extends "base.html" %}
 
+{% block stylesheets %}
+  {{ super() }}
+  <style>
+    .page-content {
+      padding: 3rem 0;
+    }
+    
+    .page-content h1, .page-content h2, .page-content h3 {
+      color: #e8e8e8;
+      font-weight: 700;
+    }
+    
+    .page-content h2 {
+      font-size: 2rem;
+      margin-bottom: 1.5rem;
+      background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .page-content p {
+      color: #a0a0b8;
+      font-size: 1.1rem;
+      line-height: 1.8;
+    }
+    
+    .page-content a {
+      color: #ff6b6b;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+    
+    .page-content a:hover {
+      color: #4ecdc4;
+      text-shadow: 0 0 10px rgba(78, 205, 196, 0.5);
+    }
+    
+    /* Center logo box - Jumbotron in page content */
+    .page-content .jumbotron,
+    .page-content > div:first-child {
+      background: linear-gradient(135deg, rgba(42, 42, 74, 0.9) 0%, rgba(26, 26, 46, 0.95) 100%) !important;
+      border: 2px solid rgba(255, 107, 107, 0.3);
+      border-radius: 24px;
+      padding: 4rem 3rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+      margin-bottom: 2rem;
+    }
+    
+    .page-content .jumbotron::before,
+    .page-content > div:first-child::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle at 30% 30%, rgba(255, 107, 107, 0.1) 0%, transparent 50%),
+                  radial-gradient(circle at 70% 70%, rgba(78, 205, 196, 0.08) 0%, transparent 50%);
+      pointer-events: none;
+      animation: rotate-bg 30s linear infinite;
+    }
+    
+    @keyframes rotate-bg {
+      100% { transform: rotate(360deg); }
+    }
+    
+    .page-content .jumbotron > *,
+    .page-content > div:first-child > * {
+      position: relative;
+      z-index: 1;
+    }
+    
+    .page-content .jumbotron h1,
+    .page-content .jumbotron h2,
+    .page-content > div:first-child h1,
+    .page-content > div:first-child h2 {
+      font-size: 3.5rem !important;
+      font-weight: 800 !important;
+      letter-spacing: 3px;
+      background: linear-gradient(135deg, #ffffff 0%, #e8e8e8 30%, #ff6b6b 70%, #ff8e53 100%) !important;
+      -webkit-background-clip: text !important;
+      -webkit-text-fill-color: transparent !important;
+      background-clip: text !important;
+      text-shadow: none;
+      margin-bottom: 1rem;
+      animation: glow-text 3s ease-in-out infinite alternate;
+    }
+    
+    @keyframes glow-text {
+      0% { filter: drop-shadow(0 0 10px rgba(255, 107, 107, 0.3)); }
+      100% { filter: drop-shadow(0 0 20px rgba(255, 107, 107, 0.6)); }
+    }
+    
+    /* Logo image styling */
+    .page-content img[src*="logo"],
+    .page-content .jumbotron img {
+      max-width: 300px;
+      height: auto;
+      margin: 0 auto 1.5rem;
+      display: block;
+      filter: drop-shadow(0 0 30px rgba(255, 107, 107, 0.4));
+      animation: float-logo 4s ease-in-out infinite;
+    }
+    
+    @keyframes float-logo {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    /* Hero section for home page */
+    .hero-section {
+      text-align: center;
+      padding: 2rem 0;
+    }
+    
+    .hero-section h1 {
+      font-size: 3rem;
+      font-weight: 800;
+      margin-bottom: 1rem;
+    }
+    
+    .hero-section .lead {
+      font-size: 1.3rem;
+      color: #a0a0b8;
+    }
+    
+    /* Feature cards */
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 2rem;
+      margin-top: 3rem;
+    }
+    
+    .feature-card {
+      background: rgba(42, 42, 74, 0.8);
+      border: 1px solid rgba(255, 107, 107, 0.15);
+      border-radius: 16px;
+      padding: 2rem;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+    
+    .feature-card:hover {
+      transform: translateY(-5px);
+      border-color: rgba(255, 107, 107, 0.4);
+      box-shadow: 0 15px 40px rgba(255, 107, 107, 0.15);
+    }
+    
+    .feature-card i {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, #ff6b6b 0%, #4ecdc4 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .feature-card h3 {
+      font-size: 1.3rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .feature-card p {
+      font-size: 0.95rem;
+      color: #a0a0b8;
+      margin: 0;
+    }
+    
+    /* CTA Button */
+    .cta-button {
+      display: inline-block;
+      padding: 1rem 2.5rem;
+      margin-top: 2rem;
+      background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%);
+      color: white !important;
+      text-decoration: none;
+      border-radius: 50px;
+      font-weight: 700;
+      font-size: 1.1rem;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 20px rgba(255, 107, 107, 0.4);
+    }
+    
+    .cta-button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 30px rgba(255, 107, 107, 0.5);
+      color: white !important;
+    }
+    
+    /* Stats section */
+    .stats-row {
+      display: flex;
+      justify-content: center;
+      gap: 4rem;
+      margin: 3rem 0;
+      flex-wrap: wrap;
+    }
+    
+    .stat-item {
+      text-align: center;
+    }
+    
+    .stat-number {
+      font-size: 3rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .stat-label {
+      color: #a0a0b8;
+      font-size: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+  </style>
+{% endblock %}
+
 {% block content %}
-  <div class="container">
+  <div class="container page-content">
     {{ content | safe }}
   </div>
 {% endblock %}

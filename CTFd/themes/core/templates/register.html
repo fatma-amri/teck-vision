@@ -1,91 +1,255 @@
 {% extends "base.html" %}
 
+{% block stylesheets %}
+  {{ super() }}
+  <style>
+    .register-container {
+      min-height: calc(100vh - 56px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 0;
+    }
+    
+    .register-card {
+      background: rgba(42, 42, 74, 0.95);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(78, 205, 196, 0.2);
+      border-radius: 20px;
+      padding: 3rem;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      position: relative;
+      overflow: hidden;
+      max-width: 500px;
+      width: 100%;
+    }
+    
+    .register-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(78, 205, 196, 0.1) 0%, transparent 50%);
+      animation: rotate 20s linear infinite;
+    }
+    
+    @keyframes rotate {
+      100% { transform: rotate(360deg); }
+    }
+    
+    .register-card > * {
+      position: relative;
+      z-index: 1;
+    }
+    
+    .register-logo {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+    
+    .register-logo-text {
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: 2px;
+    }
+    
+    .register-logo-text .teck {
+      background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .register-logo-text .vision {
+      background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .register-logo-icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      filter: drop-shadow(0 0 15px rgba(78, 205, 196, 0.5));
+    }
+    
+    .register-title {
+      text-align: center;
+      font-size: 1.8rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.5rem;
+    }
+    
+    .register-subtitle {
+      text-align: center;
+      color: #a0a0b8;
+      margin-bottom: 1.5rem;
+    }
+    
+    .form-group {
+      margin-bottom: 1.2rem;
+    }
+    
+    .form-group label {
+      display: block;
+      color: #a0a0b8;
+      font-size: 0.85rem;
+      margin-bottom: 0.4rem;
+      font-weight: 500;
+    }
+    
+    .form-group label i {
+      color: #4ecdc4;
+      margin-right: 0.5rem;
+    }
+    
+    .form-group .form-control {
+      background: rgba(26, 26, 46, 0.8) !important;
+      border: 1px solid rgba(78, 205, 196, 0.2) !important;
+      border-radius: 12px !important;
+      padding: 0.9rem 1rem;
+      height: auto;
+      color: #e8e8e8 !important;
+      width: 100%;
+      font-size: 1rem;
+    }
+    
+    .form-group .form-control::placeholder {
+      color: #6a6a8a;
+    }
+    
+    .form-group .form-control:focus {
+      border-color: #4ecdc4 !important;
+      box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.2) !important;
+      outline: none;
+    }
+    
+    .form-hint {
+      font-size: 0.75rem;
+      color: #a0a0b8;
+      margin-top: 0.2rem;
+    }
+    
+    .btn-register {
+      width: 100%;
+      padding: 1rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
+      color: white;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(78, 205, 196, 0.4);
+    }
+    
+    .btn-register:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 25px rgba(78, 205, 196, 0.5);
+    }
+    
+    .register-links {
+      margin-top: 1.5rem;
+      text-align: center;
+    }
+    
+    .register-links a {
+      color: #4ecdc4;
+      text-decoration: none;
+    }
+    
+    .tos-text {
+      font-size: 0.8rem;
+      color: #a0a0b8;
+      text-align: center;
+      margin-top: 1rem;
+    }
+    
+    .tos-text a { color: #4ecdc4; }
+    
+    .jumbotron { display: none !important; }
+  </style>
+{% endblock %}
+
 {% block content %}
-  <div class="jumbotron">
-    <div class="container">
-      <h1>
-        {% trans %}Register{% endtrans %}
-      </h1>
-    </div>
-  </div>
-
-  <div class="container">
-    <div class="row">
-      <div class="col-md-6 offset-md-3">
-        {% include "components/errors.html" %}
-
-        {% if integrations.mlc() %}
-          <a class="btn btn-secondary btn-lg btn-block w-100" href="{{ url_for('auth.oauth_login') }}">
-            Login with Major League Cyber
-          </a>
-
-          <hr>
-        {% endif %}
-
-        {% with form = Forms.auth.RegistrationForm() %}
-
-          {% from "macros/forms.html" import render_extra_fields %}
-
-          <form method="post" accept-charset="utf-8" role="form">
-
-            <div class="mb-3">
-              <b>
-                {{ form.name.label(class="form-label") }}
-                <span class="text-danger">*</span>
-              </b>
-              {{ form.name(class="form-control", value=name, autocomplete="username") }}
-              <small class="form-text text-muted">
-                {% trans %}Your username on the site{% endtrans %}
-              </small>
+  {% include "components/particles.html" %}
+  
+  <div class="register-container">
+    <div class="register-card">
+      <div class="register-logo">
+        <div class="register-logo-icon"><i class="fas fa-shield-alt"></i></div>
+        <div class="register-logo-text"><span class="teck">TECK</span><span class="vision">-VISION</span></div>
+      </div>
+      
+      <h1 class="register-title">{% trans %}Join the Challenge{% endtrans %}</h1>
+      <p class="register-subtitle">{% trans %}Create your account and start hacking{% endtrans %}</p>
+      
+      {% include "components/errors.html" %}
+      
+      {% if integrations.mlc() %}
+        <a class="btn btn-secondary btn-lg w-100 mb-3" href="{{ url_for('auth.oauth_login') }}">
+          <i class="fas fa-shield-alt me-2"></i>Register with Major League Cyber
+        </a>
+        <div class="divider"><span>{% trans %}or{% endtrans %}</span></div>
+      {% endif %}
+      
+      {% with form = Forms.auth.RegistrationForm() %}
+        {% from "macros/forms.html" import render_extra_fields %}
+        
+        <form method="post" accept-charset="utf-8" role="form">
+          <div class="form-group">
+            <label><i class="fas fa-user"></i>{{ form.name.label.text }}</label>
+            {{ form.name(class="form-control", value=name, autocomplete="username", placeholder="Choose a username") }}
+            <div class="form-hint">{% trans %}Your public username{% endtrans %}</div>
+          </div>
+          
+          <div class="form-group">
+            <label><i class="fas fa-envelope"></i>{{ form.email.label.text }}</label>
+            {{ form.email(class="form-control", value=email, autocomplete="email", placeholder="Enter your email") }}
+            <div class="form-hint">{% trans %}Never shown publicly{% endtrans %}</div>
+          </div>
+          
+          <div class="form-group">
+            <label><i class="fas fa-lock"></i>{{ form.password.label.text }}</label>
+            {{ form.password(class="form-control", value=password, autocomplete="new-password", placeholder="Create a password") }}
+            <div class="form-hint">{% trans %}Choose a strong password{% endtrans %}</div>
+          </div>
+          
+          {{ form.nonce() }}
+          {{ render_extra_fields(form.extra) }}
+          
+          <button type="submit" class="btn-register">
+            <i class="fas fa-rocket me-2"></i>{% trans %}Create Account{% endtrans %}
+          </button>
+          
+          {% if Configs.tos_or_privacy %}
+            <div class="tos-text">
+              {% trans trimmed privacy_link=Configs.privacy_link, tos_link=Configs.tos_link %}
+              By registering, you agree to the
+              <a href="{{ privacy_link }}" target="_blank">privacy policy</a>
+              and <a href="{{ tos_link }}" target="_blank">terms of service</a>
+              {% endtrans %}
             </div>
-
-            <div class="mb-3">
-              <b>
-                {{ form.email.label(class="form-label") }}
-                <span class="text-danger">*</span>
-              </b>
-              {{ form.email(class="form-control", value=email, autocomplete="email") }}
-              <small class="form-text text-muted">
-                {% trans %}Never shown to the public{% endtrans %}
-              </small>
-            </div>
-
-            <div class="mb-3">
-              <b>
-                {{ form.password.label(class="form-label") }}
-                <span class="text-danger">*</span>
-              </b>
-              {{ form.password(class="form-control", value=password, autocomplete="new-password") }}
-              <small class="form-text text-muted">
-                {% trans %}Password used to log into your account{% endtrans %}
-              </small>
-            </div>
-
-            {{ form.nonce() }}
-
-            {{ render_extra_fields(form.extra) }}
-
-            <div class="row pt-3">
-              <div class="col-6 col-md-4 offset-6 offset-md-8">
-                {{ form.submit(class="btn btn-block btn-primary w-100") }}
-              </div>
-            </div>
-
-            {% if Configs.tos_or_privacy %}
-              <div class="row pt-3">
-                <div class="col-md-12 text-center">
-                  <small class="text-muted text-center">
-                    {% trans trimmed privacy_link=Configs.privacy_link, tos_link=Configs.tos_link %}
-                    By registering, you agree to the
-                    <a href="{{ privacy_link }}" target="_blank">privacy policy</a>
-                    and <a href="{{ tos_link }}" target="_blank">terms of service</a>
-                    {% endtrans %}
-                  </small>
-                </div>
-              </div>
-            {% endif %}
-          </form>
-        {% endwith %}
+          {% endif %}
+        </form>
+      {% endwith %}
+      
+      <div class="register-links">
+        <span class="text-muted">{% trans %}Already have an account?{% endtrans %}</span>
+        <a href="{{ url_for('auth.login') }}">
+          <i class="fas fa-sign-in-alt me-1"></i>{% trans %}Login{% endtrans %}
+        </a>
       </div>
     </div>
   </div>

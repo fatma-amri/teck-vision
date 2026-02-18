@@ -46,10 +46,34 @@ body {
   .navbar-brand {
     font-weight: 700;
     letter-spacing: 2px;
-    background: $tv-gradient;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    display: flex;
+    align-items: center;
+    
+    .brand-text {
+      font-size: 1.4rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+    }
+    
+    .brand-teck {
+      background: $tv-gradient;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .brand-vision {
+      background: linear-gradient(135deg, $tv-secondary 0%, #44a08d 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    &:hover {
+      .brand-teck, .brand-vision {
+        filter: brightness(1.2);
+      }
+    }
   }
   
   .nav-link {
