@@ -1,0 +1,418 @@
+/* Teck-Vision Custom Theme
+   Rouge Coral + Bleu Nuit Design
+-------------------------------------------------- */
+
+// Variables personnalisées
+$tv-primary: #ff6b6b;
+$tv-primary-light: #ff8e8e;
+$tv-primary-dark: #e55555;
+$tv-secondary: #4ecdc4;
+$tv-background: #1a1a2e;
+$tv-background-light: #252542;
+$tv-background-card: #2a2a4a;
+$tv-text: #e8e8e8;
+$tv-text-muted: #a0a0b8;
+$tv-success: #00ff88;
+$tv-gradient: linear-gradient(135deg, $tv-primary 0%, #ff8e53 100%);
+
+// Mode sombre forcé avec couleurs Teck-Vision
+[data-bs-theme="dark"],
+body {
+  --bs-body-bg: #{$tv-background};
+  --bs-body-color: #{$tv-text};
+  --bs-primary: #{$tv-primary};
+  --bs-primary-rgb: 255, 107, 107;
+  --bs-link-color: #{$tv-primary};
+  --bs-link-hover-color: #{$tv-primary-light};
+}
+
+// Body avec dégradé animé subtil
+body {
+  background: $tv-background !important;
+  background-image: 
+    radial-gradient(ellipse at top left, rgba($tv-primary, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at bottom right, rgba($tv-secondary, 0.05) 0%, transparent 50%) !important;
+  min-height: 100vh;
+  color: $tv-text !important;
+}
+
+// Navbar stylisée
+.navbar {
+  background: rgba($tv-background, 0.95) !important;
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba($tv-primary, 0.3);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
+  
+  .navbar-brand {
+    font-weight: 700;
+    letter-spacing: 2px;
+    background: $tv-gradient;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .nav-link {
+    color: $tv-text-muted !important;
+    transition: all 0.3s ease;
+    position: relative;
+    
+    &:hover, &.active {
+      color: $tv-primary !important;
+    }
+    
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      width: 0;
+      height: 2px;
+      background: $tv-gradient;
+      transition: all 0.3s ease;
+      transform: translateX(-50%);
+    }
+    
+    &:hover::after, &.active::after {
+      width: 80%;
+    }
+  }
+}
+
+// Jumbotron hero section
+.jumbotron {
+  background: linear-gradient(135deg, $tv-background-light 0%, $tv-background 100%) !important;
+  border-bottom: 1px solid rgba($tv-primary, 0.2);
+  position: relative;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba($tv-primary, 0.1) 0%, transparent 50%);
+    animation: pulse 15s ease-in-out infinite;
+  }
+  
+  h1 {
+    background: $tv-gradient;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 700;
+    text-shadow: 0 0 40px rgba($tv-primary, 0.3);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.1); opacity: 0.8; }
+}
+
+// Cards stylisées
+.card {
+  background: $tv-background-card !important;
+  border: 1px solid rgba($tv-primary, 0.15) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-4px);
+    border-color: rgba($tv-primary, 0.4) !important;
+    box-shadow: 0 12px 40px rgba($tv-primary, 0.15);
+  }
+  
+  .card-header {
+    background: rgba($tv-primary, 0.1) !important;
+    border-bottom: 1px solid rgba($tv-primary, 0.2) !important;
+  }
+  
+  .card-body {
+    color: $tv-text;
+  }
+}
+
+// Boutons
+.btn-primary {
+  background: $tv-gradient !important;
+  border: none !important;
+  box-shadow: 0 4px 15px rgba($tv-primary, 0.4);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba($tv-primary, 0.5);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.btn-outline-primary {
+  border-color: $tv-primary !important;
+  color: $tv-primary !important;
+  
+  &:hover {
+    background: $tv-primary !important;
+    color: white !important;
+  }
+}
+
+.btn-secondary {
+  background: $tv-background-light !important;
+  border: 1px solid rgba($tv-text-muted, 0.3) !important;
+  color: $tv-text !important;
+  
+  &:hover {
+    background: $tv-background-card !important;
+    border-color: $tv-primary !important;
+  }
+}
+
+// Challenge buttons
+.challenge-button {
+  background: $tv-background-card !important;
+  border: 1px solid rgba($tv-primary, 0.3) !important;
+  border-radius: 10px !important;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background: rgba($tv-primary, 0.15) !important;
+    border-color: $tv-primary !important;
+    transform: scale(1.02);
+    box-shadow: 0 8px 25px rgba($tv-primary, 0.25);
+  }
+  
+  &.challenge-solved {
+    background: linear-gradient(135deg, #00c853, #00e676) !important;
+    border-color: $tv-success !important;
+    box-shadow: 0 4px 20px rgba($tv-success, 0.3);
+    
+    &:hover {
+      background: linear-gradient(135deg, #00e676, #69f0ae) !important;
+    }
+  }
+}
+
+// Forms
+.form-control, .form-select {
+  background: $tv-background-light !important;
+  border: 1px solid rgba($tv-text-muted, 0.2) !important;
+  color: $tv-text !important;
+  border-radius: 8px !important;
+  
+  &:focus {
+    border-color: $tv-primary !important;
+    box-shadow: 0 0 0 3px rgba($tv-primary, 0.2) !important;
+  }
+  
+  &::placeholder {
+    color: $tv-text-muted !important;
+  }
+}
+
+// Tables
+.table {
+  color: $tv-text !important;
+  
+  thead {
+    background: rgba($tv-primary, 0.1);
+    
+    th {
+      border-bottom: 2px solid $tv-primary !important;
+      color: $tv-primary !important;
+    }
+  }
+  
+  tbody tr {
+    transition: all 0.2s ease;
+    
+    &:hover {
+      background: rgba($tv-primary, 0.08) !important;
+    }
+  }
+  
+  td, th {
+    border-color: rgba($tv-text-muted, 0.15) !important;
+  }
+}
+
+// Scoreboard
+.scoreboard-top {
+  background: $tv-gradient;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+// Badges
+.badge {
+  &.bg-primary {
+    background: $tv-gradient !important;
+  }
+  
+  &.bg-success {
+    background: linear-gradient(135deg, #00c853, #00e676) !important;
+  }
+}
+
+// Footer
+.footer {
+  background: $tv-background !important;
+  border-top: 1px solid rgba($tv-primary, 0.2);
+  
+  .text-muted {
+    color: $tv-text-muted !important;
+  }
+}
+
+// Modals
+.modal-content {
+  background: $tv-background-card !important;
+  border: 1px solid rgba($tv-primary, 0.3) !important;
+  border-radius: 16px !important;
+  
+  .modal-header {
+    border-bottom: 1px solid rgba($tv-primary, 0.2) !important;
+    
+    .modal-title {
+      color: $tv-primary;
+    }
+  }
+  
+  .modal-footer {
+    border-top: 1px solid rgba($tv-primary, 0.2) !important;
+  }
+  
+  .btn-close {
+    filter: invert(1);
+  }
+}
+
+// Alerts
+.alert {
+  border-radius: 10px !important;
+  border: none !important;
+  
+  &.alert-success {
+    background: rgba($tv-success, 0.15) !important;
+    color: $tv-success !important;
+    border-left: 4px solid $tv-success !important;
+  }
+  
+  &.alert-danger {
+    background: rgba($tv-primary, 0.15) !important;
+    color: $tv-primary-light !important;
+    border-left: 4px solid $tv-primary !important;
+  }
+  
+  &.alert-warning {
+    background: rgba(#ffd93d, 0.15) !important;
+    color: #ffd93d !important;
+    border-left: 4px solid #ffd93d !important;
+  }
+  
+  &.alert-info {
+    background: rgba($tv-secondary, 0.15) !important;
+    color: $tv-secondary !important;
+    border-left: 4px solid $tv-secondary !important;
+  }
+}
+
+// Scrollbar personnalisée
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: $tv-background;
+}
+
+::-webkit-scrollbar-thumb {
+  background: $tv-primary;
+  border-radius: 4px;
+  
+  &:hover {
+    background: $tv-primary-light;
+  }
+}
+
+// Selection
+::selection {
+  background: rgba($tv-primary, 0.4);
+  color: white;
+}
+
+// Links
+a:not(.btn):not(.nav-link) {
+  color: $tv-primary;
+  
+  &:hover {
+    color: $tv-primary-light;
+  }
+}
+
+// Dropdown menus
+.dropdown-menu {
+  background: $tv-background-card !important;
+  border: 1px solid rgba($tv-primary, 0.2) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+  
+  .dropdown-item {
+    color: $tv-text !important;
+    transition: all 0.2s ease;
+    
+    &:hover {
+      background: rgba($tv-primary, 0.15) !important;
+      color: $tv-primary !important;
+    }
+  }
+  
+  .dropdown-divider {
+    border-color: rgba($tv-text-muted, 0.15) !important;
+  }
+}
+
+// Pagination
+.pagination {
+  .page-link {
+    background: $tv-background-light !important;
+    border-color: rgba($tv-primary, 0.2) !important;
+    color: $tv-text !important;
+    
+    &:hover {
+      background: rgba($tv-primary, 0.2) !important;
+      color: $tv-primary !important;
+    }
+  }
+  
+  .page-item.active .page-link {
+    background: $tv-gradient !important;
+    border-color: $tv-primary !important;
+  }
+}
+
+// Progress bars
+.progress {
+  background: $tv-background-light !important;
+  border-radius: 10px !important;
+  
+  .progress-bar {
+    background: $tv-gradient !important;
+  }
+}
+
+// Code blocks
+pre, code {
+  background: $tv-background !important;
+  border: 1px solid rgba($tv-primary, 0.2) !important;
+  color: $tv-secondary !important;
+  border-radius: 6px !important;
+}

@@ -1,5 +1,10 @@
 @use "bootstrap/scss/bootstrap" as * with (
-  $info: #5c728f
+  $info: #5c728f,
+  $primary: #ff6b6b,
+  $secondary: #4ecdc4,
+  $dark: #1a1a2e,
+  $body-bg: #1a1a2e,
+  $body-color: #e8e8e8
 );
 
 @use "includes/components/table";
@@ -7,6 +12,7 @@
 @use "includes/components/challenge";
 @use "includes/components/sticky-footer";
 @use "includes/components/graphs";
+@use "includes/components/teck-vision";
 
 @use "includes/utils/fonts";
 @use "includes/utils/opacity";
