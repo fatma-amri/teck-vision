@@ -202,7 +202,6 @@ def setup():
         <img class="w-100 mx-auto d-block" style="max-width: 500px;padding: 50px;padding-top: 14vh;" src="{default_ctf_banner_location}" />
         <h3 class="text-center">
             <p>Bienvenue sur <strong>Teck-Vision</strong></p>
-            <p>Plateforme CTF DevSecOps</p>
         </h3>
         <br>
         <h4 class="text-center">
