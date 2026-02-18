@@ -1,3 +1,8 @@
+#!/usr/bin/env python
+"""
+Teck-Vision — Point d'entrée WSGI pour Gunicorn
+Plateforme CTF DevSecOps
+"""
 import os
 
 # Detect if we're running via `flask run` and don't monkey patch

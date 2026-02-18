@@ -1,3 +1,6 @@
+# Teck-Vision — Makefile
+# Commandes utilitaires pour le développement
+
 lint:
 	ruff check --select E,F,W,B,C4,I --ignore E402,E501,E712,B904,B905,I001 --exclude=CTFd/uploads CTFd/ migrations/ tests/
 	isort --profile=black --check-only --skip=CTFd/uploads --skip-glob **/node_modules CTFd/ tests/

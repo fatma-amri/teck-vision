@@ -1,9 +1,12 @@
+# Teck-Vision — Fichiers exclus du build Docker
 CTFd/logs/*.log
 CTFd/static/uploads
 CTFd/uploads
 CTFd/*.db
+*.db
 CTFd/uploads/**/*
 .ctfd_secret_key
+.teck_vision_secret_key
 .data
 .git
 .codecov.yml

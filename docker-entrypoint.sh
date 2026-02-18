@@ -28,8 +28,8 @@ fi
 # Initialize database
 flask db upgrade
 
-# Start CTFd
-echo "Starting CTFd"
+# Start Teck-Vision
+echo "Starting Teck-Vision CTF Platform"
 exec gunicorn 'CTFd:create_app()' \
     --bind '0.0.0.0:8000' \
     --workers $WORKERS \

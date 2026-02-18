@@ -1,22 +1,25 @@
+# Teck-Vision — Stack Docker Compose
+# Plateforme CTF DevSecOps
+
 services:
-  ctfd:
+  teck-vision:
     build: .
     restart: always
     ports:
       - "8000:8000"
     environment:
       - UPLOAD_FOLDER=/var/uploads
-      - DATABASE_URL=mysql+pymysql://ctfd:ctfd@db/ctfd
+      - DATABASE_URL=mysql+pymysql://teck_vision:teck_vision@db/teck_vision
       - REDIS_URL=redis://cache:6379
       - WORKERS=1
-      - LOG_FOLDER=/var/log/CTFd
+      - LOG_FOLDER=/var/log/teck-vision
       - ACCESS_LOG=-
       - ERROR_LOG=-
       - REVERSE_PROXY=true
     volumes:
-      - .data/CTFd/logs:/var/log/CTFd
-      - .data/CTFd/uploads:/var/uploads
-      - .:/opt/CTFd:ro
+      - .data/teck-vision/logs:/var/log/teck-vision
+      - .data/teck-vision/uploads:/var/uploads
+      - .:/opt/teck-vision:ro
     depends_on:
       - db
     networks:
@@ -31,22 +34,21 @@ services:
     ports:
       - 80:80
     depends_on:
-      - ctfd
+      - teck-vision
 
   db:
     image: mariadb:10.11
     restart: always
     environment:
-      - MARIADB_ROOT_PASSWORD=ctfd
-      - MARIADB_USER=ctfd
-      - MARIADB_PASSWORD=ctfd
-      - MARIADB_DATABASE=ctfd
+      - MARIADB_ROOT_PASSWORD=teck_vision
+      - MARIADB_USER=teck_vision
+      - MARIADB_PASSWORD=teck_vision
+      - MARIADB_DATABASE=teck_vision
       - MARIADB_AUTO_UPGRADE=1
     volumes:
       - .data/mysql:/var/lib/mysql
     networks:
         internal:
-    # This command is required to set important mariadb defaults
     command: [mysqld, --character-set-server=utf8mb4, --collation-server=utf8mb4_unicode_ci, --wait_timeout=28800, --log-warnings=0]
 
   cache:

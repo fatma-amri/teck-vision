@@ -1,6 +1,14 @@
+#!/usr/bin/env python
+"""
+Teck-Vision — Serveur de développement
+Plateforme CTF DevSecOps
+
+Usage:
+    python serve.py --port 4000 --disable-gevent
+"""
 import argparse
 
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(description="Teck-Vision CTF Development Server")
 parser.add_argument("--port", help="Port for debug server to listen on", default=4000)
 parser.add_argument(
     "--profile", help="Enable flask_profiler profiling", action="store_true"
