@@ -46,6 +46,7 @@ from CTFd.utils.decorators import authed_only
 from CTFd.utils.health import check_config, check_database
 from CTFd.utils.helpers import get_errors, get_infos, markup
 from CTFd.utils.modes import USERS_MODE
+from CTFd.utils.passwords import validate_password_strength
 from CTFd.utils.security.auth import login_user
 from CTFd.utils.security.csrf import generate_nonce
 from CTFd.utils.security.signing import (
@@ -151,10 +152,9 @@ def setup():
                 .filter_by(email=email)
                 .first()
             )
-            pass_short = len(password) == 0
-            pass_long = len(password) > 128
             valid_email = validators.validate_email(request.form["email"])
             team_name_email_check = validators.validate_email(name)
+            password_errors = validate_password_strength(password, configured_min_length=0)
 
             if not valid_email:
                 errors.append("Please enter a valid email address")
@@ -164,10 +164,7 @@ def setup():
                 errors.append("Your user name cannot be an email address")
             if emails:
                 errors.append("That email has already been used")
-            if pass_short:
-                errors.append("Pick a longer password")
-            if pass_long:
-                errors.append("Pick a shorter password")
+            errors.extend(password_errors)
             if name_len:
                 errors.append("Pick a longer user name")
 

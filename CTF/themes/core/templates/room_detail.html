@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <div class="jumbotron">
+    <div class="container">
+      <h1 class="mb-2">{{ room.title }}</h1>
+      <p class="lead mb-0">{{ room.description }}</p>
+    </div>
+  </div>
+
+  <div class="container pb-5" id="room-page" data-duration-minutes="{{ room.duration }}">
+    <div class="row">
+      <div class="col-12">
+        <div class="card mb-4">
+          <div class="card-body">
+            <div class="d-flex flex-wrap align-items-center justify-content-between mb-3">
+              <div>
+                <h4 class="mb-1">Details de la room</h4>
+                <small class="text-muted">
+                  Difficulte: <strong>{{ room.difficulty }}</strong>
+                  | Joueurs: <strong>{{ room.players_count }}</strong>
+                  | Duree: <strong>{{ room.duration }} min</strong>
+                </small>
+              </div>
+              <div class="mt-2 mt-md-0">
+                <span class="badge badge-pill badge-secondary px-3 py-2" id="machine-status-badge">
+                  <span class="status-dot" id="status-dot"></span>
+                  <span id="machine-status-text">Machine arretee</span>
+                </span>
+              </div>
+            </div>
+
+            <div class="mb-2 d-flex justify-content-between align-items-center">
+              <span>Progression</span>
+              <strong>{{ solved_count }}/{{ total_count }} resolus ({{ progress_percent }}%)</strong>
+            </div>
+            <div class="progress" style="height: 18px;">
+              <div
+                id="progress-bar"
+                class="progress-bar bg-success progress-bar-striped progress-bar-animated"
+                role="progressbar"
+                style="width: 0%;"
+                data-target-width="{{ progress_percent }}"
+                aria-valuenow="{{ progress_percent }}"
+                aria-valuemin="0"
+                aria-valuemax="100"
+              ></div>
+            </div>
+
+            <div class="mt-4 d-flex flex-wrap align-items-center gap-2">
+              <button class="btn btn-primary mr-2 mb-2" id="start-machine-btn" type="button">
+                Demarrer le challenge
+              </button>
+              <button class="btn btn-outline-danger mb-2" id="stop-machine-btn" type="button" disabled>
+                Arreter la machine
+              </button>
+              <span class="ml-md-3 mb-2 text-monospace" id="countdown-timer">Temps restant: --:--</span>
+            </div>
+
+            <div class="alert alert-info mt-3 d-none" id="machine-ip-block" role="alert">
+              IP cible: <strong>{{ challenge_target_ip }}</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      {% for challenge in challenges %}
+        <div class="col-sm-6 col-lg-4 mb-4">
+          <div class="card h-100 challenge-card {% if challenge.solved %}challenge-solved{% else %}challenge-open{% endif %}">
+            <div class="card-body d-flex flex-column">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <h5 class="card-title mb-0">{{ challenge.name }}</h5>
+                {% if challenge.solved %}
+                  <span class="badge badge-success">Resolu</span>
+                {% else %}
+                  <span class="badge badge-secondary">Non resolu</span>
+                {% endif %}
+              </div>
+              <p class="mb-1"><strong>Categorie:</strong> {{ challenge.category }}</p>
+              <p class="mb-1"><strong>Points:</strong> {{ challenge.value }}</p>
+              <p class="mb-0"><strong>Difficulte:</strong> {{ challenge.difficulty }}</p>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script>
+    (function () {
+      var roomPage = document.getElementById("room-page");
+      if (!roomPage) {
+        return;
+      }
+
+      var machineIpBlock = document.getElementById("machine-ip-block");
+      var startButton = document.getElementById("start-machine-btn");
+      var stopButton = document.getElementById("stop-machine-btn");
+      var timerNode = document.getElementById("countdown-timer");
+      var statusBadge = document.getElementById("machine-status-badge");
+      var statusDot = document.getElementById("status-dot");
+      var statusText = document.getElementById("machine-status-text");
+      var progressBar = document.getElementById("progress-bar");
+
+      var durationMinutes = parseInt(roomPage.dataset.durationMinutes || "30", 10);
+      var totalSeconds = durationMinutes * 60;
+      var remainingSeconds = totalSeconds;
+      var countdownInterval = null;
+
+      function formatTime(seconds) {
+        var mins = Math.floor(seconds / 60);
+        var secs = seconds % 60;
+        return String(mins).padStart(2, "0") + ":" + String(secs).padStart(2, "0");
+      }
+
+      function refreshTimer() {
+        timerNode.textContent = "Temps restant: " + formatTime(Math.max(remainingSeconds, 0));
+      }
+
+      function setMachineState(isActive) {
+        if (isActive) {
+          statusBadge.classList.remove("badge-secondary");
+          statusBadge.classList.add("badge-success");
+          statusDot.classList.add("dot-active");
+          statusText.textContent = "Machine active";
+        } else {
+          statusBadge.classList.remove("badge-success");
+          statusBadge.classList.add("badge-secondary");
+          statusDot.classList.remove("dot-active");
+          statusText.textContent = "Machine arretee";
+        }
+      }
+
+      function stopMachine() {
+        if (countdownInterval) {
+          clearInterval(countdownInterval);
+          countdownInterval = null;
+        }
+        setMachineState(false);
+        startButton.disabled = false;
+        stopButton.disabled = true;
+      }
+
+      startButton.addEventListener("click", function () {
+        if (countdownInterval) {
+          return;
+        }
+
+        machineIpBlock.classList.remove("d-none");
+        remainingSeconds = totalSeconds;
+        refreshTimer();
+        setMachineState(true);
+        startButton.disabled = true;
+        stopButton.disabled = false;
+
+        countdownInterval = setInterval(function () {
+          remainingSeconds -= 1;
+          refreshTimer();
+
+          if (remainingSeconds <= 0) {
+            stopMachine();
+          }
+        }, 1000);
+      });
+
+      stopButton.addEventListener("click", function () {
+        stopMachine();
+      });
+
+      if (progressBar) {
+        var target = parseInt(progressBar.dataset.targetWidth || "0", 10);
+        window.requestAnimationFrame(function () {
+          progressBar.style.transition = "width 0.9s ease";
+          progressBar.style.width = target + "%";
+        });
+      }
+
+      refreshTimer();
+      setMachineState(false);
+    })();
+  </script>
+
+  <style>
+    .challenge-card {
+      border-width: 2px;
+    }
+
+    .challenge-solved {
+      border-color: #28a745;
+      box-shadow: 0 0 0.85rem rgba(40, 167, 69, 0.16);
+    }
+
+    .challenge-open {
+      border-color: #d1d5db;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      display: inline-block;
+      margin-right: 6px;
+      background: #6c757d;
+      vertical-align: middle;
+    }
+
+    .dot-active {
+      background: #1dd75f;
+      box-shadow: 0 0 0 rgba(29, 215, 95, 0.6);
+      animation: pulse-dot 1.2s infinite;
+    }
+
+    @keyframes pulse-dot {
+      0% {
+        box-shadow: 0 0 0 0 rgba(29, 215, 95, 0.65);
+      }
+      70% {
+        box-shadow: 0 0 0 12px rgba(29, 215, 95, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(29, 215, 95, 0);
+      }
+    }
+  </style>
+{% endblock %}

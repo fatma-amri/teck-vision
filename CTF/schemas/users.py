@@ -8,6 +8,7 @@ from CTFd.schemas.fields import UserFieldEntriesSchema
 from CTFd.utils import get_config, string_types
 from CTFd.utils.crypto import verify_password
 from CTFd.utils.email import check_email_is_blacklisted, check_email_is_whitelisted
+from CTFd.utils.passwords import validate_password_strength
 from CTFd.utils.user import get_current_user, is_admin
 from CTFd.utils.validators import validate_country_code, validate_language
 
@@ -182,12 +183,12 @@ class UserSchema(ma.ModelSchema):
                 )
 
             if password and confirm:
-                password_min_length = int(get_config("password_min_length", default=0))
-                if len(password) < password_min_length:
-                    raise ValidationError(
-                        f"Password must be at least {password_min_length} characters",
-                        field_names=["password"],
-                    )
+                password_errors = validate_password_strength(
+                    password,
+                    configured_min_length=int(get_config("password_min_length", default=0)),
+                )
+                if password_errors:
+                    raise ValidationError(password_errors[0], field_names=["password"])
 
                 test = verify_password(
                     plaintext=confirm, ciphertext=target_user.password

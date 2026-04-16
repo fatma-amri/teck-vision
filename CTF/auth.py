@@ -22,6 +22,7 @@ from CTFd.utils.decorators.visibility import check_registration_visibility
 from CTFd.utils.helpers import error_for, get_errors, markup
 from CTFd.utils.logging import log
 from CTFd.utils.modes import TEAMS_MODE
+from CTFd.utils.passwords import validate_password_strength
 from CTFd.utils.security.auth import generate_preset_admin, login_user, logout_user
 from CTFd.utils.security.email import (
     remove_email_confirm_token,
@@ -152,23 +153,17 @@ def reset_password(data=None):
                     ],
                 )
 
-            pass_short = len(password) == 0
-            if pass_short:
-                return render_template(
-                    "reset_password.html", errors=[_l("Please pick a longer password")]
+            password_errors = [
+                _l(message)
+                for message in validate_password_strength(
+                    password,
+                    configured_min_length=int(
+                        get_config("password_min_length", default=0)
+                    ),
                 )
-
-            password_min_length = int(get_config("password_min_length", default=0))
-            pass_min = len(password) < password_min_length
-            if pass_min:
-                return render_template(
-                    "reset_password.html",
-                    errors=[
-                        _l(
-                            f"Password must be at least {password_min_length} characters"
-                        )
-                    ],
-                )
+            ]
+            if password_errors:
+                return render_template("reset_password.html", errors=password_errors)
 
             user.password = password
             user.change_password = False
@@ -269,13 +264,15 @@ def register():
             .filter_by(email=email_address)
             .first()
         )
-        pass_short = len(password) == 0
-        pass_long = len(password) > 128
         valid_email = validators.validate_email(email_address)
         team_name_email_check = validators.validate_email(name)
-
-        password_min_length = int(get_config("password_min_length", default=0))
-        pass_min = len(password) < password_min_length
+        password_errors = [
+            _l(message)
+            for message in validate_password_strength(
+                password,
+                configured_min_length=int(get_config("password_min_length", default=0)),
+            )
+        ]
 
         if get_config("registration_code"):
             if (
@@ -342,14 +339,7 @@ def register():
             errors.append(_l("Your user name cannot be an email address"))
         if emails:
             errors.append(_l("That email has already been used"))
-        if pass_short:
-            errors.append(_l("Pick a longer password"))
-        if password_min_length and pass_min:
-            errors.append(
-                _l(f"Password must be at least {password_min_length} characters")
-            )
-        if pass_long:
-            errors.append(_l("Pick a shorter password"))
+        errors.extend(password_errors)
         if name_len:
             errors.append(_l("Pick a longer user name"))
         if valid_website is False:

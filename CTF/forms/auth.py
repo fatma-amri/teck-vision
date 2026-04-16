@@ -14,15 +14,17 @@ from CTFd.forms.users import (
     build_user_bracket_field,
 )
 from CTFd.utils import get_config
+from CTFd.utils.passwords import get_password_policy_min_length
 
 
 def RegistrationForm(*args, **kwargs):
-    password_min_length = int(get_config("password_min_length", default=0))
+    password_min_length = get_password_policy_min_length(
+        configured_min_length=int(get_config("password_min_length", default=0))
+    )
     password_description = _l("Password used to log into your account")
-    if password_min_length:
-        password_description += _l(
-            f" (Must be at least {password_min_length} characters)"
-        )
+    password_description += _l(
+        f" (At least {password_min_length} characters, uppercase, lowercase, number, and special character)"
+    )
 
     class _RegistrationForm(BaseForm):
         name = StringField(
@@ -83,6 +85,11 @@ class ResetPasswordRequestForm(BaseForm):
 
 class ResetPasswordForm(BaseForm):
     password = PasswordField(
-        _l("Password"), validators=[InputRequired()], render_kw={"autofocus": True}
+        _l("Password"),
+        description=_l(
+            "Use a strong password with uppercase, lowercase, number, and special character"
+        ),
+        validators=[InputRequired()],
+        render_kw={"autofocus": True},
     )
     submit = SubmitField(_l("Submit"))

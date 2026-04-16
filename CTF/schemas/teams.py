@@ -7,6 +7,7 @@ from CTFd.models import Brackets, TeamFieldEntries, TeamFields, Teams, Users, ma
 from CTFd.schemas.fields import TeamFieldEntriesSchema
 from CTFd.utils import get_config, string_types
 from CTFd.utils.crypto import verify_password
+from CTFd.utils.passwords import validate_password_strength
 from CTFd.utils.user import get_current_team, get_current_user, is_admin
 from CTFd.utils.validators import validate_country_code
 
@@ -153,6 +154,13 @@ class TeamSchema(ma.ModelSchema):
                 )
 
             if password and confirm:
+                password_errors = validate_password_strength(
+                    password,
+                    configured_min_length=int(get_config("password_min_length", default=0)),
+                )
+                if password_errors:
+                    raise ValidationError(password_errors[0], field_names=["password"])
+
                 test_team = verify_password(
                     plaintext=confirm, ciphertext=current_team.password
                 )
