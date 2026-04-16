@@ -61,7 +61,7 @@ def teams_detail(team_id):
     place = team.get_place(admin=True)
 
     # Get missing Challenges for all members
-    # TODO: How do you mark a missing challenge for a team?
+    # NOTE: Unsolved challenges calculation. This needs refactoring in a future update.
     solve_ids = [s.challenge_id for s in solves]
     missing = Challenges.query.filter(not_(Challenges.id.in_(solve_ids))).all()
 

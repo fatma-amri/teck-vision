@@ -3,7 +3,6 @@ import os
 import sys
 import time
 import weakref
-from distutils.version import StrictVersion
 
 import jinja2
 from flask import Flask, Request
@@ -79,8 +78,8 @@ class CTFdFlask(Flask):
         return super(CTFdFlask, self).create_jinja_environment()
 
     def create_url_adapter(self, request):
-        # TODO: Backport of TRUSTED_HOSTS behavior from Flask. Remove when possible.
-        # https://github.com/pallets/flask/pull/5637
+        # NOTE: Backport of TRUSTED_HOSTS behavior from Flask. Remove when upgrading Flask.
+        # See: https://github.com/pallets/flask/pull/5637
         if request is not None:
             if (trusted_hosts := self.config.get("TRUSTED_HOSTS")) is not None:
                 request.trusted_hosts = trusted_hosts
@@ -300,7 +299,8 @@ def create_app(config="CTFd.config.Config"):
         version = utils.get_config("ctf_version")
 
         # Upgrading from an older version of CTFd
-        if version and (StrictVersion(version) < StrictVersion(__version__)):
+        from packaging.version import Version
+        if version and (Version(version) < Version(__version__)):
             if confirm_upgrade():
                 run_upgrade()
             else:
@@ -317,15 +317,16 @@ def create_app(config="CTFd.config.Config"):
         init_request_processors(app)
         init_template_filters(app)
         init_template_globals(app)
-
         # Importing here allows tests to use sensible names (e.g. api instead of api_bp)
         from CTFd.admin import admin
         from CTFd.api import api
         from CTFd.auth import auth
         from CTFd.challenges import challenges
+        from CTFd.challenges_api import challenges_api
         from CTFd.errors import render_error
         from CTFd.events import events
         from CTFd.health import health
+        from CTFd.room_instances import room_instances
         from CTFd.scoreboard import scoreboard
         from CTFd.share import social
         from CTFd.teams import teams
@@ -342,6 +343,8 @@ def create_app(config="CTFd.config.Config"):
         app.register_blueprint(events)
         app.register_blueprint(social)
         app.register_blueprint(health)
+        app.register_blueprint(room_instances)
+        app.register_blueprint(challenges_api)
 
         app.register_blueprint(admin)
 

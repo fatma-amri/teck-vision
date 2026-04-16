@@ -1,6 +1,5 @@
-from wtforms import BooleanField, FileField, SelectField, StringField, TextAreaField
-from wtforms.fields.html5 import IntegerField, URLField
-from wtforms.widgets.html5 import NumberInput
+from wtforms import BooleanField, FileField, IntegerField, SelectField, StringField, TextAreaField, URLField
+from wtforms.widgets import NumberInput
 
 from CTFd.constants.config import (
     AccountVisibilityTypes,

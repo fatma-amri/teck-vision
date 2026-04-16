@@ -39,6 +39,15 @@ auth = Blueprint("auth", __name__)
 @auth.route("/confirm/<data>", methods=["POST", "GET"])
 @ratelimit(method="POST", limit=10, interval=60)
 def confirm(data=None):
+    """Handle email confirmation flow.
+    
+    GET with data: Verify email confirmation token and mark email as verified.
+    POST: Resend confirmation email to current user.
+    GET without data: Display confirmation status page.
+    
+    Args:
+        data: Optional confirmation token from email link
+    """
     # If we can't send mails our behavior depends on verify_emails
     if not can_send_mail():
         if get_config("verify_emails") is False:
@@ -121,6 +130,15 @@ def confirm(data=None):
 @auth.route("/reset_password/<data>", methods=["POST", "GET"])
 @ratelimit(method="POST", limit=10, interval=60)
 def reset_password(data=None):
+    """Handle password reset flow.
+    
+    GET with data: Verify reset token and display password change form.
+    POST with data: Update user password with validation.
+    POST without data: Send password reset email to user.
+    
+    Args:
+        data: Optional password reset token from email link
+    """
     if config.can_send_mail() is False and data is None:
         return render_template(
             "reset_password.html",

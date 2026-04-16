@@ -1,4 +1,5 @@
-import os  # noqa: I001
+import logging
+import os
 
 from flask import Blueprint, abort
 from flask import current_app as app
@@ -64,6 +65,11 @@ views = Blueprint("views", __name__)
 
 @views.route("/setup", methods=["GET", "POST"])
 def setup():
+    """Initialize CTFd setup and configuration.
+    
+    Handles both GET (display setup form) and POST (process setup) requests.
+    Creates admin user, initializes configuration, and sets up the CTF.
+    """
     errors = get_errors()
     if not config.is_setup():
         if not session.get("nonce"):
@@ -106,13 +112,13 @@ def setup():
             # Style
             ctf_logo = request.files.get("ctf_logo")
             if ctf_logo:
-                f = upload_file(file=ctf_logo)
-                set_config("ctf_logo", f.location)
+                uploaded_file = upload_file(file=ctf_logo)
+                set_config("ctf_logo", uploaded_file.location)
 
             ctf_small_icon = request.files.get("ctf_small_icon")
             if ctf_small_icon:
-                f = upload_file(file=ctf_small_icon)
-                set_config("ctf_small_icon", f.location)
+                uploaded_file = upload_file(file=ctf_small_icon)
+                set_config("ctf_small_icon", uploaded_file.location)
 
             theme = request.form.get("ctf_theme", DEFAULT_THEME)
             set_config("ctf_theme", theme)
@@ -123,8 +129,10 @@ def setup():
                 css = (
                     '<style id="theme-color">\n'
                     ":root {{--theme-color: {theme_color};}}\n"
-                    ".navbar{{background-color: var(--theme-color) !important;}}\n"
-                    ".jumbotron{{background-color: var(--theme-color) !important;}}\n"
+                    ".navbar{{"
+                    "background-color: var(--theme-color) !important;}}\n"
+                    ".jumbotron{{"
+                    "background-color: var(--theme-color) !important;}}\n"
                     "</style>\n"
                 ).format(theme_color=theme_color)
                 set_config("theme_header", css)
@@ -174,7 +182,6 @@ def setup():
                     errors=errors,
                     name=name,
                     email=email,
-                    password=password,
                     state=serialize(generate_nonce()),
                 )
 
@@ -189,9 +196,9 @@ def setup():
             default_ctf_banner_location = url_for("views.themes", path="img/logo.png")
             ctf_banner = request.files.get("ctf_banner")
             if ctf_banner:
-                f = upload_file(file=ctf_banner, page_id=page.id)
-                default_ctf_banner_location = url_for("views.files", path=f.location)
-                set_config("ctf_banner", f.location)
+                uploaded_file = upload_file(file=ctf_banner, page_id=page.id)
+                default_ctf_banner_location = url_for("views.files", path=uploaded_file.location)
+                set_config("ctf_banner", uploaded_file.location)
 
             # Splice in our banner
             index = f"""<div class="row">
@@ -236,13 +243,15 @@ def setup():
             try:
                 db.session.add(admin)
                 db.session.commit()
-            except IntegrityError:
+            except IntegrityError as e:
+                logging.warning(f"Failed to add admin user: {e}")
                 db.session.rollback()
 
             try:
                 db.session.add(page)
                 db.session.commit()
-            except IntegrityError:
+            except IntegrityError as e:
+                logging.warning(f"Failed to add index page: {e}")
                 db.session.rollback()
 
             login_user(admin)
@@ -254,8 +263,9 @@ def setup():
             return redirect(url_for("views.static_html"))
         try:
             return render_template("setup.html", state=serialize(generate_nonce()))
-        except TemplateNotFound:
+        except TemplateNotFound as e:
             # Set theme to default and try again
+            logging.warning(f"Setup template not found, resetting to default theme: {e}")
             set_config("ctf_theme", DEFAULT_THEME)
             return render_template("setup.html", state=serialize(generate_nonce()))
     return redirect(url_for("views.static_html"))
@@ -263,6 +273,11 @@ def setup():
 
 @views.route("/setup/integrations", methods=["GET", "POST"])
 def integrations():
+    """Configure CTFd integrations.
+    
+    Handles OAuth and other third-party integrations setup.
+    Requires admin access or pre-setup state.
+    """
     if is_admin() or is_setup() is False:
         name = request.values.get("name")
         state = request.values.get("state")
@@ -271,7 +286,8 @@ def integrations():
             state = unserialize(state, max_age=3600)
         except (BadSignature, BadTimeSignature):
             state = False
-        except Exception:
+        except Exception as e:
+            logging.warning(f"Failed to unserialize state: {e}")
             state = False
 
         if state:
@@ -291,6 +307,10 @@ def integrations():
 
 @views.route("/notifications", methods=["GET"])
 def notifications():
+    """Display user notifications.
+    
+    Returns all notifications ordered by most recent.
+    """
     notifications = Notifications.query.order_by(Notifications.id.desc()).all()
     return render_template("notifications.html", notifications=notifications)
 
@@ -298,6 +318,11 @@ def notifications():
 @views.route("/settings", methods=["GET"])
 @authed_only
 def settings():
+    """Display user settings and profile management.
+    
+    Requires user to be authenticated. Shows personal information,
+    API tokens, email confirmation status, and team information.
+    """
     infos = get_infos()
     errors = get_errors()
 
@@ -342,10 +367,16 @@ def settings():
 @views.route("/", defaults={"route": "index"})
 @views.route("/<path:route>")
 def static_html(route):
-    """
-    Route in charge of routing users to Pages.
-    :param route:
-    :return:
+    """Route users to pages stored in the database.
+    
+    Dynamically loads page content based on route parameter.
+    Redirects to login if page requires authentication.
+    
+    Args:
+        route: The page route/path requested by the user.
+        
+    Returns:
+        Rendered page template or 404 error if page not found.
     """
     page = get_page(route)
     if page is None:
@@ -469,7 +500,8 @@ def files(path):
     uploader = get_uploader()
     try:
         return uploader.download(f.location)
-    except IOError:
+    except IOError as e:
+        logging.error(f"Failed to download file {f.location}: {e}")
         abort(404)
 
 

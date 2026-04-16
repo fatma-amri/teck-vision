@@ -14,7 +14,7 @@ from CTFd.utils.modes import get_model
 class ChallengePropertyCounts(Resource):
     @admins_only
     def get(self, column):
-        # TODO: Probably rename this function in CTFd 4.0 as it can be used to do more than just counts now
+        # NOTE: This function aggregates challenge statistics and may need refactoring in CTFd 4.0.
         funcs = {
             "count": func.count,
             "sum": func.sum,

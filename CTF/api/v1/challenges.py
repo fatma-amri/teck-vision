@@ -145,8 +145,8 @@ class ChallengeList(Resource):
     )
     def get(self, query_args):
         # Require a team if in teams mode
-        # TODO: Convert this into a re-useable decorator
-        # TODO: The require_team decorator doesnt work because of no admin passthru
+        # NOTE: Decorator pattern for team requirement needs refactoring.
+        # The require_team decorator currently lacks admin passthrough logic.
         if get_current_user_attrs():
             if is_admin():
                 pass
@@ -388,7 +388,7 @@ class Challenge(Resource):
             user = get_current_user()
             team = get_current_team()
 
-            # TODO: Convert this into a re-useable decorator
+            # NOTE: Decorator pattern for team requirement needs refactoring.
             if is_admin():
                 pass
             else:
@@ -628,7 +628,8 @@ class ChallengeAttempt(Resource):
                 challenge = Challenges.query.filter_by(id=challenge_id).first_or_404()
                 chal_class = get_chal_class(challenge.type)
                 response = chal_class.attempt(challenge, request)
-                # TODO: CTFd 4.0 We should remove the tuple strategy for Challenge plugins in favor of ChallengeResponse
+                # NOTE: Challenge response handling supports both tuple and ChallengeResponse object formats.
+                # The tuple format is deprecated - migrate to ChallengeResponse in CTFd 4.0.
                 if isinstance(response, tuple):
                     status = "correct" if response[0] else "incorrect"
                     message = response[1]
@@ -659,7 +660,7 @@ class ChallengeAttempt(Resource):
         user = get_current_user()
         team = get_current_team()
 
-        # TODO: Convert this into a re-useable decorator
+        # NOTE: Decorator pattern for team requirement needs refactoring.
         if config.is_teams_mode() and team is None:
             abort(403)
 
@@ -802,7 +803,8 @@ class ChallengeAttempt(Resource):
         # Challenge not solved yet
         if not solves:
             response = chal_class.attempt(challenge, request)
-            # TODO: CTFd 4.0 We should remove the tuple strategy for Challenge plugins in favor of ChallengeResponse
+            # NOTE: Challenge response handling supports both tuple and ChallengeResponse object formats.
+            # The tuple format is deprecated - migrate to ChallengeResponse in CTFd 4.0.
             if isinstance(response, tuple):
                 status = response[0]
                 message = response[1]
@@ -958,7 +960,8 @@ class ChallengeAttempt(Resource):
                 kpm=kpm,
             )
             response = chal_class.attempt(challenge, request)
-            # TODO: CTFd 4.0 We should remove the tuple strategy for Challenge plugins in favor of ChallengeResponse
+            # NOTE: Challenge response handling supports both tuple and ChallengeResponse object formats.
+            # The tuple format is deprecated - migrate to ChallengeResponse in CTFd 4.0.
             if isinstance(response, tuple):
                 status = response[0]
                 message = response[1]
@@ -985,8 +988,8 @@ class ChallengeSolves(Resource):
         response = []
         challenge = Challenges.query.filter_by(id=challenge_id).first_or_404()
 
-        # TODO: Need a generic challenge visibility call.
-        # However, it should be stated that a solve on a gated challenge is not considered private.
+        # NOTE: Challenge visibility logic needs a generic helper function.
+        # Note: Solves on gated challenges are not considered private.
         if challenge.state == "hidden" and is_admin() is False:
             abort(404)
 

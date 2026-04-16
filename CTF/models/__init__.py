@@ -1194,3 +1194,37 @@ class Ratings(db.Model):
         return "<Rating user_id={} challenge_id={} value={}>".format(
             self.user_id, self.challenge_id, self.value
         )
+
+
+class RoomInstances(db.Model):
+    """Track active machine instances for room challenges (TryHackMe-like)."""
+    
+    __tablename__ = "room_instances"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"))
+    team_id = db.Column(db.Integer, db.ForeignKey("teams.id", ondelete="CASCADE"))
+    category = db.Column(db.String(80), nullable=False)  # Room category/name
+    machine_ip = db.Column(db.String(15), default="15.237.60.47")  # Static IP
+    is_active = db.Column(db.Boolean, default=False)
+    started_at = db.Column(db.DateTime, nullable=True)
+    expires_at = db.Column(db.DateTime, nullable=True)
+    duration_minutes = db.Column(db.Integer, default=30)  # Default 30 min lifetime
+    created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    
+    user = db.relationship("Users", foreign_keys="RoomInstances.user_id", lazy="select")
+    team = db.relationship("Teams", foreign_keys="RoomInstances.team_id", lazy="select")
+    
+    def __init__(self, *args, **kwargs):
+        super(RoomInstances, self).__init__(**kwargs)
+    
+    @property
+    def time_remaining_seconds(self):
+        """Calculate remaining time in seconds."""
+        if not self.is_active or not self.expires_at:
+            return 0
+        remaining = (self.expires_at - datetime.datetime.utcnow()).total_seconds()
+        return max(0, int(remaining))
+    
+    def __repr__(self):
+        return f"<RoomInstance user_id={self.user_id}, category={self.category}, active={self.is_active}>"
+

@@ -33,7 +33,7 @@ def listing():
     if q:
         filters.append(getattr(Teams, field).like("%{}%".format(q)))
 
-    teams = (
+    teams_paginated = (
         Teams.query.filter_by(hidden=False, banned=False)
         .filter(*filters)
         .order_by(Teams.id.asc())
@@ -45,9 +45,9 @@ def listing():
 
     return render_template(
         "teams/teams.html",
-        teams=teams,
-        prev_page=url_for(request.endpoint, page=teams.prev_num, **args),
-        next_page=url_for(request.endpoint, page=teams.next_num, **args),
+        teams=teams_paginated,
+        prev_page=url_for(request.endpoint, page=teams_paginated.prev_num, **args),
+        next_page=url_for(request.endpoint, page=teams_paginated.next_num, **args),
         q=q,
         field=field,
     )

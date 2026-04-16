@@ -25,7 +25,7 @@ def listing():
     if q:
         filters.append(getattr(Users, field).like("%{}%".format(q)))
 
-    users = (
+    users_paginated = (
         Users.query.filter_by(banned=False, hidden=False)
         .filter(*filters)
         .order_by(Users.id.asc())
@@ -37,9 +37,9 @@ def listing():
 
     return render_template(
         "users/users.html",
-        users=users,
-        prev_page=url_for(request.endpoint, page=users.prev_num, **args),
-        next_page=url_for(request.endpoint, page=users.next_num, **args),
+        users=users_paginated,
+        prev_page=url_for(request.endpoint, page=users_paginated.prev_num, **args),
+        next_page=url_for(request.endpoint, page=users_paginated.next_num, **args),
         q=q,
         field=field,
     )

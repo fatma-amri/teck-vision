@@ -8,7 +8,7 @@
     </div>
   </div>
 
-  <div class="container pb-5" id="room-page" data-duration-minutes="{{ room.duration }}">
+  <div class="container pb-5" id="room-page" data-room-category="{{ room.id }}" data-duration-minutes="{{ room.duration }}">
     <div class="row">
       <div class="col-12">
         <div class="card mb-4">
@@ -54,11 +54,14 @@
               <button class="btn btn-outline-danger mb-2" id="stop-machine-btn" type="button" disabled>
                 Arreter la machine
               </button>
+              <button class="btn btn-secondary mb-2" id="copy-ip-btn" type="button" disabled>
+                Copier l'IP
+              </button>
               <span class="ml-md-3 mb-2 text-monospace" id="countdown-timer">Temps restant: --:--</span>
             </div>
 
             <div class="alert alert-info mt-3 d-none" id="machine-ip-block" role="alert">
-              IP cible: <strong>{{ challenge_target_ip }}</strong>
+              IP cible: <strong id="target-ip-display">{{ challenge_target_ip }}</strong>
             </div>
           </div>
         </div>
@@ -67,20 +70,52 @@
 
     <div class="row">
       {% for challenge in challenges %}
-        <div class="col-sm-6 col-lg-4 mb-4">
-          <div class="card h-100 challenge-card {% if challenge.solved %}challenge-solved{% else %}challenge-open{% endif %}">
-            <div class="card-body d-flex flex-column">
-              <div class="d-flex justify-content-between align-items-start mb-2">
-                <h5 class="card-title mb-0">{{ challenge.name }}</h5>
+        <div class="col-12 mb-4">
+          <div class="card challenge-card {% if challenge.solved %}challenge-solved{% else %}challenge-open{% endif %}" data-challenge-id="{{ challenge.id }}">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-start mb-3">
+                <div>
+                  <h5 class="card-title mb-0">{{ challenge.name }}</h5>
+                  <p class="mb-0 text-muted small">{{ challenge.description }}</p>
+                </div>
                 {% if challenge.solved %}
-                  <span class="badge badge-success">Resolu</span>
+                  <span class="badge badge-success">✓ Resolu</span>
                 {% else %}
                   <span class="badge badge-secondary">Non resolu</span>
                 {% endif %}
               </div>
-              <p class="mb-1"><strong>Categorie:</strong> {{ challenge.category }}</p>
-              <p class="mb-1"><strong>Points:</strong> {{ challenge.value }}</p>
-              <p class="mb-0"><strong>Difficulte:</strong> {{ challenge.difficulty }}</p>
+
+              <div class="row mb-3">
+                <div class="col-auto">
+                  <small><strong>Categorie:</strong> {{ challenge.category }}</small>
+                </div>
+                <div class="col-auto">
+                  <small><strong>Points:</strong> {{ challenge.value }}</small>
+                </div>
+                <div class="col-auto">
+                  <small><strong>Difficulte:</strong> {{ challenge.difficulty }}</small>
+                </div>
+              </div>
+
+              {% if not challenge.solved %}
+                <div class="input-group mb-2">
+                  <input
+                    type="text"
+                    class="form-control flag-input"
+                    placeholder="Entrer le flag ici..."
+                    data-challenge-id="{{ challenge.id }}"
+                    autocomplete="off"
+                  />
+                  <div class="input-group-append">
+                    <button class="btn btn-primary submit-flag-btn" type="button" data-challenge-id="{{ challenge.id }}">
+                      Valider
+                    </button>
+                  </div>
+                </div>
+                <div class="alert alert-danger d-none" role="alert" data-challenge-id="{{ challenge.id }}"></div>
+              {% else %}
+                <div class="alert alert-success">Flag valide!</div>
+              {% endif %}
             </div>
           </div>
         </div>
@@ -98,19 +133,23 @@
         return;
       }
 
+      var roomCategory = roomPage.dataset.roomCategory;
       var machineIpBlock = document.getElementById("machine-ip-block");
       var startButton = document.getElementById("start-machine-btn");
       var stopButton = document.getElementById("stop-machine-btn");
+      var copyIpButton = document.getElementById("copy-ip-btn");
       var timerNode = document.getElementById("countdown-timer");
       var statusBadge = document.getElementById("machine-status-badge");
       var statusDot = document.getElementById("status-dot");
       var statusText = document.getElementById("machine-status-text");
       var progressBar = document.getElementById("progress-bar");
+      var targetIpDisplay = document.getElementById("target-ip-display");
 
       var durationMinutes = parseInt(roomPage.dataset.durationMinutes || "30", 10);
       var totalSeconds = durationMinutes * 60;
       var remainingSeconds = totalSeconds;
       var countdownInterval = null;
+      var machineActive = false;
 
       function formatTime(seconds) {
         var mins = Math.floor(seconds / 60);
@@ -123,6 +162,7 @@
       }
 
       function setMachineState(isActive) {
+        machineActive = isActive;
         if (isActive) {
           statusBadge.classList.remove("badge-secondary");
           statusBadge.classList.add("badge-success");
@@ -141,36 +181,135 @@
           clearInterval(countdownInterval);
           countdownInterval = null;
         }
+        
+        // Call API to terminate machine
+        fetch("/api/room-instances/terminate/" + roomCategory, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" }
+        }).catch(console.error);
+        
         setMachineState(false);
         startButton.disabled = false;
         stopButton.disabled = true;
+        copyIpButton.disabled = true;
+        machineIpBlock.classList.add("d-none");
       }
 
-      startButton.addEventListener("click", function () {
+      function startMachine() {
         if (countdownInterval) {
           return;
         }
 
-        machineIpBlock.classList.remove("d-none");
-        remainingSeconds = totalSeconds;
-        refreshTimer();
-        setMachineState(true);
-        startButton.disabled = true;
-        stopButton.disabled = false;
+        fetch("/api/room-instances/start/" + roomCategory, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" }
+        })
+        .then(function(response) { return response.json(); })
+        .then(function(data) {
+          if (data.success) {
+            machineIpBlock.classList.remove("d-none");
+            remainingSeconds = data.duration_minutes * 60;
+            refreshTimer();
+            setMachineState(true);
+            startButton.disabled = true;
+            stopButton.disabled = false;
+            copyIpButton.disabled = false;
 
-        countdownInterval = setInterval(function () {
-          remainingSeconds -= 1;
-          refreshTimer();
+            countdownInterval = setInterval(function () {
+              remainingSeconds -= 1;
+              refreshTimer();
 
-          if (remainingSeconds <= 0) {
-            stopMachine();
+              if (remainingSeconds <= 0) {
+                stopMachine();
+              }
+            }, 1000);
           }
-        }, 1000);
+        })
+        .catch(console.error);
+      }
+
+      // Flag submission
+      document.querySelectorAll(".submit-flag-btn").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+          var challengeId = btn.dataset.challengeId;
+          var input = document.querySelector(".flag-input[data-challenge-id='" + challengeId + "']");
+          var flagValue = input.value.trim();
+          
+          if (!flagValue) {
+            showError(challengeId, "Veuillez entrer un flag");
+            return;
+          }
+
+          submitFlag(challengeId, flagValue);
+        });
       });
 
-      stopButton.addEventListener("click", function () {
-        stopMachine();
+      function submitFlag(challengeId, flagValue) {
+        var btn = document.querySelector(".submit-flag-btn[data-challenge-id='" + challengeId + "']");
+        var input = document.querySelector(".flag-input[data-challenge-id='" + challengeId + "']");
+        
+        btn.disabled = true;
+        btn.textContent = "Validation...";
+        
+        fetch("/api/challenges/" + challengeId + "/submit-flag", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ flag: flagValue })
+        })
+        .then(function(response) { return response.json(); })
+        .then(function(data) {
+          if (data.success) {
+            // Correct flag
+            var card = document.querySelector(".challenge-card[data-challenge-id='" + challengeId + "']");
+            card.classList.remove("challenge-open");
+            card.classList.add("challenge-solved");
+            
+            // Replace input with success message
+            input.parentElement.innerHTML = '<div class="alert alert-success">Flag valide! +' + data.points + ' points</div>';
+            
+            // Update progress
+            location.reload();  // Simple way to update progress - can be optimized
+          } else {
+            showError(challengeId, data.message || "Wrong flag, try again");
+            btn.disabled = false;
+            btn.textContent = "Valider";
+          }
+        })
+        .catch(function(error) {
+          console.error("Error:", error);
+          showError(challengeId, "Erreur lors de la validation du flag");
+          btn.disabled = false;
+          btn.textContent = "Valider";
+        });
+      }
+
+      function showError(challengeId, message) {
+        var errorDiv = document.querySelector(".alert-danger[data-challenge-id='" + challengeId + "']");
+        if (errorDiv) {
+          errorDiv.textContent = message;
+          errorDiv.classList.remove("d-none");
+          setTimeout(function() {
+            errorDiv.classList.add("d-none");
+          }, 5000);
+        }
+      }
+
+      // Copy IP button
+      copyIpButton.addEventListener("click", function() {
+        var ip = targetIpDisplay.textContent;
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(ip).then(function() {
+            var originalText = copyIpButton.textContent;
+            copyIpButton.textContent = "Copié!";
+            setTimeout(function() {
+              copyIpButton.textContent = originalText;
+            }, 2000);
+          }).catch(console.error);
+        }
       });
+
+      startButton.addEventListener("click", startMachine);
+      stopButton.addEventListener("click", stopMachine);
 
       if (progressBar) {
         var target = parseInt(progressBar.dataset.targetWidth || "0", 10);

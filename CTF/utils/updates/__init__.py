@@ -1,10 +1,10 @@
 import sys
 import time
-from distutils.version import StrictVersion
 from platform import python_version
 
 import requests
 from flask import current_app as app
+from packaging.version import Version
 
 from CTFd.models import Challenges, Teams, Users, db
 from CTFd.utils import get_app_config, get_config, set_config
@@ -66,9 +66,9 @@ def update_check(force=False):
             try:
                 latest = check["resource"]["tag"]
                 html_url = check["resource"]["html_url"]
-                if StrictVersion(latest) > StrictVersion(app.VERSION):
+                if Version(latest) > Version(app.VERSION):
                     set_config("version_latest", html_url)
-                elif StrictVersion(latest) <= StrictVersion(app.VERSION):
+                elif Version(latest) <= Version(app.VERSION):
                     set_config("version_latest", None)
                 next_update_check_time = check["resource"].get(
                     "next", int(time.time() + 43200)

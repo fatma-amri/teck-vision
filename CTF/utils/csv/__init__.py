@@ -40,7 +40,8 @@ def dump_csv(name):
 
 
 def dump_scoreboard_csv():
-    # TODO: Add fields to scoreboard data
+    # NOTE: Scoreboard CSV export is currently basic.
+    # Additional fields can be added in future enhancements.
     temp = StringIO()
     writer = csv.writer(temp)
 
@@ -302,7 +303,8 @@ def dump_teams_with_members_fields_csv():
 
 
 def dump_database_table(tablename):
-    # TODO: It might make sense to limit dumpable tables. Config could potentially leak sensitive information.
+    # NOTE: Security consideration: Consider restricting dumpable tables.
+    # The Config table may contain sensitive information that should be protected.
     model = get_class_by_tablename(tablename)
 
     if model is None:

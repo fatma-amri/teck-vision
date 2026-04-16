@@ -1,12 +1,21 @@
 import configparser
 import json
+import logging
 import os
-from distutils.util import strtobool
-from typing import Union
+from typing import List, Optional, Union
 
 from sqlalchemy.engine.url import URL
 
 _FORCED_EXTRA_CONFIG_TYPES = {}
+
+
+def _str_to_bool(value):
+    """Convert string representation to boolean."""
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value.lower() in ("true", "1", "yes", "on")
+    return bool(value)
 
 
 class EnvInterpolation(configparser.BasicInterpolation):
@@ -31,7 +40,7 @@ def process_string_var(value, key=None):
         elif t == "float":
             return float(value)
         elif t == "bool":
-            return bool(strtobool(value))
+            return _str_to_bool(value)
 
     if value == "":
         return None
@@ -42,7 +51,7 @@ def process_string_var(value, key=None):
         return float(value)
 
     try:
-        return bool(strtobool(value))
+        return _str_to_bool(value)
     except ValueError:
         return value
 
@@ -57,7 +66,7 @@ def process_boolean_str(value):
     if value == "":
         return None
 
-    return bool(strtobool(value))
+    return _str_to_bool(value)
 
 
 def empty_str_cast(value, default=None):
@@ -67,12 +76,17 @@ def empty_str_cast(value, default=None):
 
 
 def gen_secret_key():
+    """Generate or load the secret key from .ctfd_secret_key file."""
+    logger = logging.getLogger(__name__)
     # Attempt to read the secret from the secret file
     # This will fail if the secret has not been written
     try:
         with open(".ctfd_secret_key", "rb") as secret:
             key = secret.read()
-    except OSError:
+    except FileNotFoundError:
+        key = None
+    except OSError as e:
+        logger.warning(f"Failed to read secret key file: {e}")
         key = None
 
     if not key:
@@ -83,8 +97,8 @@ def gen_secret_key():
             with open(".ctfd_secret_key", "wb") as secret:
                 secret.write(key)
                 secret.flush()
-        except OSError:
-            pass
+        except OSError as e:
+            logger.warning(f"Failed to write secret key file (read-only filesystem): {e}")
     return key
 
 
@@ -158,7 +172,7 @@ class ServerConfig(object):
     CROSS_ORIGIN_OPENER_POLICY: str = empty_str_cast(config_ini["security"].get("CROSS_ORIGIN_OPENER_POLICY")) \
         or "same-origin-allow-popups"
 
-    TRUSTED_HOSTS: list[str] | None = None
+    TRUSTED_HOSTS: Optional[List[str]] = None
     if config_ini["security"].get("TRUSTED_HOSTS"):
         TRUSTED_HOSTS = [
             h.strip() for h in empty_str_cast(config_ini["security"].get("TRUSTED_HOSTS")).split(",")
@@ -289,16 +303,37 @@ class ServerConfig(object):
     OAUTH_CLIENT_SECRET: str = empty_str_cast(config_ini["oauth"]["OAUTH_CLIENT_SECRET"])
 
     # === MANAGEMENT ===
-    PRESET_ADMIN_NAME: str = empty_str_cast(config_ini["management"].get("PRESET_ADMIN_NAME", "")) if config_ini.has_section("management") else None
-    PRESET_ADMIN_EMAIL: str = empty_str_cast(config_ini["management"].get("PRESET_ADMIN_EMAIL", "")) if config_ini.has_section("management") else None
-    PRESET_ADMIN_PASSWORD: str = empty_str_cast(config_ini["management"].get("PRESET_ADMIN_PASSWORD", "")) if config_ini.has_section("management") else None
-    PRESET_ADMIN_TOKEN: str = empty_str_cast(config_ini["management"].get("PRESET_ADMIN_TOKEN", "")) if config_ini.has_section("management") else None
-    PRESET_CONFIGS: str = empty_str_cast(config_ini["management"].get("PRESET_CONFIGS", "")) if config_ini.has_section("management") else None
+    PRESET_ADMIN_NAME: str = (
+        empty_str_cast(config_ini["management"].get("PRESET_ADMIN_NAME", ""))
+        if config_ini.has_section("management")
+        else None
+    )
+    PRESET_ADMIN_EMAIL: str = (
+        empty_str_cast(config_ini["management"].get("PRESET_ADMIN_EMAIL", ""))
+        if config_ini.has_section("management")
+        else None
+    )
+    PRESET_ADMIN_PASSWORD: str = (
+        empty_str_cast(config_ini["management"].get("PRESET_ADMIN_PASSWORD", ""))
+        if config_ini.has_section("management")
+        else None
+    )
+    PRESET_ADMIN_TOKEN: str = (
+        empty_str_cast(config_ini["management"].get("PRESET_ADMIN_TOKEN", ""))
+        if config_ini.has_section("management")
+        else None
+    )
+    PRESET_CONFIGS: str = (
+        empty_str_cast(config_ini["management"].get("PRESET_CONFIGS", ""))
+        if config_ini.has_section("management")
+        else None
+    )
     if PRESET_CONFIGS and SAFE_MODE is False:
         try:
             PRESET_CONFIGS = json.loads(PRESET_CONFIGS)
-        except (ValueError, TypeError):
-            print("Exception occurred during PRESET_CONFIGS loading")
+        except (ValueError, TypeError) as e:
+            logger = logging.getLogger(__name__)
+            logger.error(f"Exception occurred during PRESET_CONFIGS loading: {e}")
             PRESET_CONFIGS = {}
     else:
         PRESET_CONFIGS = {}

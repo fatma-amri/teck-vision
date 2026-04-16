@@ -13,7 +13,8 @@ from CTFd.utils.dates import isoformat, unix_time_to_utc
 from CTFd.utils.helpers.models import build_model_filters
 from CTFd.utils.modes import generate_account_url, get_model
 
-# TODO: CTFd 4.0. Consider changing to a dataclass
+# NOTE: ChallengeFields is a legacy list structure.
+# Consider refactoring to a dataclass or Enum in CTFd 4.0.
 ChallengeFields = [
     "id",
     "type",

@@ -15,11 +15,16 @@ def challenges_listing():
     q = request.args.get("q")
     field = request.args.get("field")
     filters = []
+    
+    # Whitelist of allowed searchable fields
+    ALLOWED_FIELDS = {"id", "name", "category", "type", "state", "value", "position"}
 
-    if q:
-        # The field exists as an exposed column
-        if Challenges.__mapper__.has_property(field):
-            filters.append(getattr(Challenges, field).like("%{}%".format(q)))
+    # Validate field parameter - reject invalid fields
+    if field and field not in ALLOWED_FIELDS:
+        abort(400)  # Bad Request
+
+    if q and field in ALLOWED_FIELDS:
+        filters.append(getattr(Challenges, field).ilike("%{}%".format(q)))
 
     query = Challenges.query.filter(*filters).order_by(Challenges.id.asc())
     challenges = query.all()

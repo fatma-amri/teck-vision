@@ -349,7 +349,8 @@ class UserPrivate(Resource):
 class UserPrivateSubmissions(Resource):
     @authed_only
     def get(self):
-        # TODO: CTFd 4.0 Self viewing submissions should not be enabled by default until further notice
+        # NOTE: Self-viewing submissions feature. Default is disabled for security reasons.
+        # Enable via configuration if needed in CTFd 4.0+.
         if bool(get_config("view_self_submissions")) is False:
             abort(403)
         user = get_current_user()

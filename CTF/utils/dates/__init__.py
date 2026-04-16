@@ -76,7 +76,8 @@ def unix_time_to_utc(t: Union[int, float]) -> DateTime:
     if t is None:
         print("Invalid datetime object for time filter function.")
         return None
-    # TODO: The utcfromtimestamp() has been deprecated
+    # NOTE: datetime.utcfromtimestamp() is deprecated in Python 3.12+
+    # Consider migrating to datetime.fromtimestamp() with timezone in future release.
     return DateTime.utcfromtimestamp(t)
 
 

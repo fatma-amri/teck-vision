@@ -1,5 +1,6 @@
 from flask_babel import lazy_gettext as _l
 from wtforms import (
+    EmailField,
     FileField,
     HiddenField,
     IntegerField,
@@ -9,9 +10,8 @@ from wtforms import (
     StringField,
     TextAreaField,
 )
-from wtforms.fields.html5 import EmailField
 from wtforms.validators import InputRequired
-from wtforms.widgets.html5 import NumberInput
+from wtforms.widgets import NumberInput
 
 from CTFd.constants.config import (
     AccountVisibilityTypes,
