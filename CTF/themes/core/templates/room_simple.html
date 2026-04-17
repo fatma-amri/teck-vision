@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+  <div class="row">
+    <div class="col-12">
+      <h1>{{ room_name }}</h1>
+      <p class="lead">{{ total_count }} challenges available</p>
+    </div>
+  </div>
+
+  <div class="row mt-4">
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header">
+          <h5>Machine Status</h5>
+        </div>
+        <div class="card-body">
+          <p>Status: <span id="status">Stopped</span></p>
+          <p>IP: <span id="machine-ip">-</span></p>
+          <p>Time: <span id="timer">00:00</span></p>
+          <button class="btn btn-primary" id="start-btn" onclick="startMachine()">Start Machine</button>
+          <button class="btn btn-danger" id="stop-btn" onclick="stopMachine()" disabled>Stop Machine</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header">
+          <h5>Progress</h5>
+        </div>
+        <div class="card-body">
+          <p>Solved: <strong id="progress-text">{{ solved_count }}/{{ total_count }}</strong></p>
+          <div class="progress">
+            <div class="progress-bar" id="progress-bar" style="width: {{ progress_percent }}%;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row mt-4">
+    {% for challenge in challenges %}
+    <div class="col-md-6 mb-3">
+      <div class="card {% if challenge.solved %}border-success{% else %}border-secondary{% endif %}">
+        <div class="card-header">
+          <h6>{{ challenge.name }} - {{ challenge.value }} pts</h6>
+        </div>
+        <div class="card-body">
+          <p class="small text-muted">{{ challenge.description or 'No description' }}</p>
+          {% if not challenge.solved %}
+            <div class="input-group">
+              <input type="text" class="form-control flag-input" data-cid="{{ challenge.id }}" placeholder="Enter flag...">
+              <button class="btn btn-primary" type="button" onclick="submitFlag({{ challenge.id }})">Submit</button>
+            </div>
+            <div class="alert alert-danger d-none mt-2" id="error-{{ challenge.id }}"></div>
+          {% else %}
+            <div class="alert alert-success">✓ Solved</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<script>
+// Extract room slug from current URL path
+// URL format: /play/{room_slug} or /play/{room_slug}?
+var urlPath = window.location.pathname;
+console.log("Current URL path:", urlPath);
+
+// Extract slug: match /play/{slug} pattern
+var matches = urlPath.match(/\/play\/([^\/]+)/);
+var ROOM_SLUG = matches ? matches[1] : '';
+
+console.log("Extracted ROOM_SLUG:", ROOM_SLUG);
+
+var timer_interval = null;
+var machine_active = false;
+
+function startMachine() {
+  console.log("startMachine called with slug:", ROOM_SLUG);
+  
+  fetch("/api/room-instances/start/" + ROOM_SLUG, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" }
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      machine_active = true;
+      document.getElementById("status").textContent = "Running";
+      document.getElementById("machine-ip").textContent = data.machine_ip;
+      document.getElementById("start-btn").disabled = true;
+      document.getElementById("stop-btn").disabled = false;
+      
+      var remaining = data.duration_minutes * 60;
+      timer_interval = setInterval(() => {
+        remaining--;
+        var m = Math.floor(remaining / 60);
+        var s = remaining % 60;
+        document.getElementById("timer").textContent = 
+          String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+        
+        if (remaining <= 0) {
+          clearInterval(timer_interval);
+          stopMachine();
+        }
+      }, 1000);
+    } else {
+      alert("Error: " + (data.message || "Unknown error"));
+    }
+  })
+  .catch(e => {
+    console.error("Error:", e);
+    alert("Error starting machine");
+  });
+}
+
+function stopMachine() {
+  if (timer_interval) clearInterval(timer_interval);
+  
+  fetch("/api/room-instances/terminate/" + ROOM_SLUG, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" }
+  }).catch(console.error);
+  
+  machine_active = false;
+  document.getElementById("status").textContent = "Stopped";
+  document.getElementById("machine-ip").textContent = "-";
+  document.getElementById("timer").textContent = "00:00";
+  document.getElementById("start-btn").disabled = false;
+  document.getElementById("stop-btn").disabled = true;
+}
+
+function submitFlag(challengeId) {
+  var input = document.querySelector(".flag-input[data-cid='" + challengeId + "']");
+  var flag = input.value.trim();
+  
+  if (!flag) {
+    alert("Please enter a flag");
+    return;
+  }
+  
+  fetch("/api/challenges/" + challengeId + "/submit-flag", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ flag: flag })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      alert("Correct! +" + data.points + " points");
+      location.reload();
+    } else {
+      var errorDiv = document.getElementById("error-" + challengeId);
+      errorDiv.textContent = data.message;
+      errorDiv.classList.remove("d-none");
+      setTimeout(() => errorDiv.classList.add("d-none"), 5000);
+    }
+  })
+  .catch(e => {
+    console.error("Error:", e);
+    alert("Error submitting flag");
+  });
+}
+</script>
+{% endblock %}

@@ -10,8 +10,7 @@ class SubmitField(_SubmitField):
     """
 
     def __init__(self, *args, **kwargs):
-        name = kwargs.pop("name", "_submit")
         super().__init__(*args, **kwargs)
-        if self.name == "submit" or name:
-            self.id = name
-            self.name = name
+        if self.name == "submit":
+            self.name = "_submit"
+            self.id = "_submit"

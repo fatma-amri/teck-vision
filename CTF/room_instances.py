@@ -13,18 +13,35 @@ logger = logging.getLogger(__name__)
 
 room_instances = Blueprint("room_instances", __name__, url_prefix="/api/room-instances")
 
+# Map room slugs to challenge categories
+ROOM_MAPPING = {
+    "web-security-challenge": "Web Security Challenge",
+}
 
-@room_instances.route("/start/<room_category>", methods=["POST"])
+
+def get_room_category(room_slug):
+    """Convert room slug to category name."""
+    category = ROOM_MAPPING.get(room_slug)
+    if not category:
+        return None
+    return category
+
+
+@room_instances.route("/start/<room_slug>", methods=["POST"])
 @authed_only
-def start_machine(room_category):
+def start_machine(room_slug):
     """Start a machine instance for a room.
     
     Args:
-        room_category: The challenge category/room name
+        room_slug: The room slug (e.g., 'web-security-challenge')
         
     Returns:
         JSON response with machine IP, duration, and expiration time
     """
+    room_category = get_room_category(room_slug)
+    if not room_category:
+        abort(404)
+    
     user = get_current_user()
     team = get_current_team()
     
@@ -69,7 +86,7 @@ def start_machine(room_category):
     db.session.add(instance)
     db.session.commit()
     
-    logger.info(f"Machine started: room={room_category}, {account_type}_id={account_id}")
+    logger.info(f"Machine started: room={room_slug}, category={room_category}, {account_type}_id={account_id}")
     
     return jsonify({
         "success": True,
@@ -81,17 +98,21 @@ def start_machine(room_category):
     }), 201
 
 
-@room_instances.route("/terminate/<room_category>", methods=["POST"])
+@room_instances.route("/terminate/<room_slug>", methods=["POST"])
 @authed_only
-def terminate_machine(room_category):
+def terminate_machine(room_slug):
     """Terminate a machine instance for a room.
     
     Args:
-        room_category: The challenge category/room name
+        room_slug: The room slug (e.g., 'web-security-challenge')
         
     Returns:
         JSON success response
     """
+    room_category = get_room_category(room_slug)
+    if not room_category:
+        abort(404)
+    
     user = get_current_user()
     team = get_current_team()
     
@@ -111,22 +132,26 @@ def terminate_machine(room_category):
     instance.is_active = False
     db.session.commit()
     
-    logger.info(f"Machine terminated: room={room_category}, {account_type}_id={account_id}")
+    logger.info(f"Machine terminated: room={room_slug}, category={room_category}, {account_type}_id={account_id}")
     
     return jsonify({"success": True}), 200
 
 
-@room_instances.route("/status/<room_category>", methods=["GET"])
+@room_instances.route("/status/<room_slug>", methods=["GET"])
 @authed_only
-def check_machine_status(room_category):
+def check_machine_status(room_slug):
     """Check the status of a machine instance.
     
     Args:
-        room_category: The challenge category/room name
+        room_slug: The room slug (e.g., 'web-security-challenge')
         
     Returns:
         JSON with machine status and remaining time
     """
+    room_category = get_room_category(room_slug)
+    if not room_category:
+        abort(404)
+    
     user = get_current_user()
     team = get_current_team()
     
@@ -166,3 +191,4 @@ def check_machine_status(room_category):
         "time_remaining": instance.time_remaining_seconds,
         "duration_minutes": instance.duration_minutes,
     }), 200
+

@@ -3,36 +3,37 @@
 {% block content %}
   <div class="jumbotron">
     <div class="container">
-      <h1 class="mb-2">{{ room.title }}</h1>
-      <p class="lead mb-0">{{ room.description }}</p>
+      <h1 class="mb-2">{{ room_name }}</h1>
+      <p class="lead mb-0">Résolvez les défis pour progresser dans cette room</p>
     </div>
   </div>
 
-  <div class="container pb-5" id="room-page" data-room-category="{{ room.id }}" data-duration-minutes="{{ room.duration }}">
+  <div class="container pb-5" id="room-page" data-room-category="{{ room_slug }}" data-room-name="{{ room_name }}" data-duration-minutes="30">
+    <!-- DEBUG: room_slug={{ room_slug }} -->
+    <!-- DEBUG: room_name={{ room_name }} -->
     <div class="row">
       <div class="col-12">
         <div class="card mb-4">
           <div class="card-body">
             <div class="d-flex flex-wrap align-items-center justify-content-between mb-3">
               <div>
-                <h4 class="mb-1">Details de la room</h4>
+                <h4 class="mb-1">Détails de la room</h4>
                 <small class="text-muted">
-                  Difficulte: <strong>{{ room.difficulty }}</strong>
-                  | Joueurs: <strong>{{ room.players_count }}</strong>
-                  | Duree: <strong>{{ room.duration }} min</strong>
+                  Challenges: <strong>{{ total_count }}</strong>
+                  | Points totaux: <strong>{{ total_count * 100 }}</strong>
                 </small>
               </div>
               <div class="mt-2 mt-md-0">
                 <span class="badge badge-pill badge-secondary px-3 py-2" id="machine-status-badge">
                   <span class="status-dot" id="status-dot"></span>
-                  <span id="machine-status-text">Machine arretee</span>
+                  <span id="machine-status-text">Machine arrêtée</span>
                 </span>
               </div>
             </div>
 
             <div class="mb-2 d-flex justify-content-between align-items-center">
               <span>Progression</span>
-              <strong>{{ solved_count }}/{{ total_count }} resolus ({{ progress_percent }}%)</strong>
+              <strong>{{ solved_count }}/{{ total_count }} résolus ({{ progress_percent }}%)</strong>
             </div>
             <div class="progress" style="height: 18px;">
               <div
@@ -49,10 +50,10 @@
 
             <div class="mt-4 d-flex flex-wrap align-items-center gap-2">
               <button class="btn btn-primary mr-2 mb-2" id="start-machine-btn" type="button">
-                Demarrer le challenge
+                Démarrer le challenge
               </button>
               <button class="btn btn-outline-danger mb-2" id="stop-machine-btn" type="button" disabled>
-                Arreter la machine
+                Arrêter la machine
               </button>
               <button class="btn btn-secondary mb-2" id="copy-ip-btn" type="button" disabled>
                 Copier l'IP
@@ -61,7 +62,7 @@
             </div>
 
             <div class="alert alert-info mt-3 d-none" id="machine-ip-block" role="alert">
-              IP cible: <strong id="target-ip-display">{{ challenge_target_ip }}</strong>
+              IP cible: <strong id="target-ip-display">15.237.60.47</strong>
             </div>
           </div>
         </div>
@@ -79,21 +80,18 @@
                   <p class="mb-0 text-muted small">{{ challenge.description }}</p>
                 </div>
                 {% if challenge.solved %}
-                  <span class="badge badge-success">✓ Resolu</span>
+                  <span class="badge badge-success">✓ Résolu</span>
                 {% else %}
-                  <span class="badge badge-secondary">Non resolu</span>
+                  <span class="badge badge-secondary">Non résolu</span>
                 {% endif %}
               </div>
 
               <div class="row mb-3">
                 <div class="col-auto">
-                  <small><strong>Categorie:</strong> {{ challenge.category }}</small>
+                  <small><strong>Catégorie:</strong> {{ challenge.category }}</small>
                 </div>
                 <div class="col-auto">
                   <small><strong>Points:</strong> {{ challenge.value }}</small>
-                </div>
-                <div class="col-auto">
-                  <small><strong>Difficulte:</strong> {{ challenge.difficulty }}</small>
                 </div>
               </div>
 
@@ -196,11 +194,15 @@
       }
 
       function startMachine() {
+        console.log("startMachine called, roomCategory:", roomCategory);
         if (countdownInterval) {
           return;
         }
+        
+        var url = "/api/room-instances/start/" + roomCategory;
+        console.log("Fetch URL:", url);
 
-        fetch("/api/room-instances/start/" + roomCategory, {
+        fetch(url, {
           method: "POST",
           headers: { "Content-Type": "application/json" }
         })

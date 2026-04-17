@@ -61,6 +61,14 @@
             {% trans %}Challenges{% endtrans %}
           </a>
         </li>
+
+        {% if authed() %}
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('rooms.detail', room_slug='web-security-challenge') }}">
+              🎮 {% trans %}Rooms{% endtrans %}
+            </a>
+          </li>
+        {% endif %}
       </ul>
 
       <hr class="d-sm-flex d-md-flex d-lg-none">
