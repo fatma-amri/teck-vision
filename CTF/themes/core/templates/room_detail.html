@@ -1,371 +1,309 @@
 {% extends "base.html" %}
 
 {% block content %}
-  <div class="jumbotron">
-    <div class="container">
-      <h1 class="mb-2">{{ room_name }}</h1>
-      <p class="lead mb-0">Résolvez les défis pour progresser dans cette room</p>
-    </div>
-  </div>
+<style>
+  body { background: #1a1d21 !important; color: #e0e0e0; }
+  .thm-card { background: #212529; border: 1px solid #2e3338; border-radius: 10px; }
+  .thm-badge-easy    { background: #1a7f4b; color: #fff; }
+  .thm-badge-medium  { background: #c57c00; color: #fff; }
+  .thm-badge-hard    { background: #9b1c1c; color: #fff; }
+  .thm-badge-pts     { background: #1a3a5c; color: #5ba4cf; border: 1px solid #5ba4cf; }
+  .thm-progress-wrap { background: #2e3338; border-radius: 999px; height: 10px; }
+  .thm-progress-bar  { background: linear-gradient(90deg,#1dd75f,#3bba6c); height: 10px; border-radius: 999px; transition: width .9s ease; }
+  .challenge-card    { background: #212529; border: 2px solid #2e3338; border-radius: 10px; transition: border-color .2s; }
+  .challenge-card.solved { border-color: #1dd75f; background: #1a2b1e; }
+  .status-dot { display:inline-block; width:10px; height:10px; border-radius:50%; background:#6c757d; margin-right:6px; vertical-align:middle; }
+  .status-dot.active { background:#1dd75f; animation: pulse 1.4s infinite; }
+  @keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(29,215,95,.65)} 70%{box-shadow:0 0 0 12px rgba(29,215,95,0)} 100%{box-shadow:0 0 0 0 rgba(29,215,95,0)} }
+  .thm-btn-green  { background:#1dd75f; border:none; color:#111; font-weight:600; }
+  .thm-btn-green:hover { background:#3bba6c; color:#111; }
+  .thm-btn-red    { background:transparent; border:1px solid #e74c3c; color:#e74c3c; font-weight:600; }
+  .thm-btn-red:hover { background:#e74c3c; color:#fff; }
+  .thm-btn-grey   { background:transparent; border:1px solid #6c757d; color:#adb5bd; font-weight:600; }
+  .thm-btn-grey:hover { background:#6c757d; color:#fff; }
+  .thm-input { background:#2e3338; border:1px solid #3e4348; color:#e0e0e0; border-radius:6px; }
+  .thm-input::placeholder { color:#6c757d; }
+  .thm-input:focus { background:#2e3338; border-color:#1dd75f; color:#e0e0e0; box-shadow:none; }
+  .ip-block { background:#1a2b1e; border:1px solid #1dd75f33; border-radius:8px; font-family:monospace; }
+  .timer-text { font-family:monospace; font-size:1rem; color:#adb5bd; }
+  .room-title { font-size:2rem; font-weight:700; color:#fff; }
+  .room-desc  { color:#adb5bd; }
+  .meta-pill  { background:#2e3338; color:#adb5bd; border-radius:6px; padding:4px 12px; font-size:.85rem; display:inline-block; margin-right:6px; }
+  .solved-tag { color:#1dd75f; font-weight:600; }
+  .wrong-msg  { color:#e74c3c; font-size:.85rem; margin-top:4px; }
+  .correct-msg { color:#1dd75f; font-size:.85rem; margin-top:4px; font-weight:600; }
+  .chal-title { font-size:1rem; font-weight:600; color:#e0e0e0; }
+  .chal-desc  { color:#adb5bd; font-size:.9rem; }
+</style>
 
-  <div class="container pb-5" id="room-page" data-room-category="{{ room_slug }}" data-room-name="{{ room_name }}" data-duration-minutes="30">
-    <!-- DEBUG: room_slug={{ room_slug }} -->
-    <!-- DEBUG: room_name={{ room_name }} -->
-    <div class="row">
-      <div class="col-12">
-        <div class="card mb-4">
-          <div class="card-body">
-            <div class="d-flex flex-wrap align-items-center justify-content-between mb-3">
-              <div>
-                <h4 class="mb-1">Détails de la room</h4>
-                <small class="text-muted">
-                  Challenges: <strong>{{ total_count }}</strong>
-                  | Points totaux: <strong>{{ total_count * 100 }}</strong>
-                </small>
-              </div>
-              <div class="mt-2 mt-md-0">
-                <span class="badge badge-pill badge-secondary px-3 py-2" id="machine-status-badge">
-                  <span class="status-dot" id="status-dot"></span>
-                  <span id="machine-status-text">Machine arrêtée</span>
-                </span>
-              </div>
-            </div>
+<div class="container-fluid py-4 px-3 px-md-5" style="max-width:1000px;margin:auto;">
 
-            <div class="mb-2 d-flex justify-content-between align-items-center">
-              <span>Progression</span>
-              <strong>{{ solved_count }}/{{ total_count }} résolus ({{ progress_percent }}%)</strong>
-            </div>
-            <div class="progress" style="height: 18px;">
-              <div
-                id="progress-bar"
-                class="progress-bar bg-success progress-bar-striped progress-bar-animated"
-                role="progressbar"
-                style="width: 0%;"
-                data-target-width="{{ progress_percent }}"
-                aria-valuenow="{{ progress_percent }}"
-                aria-valuemin="0"
-                aria-valuemax="100"
-              ></div>
-            </div>
-
-            <div class="mt-4 d-flex flex-wrap align-items-center gap-2">
-              <button class="btn btn-primary mr-2 mb-2" id="start-machine-btn" type="button">
-                Démarrer le challenge
-              </button>
-              <button class="btn btn-outline-danger mb-2" id="stop-machine-btn" type="button" disabled>
-                Arrêter la machine
-              </button>
-              <button class="btn btn-secondary mb-2" id="copy-ip-btn" type="button" disabled>
-                Copier l'IP
-              </button>
-              <span class="ml-md-3 mb-2 text-monospace" id="countdown-timer">Temps restant: --:--</span>
-            </div>
-
-            <div class="alert alert-info mt-3 d-none" id="machine-ip-block" role="alert">
-              IP cible: <strong id="target-ip-display">15.237.60.47</strong>
-            </div>
-          </div>
+  <!-- Room Header -->
+  <div class="thm-card p-4 mb-4">
+    <div class="d-flex flex-wrap align-items-start justify-content-between">
+      <div>
+        <div class="room-title mb-1">{{ room.title }}</div>
+        <p class="room-desc mb-3">{{ room.description }}</p>
+        <div>
+          {% set diff = room.difficulty | lower %}
+          {% if diff == 'easy' or diff == 'facile' %}
+            <span class="thm-badge-easy meta-pill">Easy</span>
+          {% elif diff == 'medium' or diff == 'intermediaire' %}
+            <span class="thm-badge-medium meta-pill">Medium</span>
+          {% elif diff == 'hard' or diff == 'difficile' %}
+            <span class="thm-badge-hard meta-pill">Hard</span>
+          {% else %}
+            <span class="meta-pill">{{ room.difficulty }}</span>
+          {% endif %}
+          <span class="meta-pill">&#9201; {{ room.duration }} min</span>
+          <span class="meta-pill">&#128100; {{ room.players_count }} players</span>
+          <span class="meta-pill">{{ total_count }} tasks</span>
         </div>
+      </div>
+      <div class="mt-3 mt-md-0 text-right">
+        <div>
+          <span class="status-dot" id="status-dot"></span>
+          <span id="status-text" style="font-size:.9rem;color:#adb5bd;">Machine Off</span>
+        </div>
+        <div class="timer-text mt-1" id="countdown-timer">--:--</div>
       </div>
     </div>
 
-    <div class="row">
-      {% for challenge in challenges %}
-        <div class="col-12 mb-4">
-          <div class="card challenge-card {% if challenge.solved %}challenge-solved{% else %}challenge-open{% endif %}" data-challenge-id="{{ challenge.id }}">
-            <div class="card-body">
-              <div class="d-flex justify-content-between align-items-start mb-3">
-                <div>
-                  <h5 class="card-title mb-0">{{ challenge.name }}</h5>
-                  <p class="mb-0 text-muted small">{{ challenge.description }}</p>
-                </div>
-                {% if challenge.solved %}
-                  <span class="badge badge-success">✓ Résolu</span>
-                {% else %}
-                  <span class="badge badge-secondary">Non résolu</span>
-                {% endif %}
-              </div>
+    <!-- Progress -->
+    <div class="mt-4">
+      <div class="d-flex justify-content-between mb-1">
+        <span style="font-size:.85rem;color:#adb5bd;">Progress</span>
+        <span style="font-size:.85rem;color:#e0e0e0;font-weight:600;">{{ solved_count }}/{{ total_count }} ({{ progress_percent }}%)</span>
+      </div>
+      <div class="thm-progress-wrap">
+        <div class="thm-progress-bar" id="progress-bar" style="width:0%;" data-target="{{ progress_percent }}"></div>
+      </div>
+    </div>
 
-              <div class="row mb-3">
-                <div class="col-auto">
-                  <small><strong>Catégorie:</strong> {{ challenge.category }}</small>
-                </div>
-                <div class="col-auto">
-                  <small><strong>Points:</strong> {{ challenge.value }}</small>
-                </div>
-              </div>
+    <!-- Machine Controls -->
+    <div class="mt-4 d-flex flex-wrap align-items-center" style="gap:10px;">
+      <button class="btn thm-btn-green px-4" id="start-btn">Start Machine</button>
+      <button class="btn thm-btn-red px-4" id="terminate-btn" disabled>Terminate Machine</button>
+      <button class="btn thm-btn-grey px-4" id="copy-ip-btn" disabled>Copy IP</button>
+    </div>
 
-              {% if not challenge.solved %}
-                <div class="input-group mb-2">
-                  <input
-                    type="text"
-                    class="form-control flag-input"
-                    placeholder="Entrer le flag ici..."
-                    data-challenge-id="{{ challenge.id }}"
-                    autocomplete="off"
-                  />
-                  <div class="input-group-append">
-                    <button class="btn btn-primary submit-flag-btn" type="button" data-challenge-id="{{ challenge.id }}">
-                      Valider
-                    </button>
-                  </div>
-                </div>
-                <div class="alert alert-danger d-none" role="alert" data-challenge-id="{{ challenge.id }}"></div>
-              {% else %}
-                <div class="alert alert-success">Flag valide!</div>
-              {% endif %}
-            </div>
-          </div>
-        </div>
-      {% endfor %}
+    <!-- IP Display -->
+    <div class="ip-block p-3 mt-3 d-none" id="ip-block">
+      Target IP: <strong id="ip-display">{{ challenge_target_ip }}</strong>
+      <span id="copy-feedback" class="ml-2" style="color:#1dd75f;font-size:.85rem;display:none;">Copied!</span>
     </div>
   </div>
+
+  <!-- Challenge List -->
+  <div id="challenges-container">
+    {% for challenge in challenges %}
+    <div class="challenge-card p-4 mb-3 {% if challenge.solved %}solved{% endif %}" id="chal-{{ challenge.id }}" data-challenge-id="{{ challenge.id }}">
+      <div class="d-flex justify-content-between align-items-start mb-2">
+        <div>
+          <div class="chal-title">{{ challenge.name }}</div>
+          <div class="chal-desc mt-1">{{ challenge.description }}</div>
+        </div>
+        <div class="d-flex flex-column align-items-end ml-3">
+          <span class="thm-badge-pts meta-pill mb-1">{{ challenge.value }} pts</span>
+          {% set cdiff = challenge.difficulty | lower %}
+          {% if cdiff == 'easy' or cdiff == 'facile' %}
+            <span class="thm-badge-easy meta-pill" style="font-size:.75rem;">Easy</span>
+          {% elif cdiff == 'medium' or cdiff == 'intermediaire' %}
+            <span class="thm-badge-medium meta-pill" style="font-size:.75rem;">Medium</span>
+          {% elif cdiff == 'hard' or cdiff == 'difficile' %}
+            <span class="thm-badge-hard meta-pill" style="font-size:.75rem;">Hard</span>
+          {% else %}
+            <span class="meta-pill" style="font-size:.75rem;">{{ challenge.difficulty }}</span>
+          {% endif %}
+        </div>
+      </div>
+
+      {% if challenge.solved %}
+        <div class="solved-tag mt-2">&#10003; Solved</div>
+      {% else %}
+        <div class="mt-3 d-flex" style="gap:8px;">
+          <input type="text" class="form-control thm-input flag-input" placeholder="Enter flag..." data-id="{{ challenge.id }}" autocomplete="off" style="max-width:420px;" />
+          <button class="btn thm-btn-green submit-btn" data-id="{{ challenge.id }}">Submit</button>
+        </div>
+        <div class="wrong-msg d-none" id="err-{{ challenge.id }}"></div>
+        <div class="correct-msg d-none" id="ok-{{ challenge.id }}">&#10003; Correct! +{{ challenge.value }} pts</div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
-  {{ super() }}
-  <script>
-    (function () {
-      var roomPage = document.getElementById("room-page");
-      if (!roomPage) {
-        return;
+{{ super() }}
+<script>
+(function () {
+  var ROOM_SLUG = {{ room_slug | tojson }};
+  var csrfToken = (window.init && window.init.csrfNonce) ? window.init.csrfNonce : "";
+
+  var startBtn     = document.getElementById("start-btn");
+  var terminateBtn = document.getElementById("terminate-btn");
+  var copyIpBtn    = document.getElementById("copy-ip-btn");
+  var ipBlock      = document.getElementById("ip-block");
+  var ipDisplay    = document.getElementById("ip-display");
+  var copyFeedback = document.getElementById("copy-feedback");
+  var statusDot    = document.getElementById("status-dot");
+  var statusText   = document.getElementById("status-text");
+  var timerEl      = document.getElementById("countdown-timer");
+  var progressBar  = document.getElementById("progress-bar");
+
+  var countdownInterval = null;
+  var remainingSeconds  = 0;
+
+  // Animate progress bar on load
+  if (progressBar) {
+    var target = parseInt(progressBar.getAttribute("data-target") || "0", 10);
+    requestAnimationFrame(function () { progressBar.style.width = target + "%"; });
+  }
+
+  function pad(n) { return String(n).padStart(2, "0"); }
+  function fmtTime(s) { return pad(Math.floor(s / 60)) + ":" + pad(s % 60); }
+
+  function setActive(active) {
+    if (active) {
+      statusDot.classList.add("active");
+      statusText.textContent = "Machine On";
+      startBtn.disabled     = true;
+      terminateBtn.disabled = false;
+      copyIpBtn.disabled    = false;
+      ipBlock.classList.remove("d-none");
+    } else {
+      statusDot.classList.remove("active");
+      statusText.textContent = "Machine Off";
+      startBtn.disabled     = false;
+      terminateBtn.disabled = true;
+      copyIpBtn.disabled    = true;
+      ipBlock.classList.add("d-none");
+      timerEl.textContent = "--:--";
+    }
+  }
+
+  function startCountdown(seconds) {
+    if (countdownInterval) clearInterval(countdownInterval);
+    remainingSeconds = seconds;
+    timerEl.textContent = fmtTime(remainingSeconds);
+    countdownInterval = setInterval(function () {
+      remainingSeconds -= 1;
+      timerEl.textContent = fmtTime(Math.max(0, remainingSeconds));
+      if (remainingSeconds <= 0) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+        setActive(false);
       }
+    }, 1000);
+  }
 
-      var roomCategory = roomPage.dataset.roomCategory;
-      var machineIpBlock = document.getElementById("machine-ip-block");
-      var startButton = document.getElementById("start-machine-btn");
-      var stopButton = document.getElementById("stop-machine-btn");
-      var copyIpButton = document.getElementById("copy-ip-btn");
-      var timerNode = document.getElementById("countdown-timer");
-      var statusBadge = document.getElementById("machine-status-badge");
-      var statusDot = document.getElementById("status-dot");
-      var statusText = document.getElementById("machine-status-text");
-      var progressBar = document.getElementById("progress-bar");
-      var targetIpDisplay = document.getElementById("target-ip-display");
-
-      var durationMinutes = parseInt(roomPage.dataset.durationMinutes || "30", 10);
-      var totalSeconds = durationMinutes * 60;
-      var remainingSeconds = totalSeconds;
-      var countdownInterval = null;
-      var machineActive = false;
-
-      function formatTime(seconds) {
-        var mins = Math.floor(seconds / 60);
-        var secs = seconds % 60;
-        return String(mins).padStart(2, "0") + ":" + String(secs).padStart(2, "0");
+  startBtn.addEventListener("click", function () {
+    startBtn.disabled = true;
+    startBtn.textContent = "Starting...";
+    fetch("/api/room-instances/start/" + ROOM_SLUG, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "CSRF-Token": csrfToken }
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      startBtn.textContent = "Start Machine";
+      if (data.success) {
+        var ip = data.ip || data.machine_ip || "15.237.60.47";
+        ipDisplay.textContent = ip;
+        setActive(true);
+        startCountdown((data.duration_minutes || 45) * 60);
+      } else {
+        startBtn.disabled = false;
       }
+    })
+    .catch(function () { startBtn.disabled = false; startBtn.textContent = "Start Machine"; });
+  });
 
-      function refreshTimer() {
-        timerNode.textContent = "Temps restant: " + formatTime(Math.max(remainingSeconds, 0));
-      }
+  terminateBtn.addEventListener("click", function () {
+    if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
+    fetch("/api/room-instances/terminate/" + ROOM_SLUG, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "CSRF-Token": csrfToken }
+    }).catch(function () {});
+    setActive(false);
+  });
 
-      function setMachineState(isActive) {
-        machineActive = isActive;
-        if (isActive) {
-          statusBadge.classList.remove("badge-secondary");
-          statusBadge.classList.add("badge-success");
-          statusDot.classList.add("dot-active");
-          statusText.textContent = "Machine active";
+  copyIpBtn.addEventListener("click", function () {
+    var ip = ipDisplay.textContent;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(ip).then(function () {
+        copyFeedback.style.display = "inline";
+        setTimeout(function () { copyFeedback.style.display = "none"; }, 2000);
+      });
+    }
+  });
+
+  // Flag submission
+  document.querySelectorAll(".submit-btn").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var id   = btn.getAttribute("data-id");
+      var input = document.querySelector(".flag-input[data-id='" + id + "']");
+      var flag  = (input.value || "").trim();
+      if (!flag) return;
+
+      btn.disabled = true;
+      btn.textContent = "...";
+
+      fetch("/api/challenges/" + id + "/attempt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "CSRF-Token": csrfToken },
+        body: JSON.stringify({ flag: flag })
+      })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (data.success) {
+          var card = document.getElementById("chal-" + id);
+          card.classList.add("solved");
+          // Replace input area with solved indicator
+          var inputRow = input.parentElement;
+          var errEl    = document.getElementById("err-" + id);
+          var okEl     = document.getElementById("ok-"  + id);
+          if (inputRow) inputRow.remove();
+          if (errEl) errEl.remove();
+          if (okEl) { okEl.classList.remove("d-none"); }
+          // Update progress bar
+          var allCards  = document.querySelectorAll(".challenge-card");
+          var solvedCount = document.querySelectorAll(".challenge-card.solved").length;
+          var total     = allCards.length;
+          var pct       = total ? Math.round(solvedCount / total * 100) : 0;
+          progressBar.style.width = pct + "%";
+          var progLabel = document.querySelector(".thm-progress-wrap").previousElementSibling;
+          if (progLabel) {
+            progLabel.querySelector("span:last-child").textContent = solvedCount + "/" + total + " (" + pct + "%)";
+          }
         } else {
-          statusBadge.classList.remove("badge-success");
-          statusBadge.classList.add("badge-secondary");
-          statusDot.classList.remove("dot-active");
-          statusText.textContent = "Machine arretee";
-        }
-      }
-
-      function stopMachine() {
-        if (countdownInterval) {
-          clearInterval(countdownInterval);
-          countdownInterval = null;
-        }
-        
-        // Call API to terminate machine
-        fetch("/api/room-instances/terminate/" + roomCategory, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" }
-        }).catch(console.error);
-        
-        setMachineState(false);
-        startButton.disabled = false;
-        stopButton.disabled = true;
-        copyIpButton.disabled = true;
-        machineIpBlock.classList.add("d-none");
-      }
-
-      function startMachine() {
-        console.log("startMachine called, roomCategory:", roomCategory);
-        if (countdownInterval) {
-          return;
-        }
-        
-        var url = "/api/room-instances/start/" + roomCategory;
-        console.log("Fetch URL:", url);
-
-        fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" }
-        })
-        .then(function(response) { return response.json(); })
-        .then(function(data) {
-          if (data.success) {
-            machineIpBlock.classList.remove("d-none");
-            remainingSeconds = data.duration_minutes * 60;
-            refreshTimer();
-            setMachineState(true);
-            startButton.disabled = true;
-            stopButton.disabled = false;
-            copyIpButton.disabled = false;
-
-            countdownInterval = setInterval(function () {
-              remainingSeconds -= 1;
-              refreshTimer();
-
-              if (remainingSeconds <= 0) {
-                stopMachine();
-              }
-            }, 1000);
+          var errEl = document.getElementById("err-" + id);
+          if (errEl) {
+            errEl.textContent = data.message || "Wrong flag, try again";
+            errEl.classList.remove("d-none");
+            setTimeout(function () { errEl.classList.add("d-none"); }, 4000);
           }
-        })
-        .catch(console.error);
-      }
-
-      // Flag submission
-      document.querySelectorAll(".submit-flag-btn").forEach(function(btn) {
-        btn.addEventListener("click", function() {
-          var challengeId = btn.dataset.challengeId;
-          var input = document.querySelector(".flag-input[data-challenge-id='" + challengeId + "']");
-          var flagValue = input.value.trim();
-          
-          if (!flagValue) {
-            showError(challengeId, "Veuillez entrer un flag");
-            return;
-          }
-
-          submitFlag(challengeId, flagValue);
-        });
-      });
-
-      function submitFlag(challengeId, flagValue) {
-        var btn = document.querySelector(".submit-flag-btn[data-challenge-id='" + challengeId + "']");
-        var input = document.querySelector(".flag-input[data-challenge-id='" + challengeId + "']");
-        
-        btn.disabled = true;
-        btn.textContent = "Validation...";
-        
-        fetch("/api/challenges/" + challengeId + "/submit-flag", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ flag: flagValue })
-        })
-        .then(function(response) { return response.json(); })
-        .then(function(data) {
-          if (data.success) {
-            // Correct flag
-            var card = document.querySelector(".challenge-card[data-challenge-id='" + challengeId + "']");
-            card.classList.remove("challenge-open");
-            card.classList.add("challenge-solved");
-            
-            // Replace input with success message
-            input.parentElement.innerHTML = '<div class="alert alert-success">Flag valide! +' + data.points + ' points</div>';
-            
-            // Update progress
-            location.reload();  // Simple way to update progress - can be optimized
-          } else {
-            showError(challengeId, data.message || "Wrong flag, try again");
-            btn.disabled = false;
-            btn.textContent = "Valider";
-          }
-        })
-        .catch(function(error) {
-          console.error("Error:", error);
-          showError(challengeId, "Erreur lors de la validation du flag");
           btn.disabled = false;
-          btn.textContent = "Valider";
-        });
-      }
-
-      function showError(challengeId, message) {
-        var errorDiv = document.querySelector(".alert-danger[data-challenge-id='" + challengeId + "']");
-        if (errorDiv) {
-          errorDiv.textContent = message;
-          errorDiv.classList.remove("d-none");
-          setTimeout(function() {
-            errorDiv.classList.add("d-none");
-          }, 5000);
+          btn.textContent = "Submit";
         }
-      }
-
-      // Copy IP button
-      copyIpButton.addEventListener("click", function() {
-        var ip = targetIpDisplay.textContent;
-        if (navigator.clipboard) {
-          navigator.clipboard.writeText(ip).then(function() {
-            var originalText = copyIpButton.textContent;
-            copyIpButton.textContent = "Copié!";
-            setTimeout(function() {
-              copyIpButton.textContent = originalText;
-            }, 2000);
-          }).catch(console.error);
-        }
+      })
+      .catch(function () {
+        btn.disabled = false;
+        btn.textContent = "Submit";
       });
+    });
+  });
 
-      startButton.addEventListener("click", startMachine);
-      stopButton.addEventListener("click", stopMachine);
-
-      if (progressBar) {
-        var target = parseInt(progressBar.dataset.targetWidth || "0", 10);
-        window.requestAnimationFrame(function () {
-          progressBar.style.transition = "width 0.9s ease";
-          progressBar.style.width = target + "%";
-        });
+  // Allow Enter key in flag inputs
+  document.querySelectorAll(".flag-input").forEach(function (input) {
+    input.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") {
+        var btn = document.querySelector(".submit-btn[data-id='" + input.getAttribute("data-id") + "']");
+        if (btn) btn.click();
       }
-
-      refreshTimer();
-      setMachineState(false);
-    })();
-  </script>
-
-  <style>
-    .challenge-card {
-      border-width: 2px;
-    }
-
-    .challenge-solved {
-      border-color: #28a745;
-      box-shadow: 0 0 0.85rem rgba(40, 167, 69, 0.16);
-    }
-
-    .challenge-open {
-      border-color: #d1d5db;
-    }
-
-    .status-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 999px;
-      display: inline-block;
-      margin-right: 6px;
-      background: #6c757d;
-      vertical-align: middle;
-    }
-
-    .dot-active {
-      background: #1dd75f;
-      box-shadow: 0 0 0 rgba(29, 215, 95, 0.6);
-      animation: pulse-dot 1.2s infinite;
-    }
-
-    @keyframes pulse-dot {
-      0% {
-        box-shadow: 0 0 0 0 rgba(29, 215, 95, 0.65);
-      }
-      70% {
-        box-shadow: 0 0 0 12px rgba(29, 215, 95, 0);
-      }
-      100% {
-        box-shadow: 0 0 0 0 rgba(29, 215, 95, 0);
-      }
-    }
-  </style>
+    });
+  });
+})();
+</script>
 {% endblock %}

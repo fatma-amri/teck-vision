@@ -1196,6 +1196,25 @@ class Ratings(db.Model):
         )
 
 
+class Rooms(db.Model):
+    """Room definition model (TryHackMe-like rooms)."""
+
+    __tablename__ = "rooms"
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(128), nullable=False)
+    slug = db.Column(db.String(128), unique=True, nullable=False)
+    description = db.Column(db.Text, default="")
+    difficulty = db.Column(db.String(32), default="Easy")
+    duration = db.Column(db.Integer, default=30)  # minutes
+    target_ip = db.Column(db.String(45), default="15.237.60.47")
+
+    def __init__(self, *args, **kwargs):
+        super(Rooms, self).__init__(**kwargs)
+
+    def __repr__(self):
+        return f"<Room slug={self.slug}>"
+
+
 class RoomInstances(db.Model):
     """Track active machine instances for room challenges (TryHackMe-like)."""
     

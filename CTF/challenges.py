@@ -7,7 +7,7 @@ from sqlalchemy import func
 
 from CTFd.cache import cache
 from CTFd.constants.config import ChallengeVisibilityTypes, Configs
-from CTFd.models import Challenges, Solves
+from CTFd.models import Challenges, Rooms, Solves
 from CTFd.utils.config import is_teams_mode
 from CTFd.utils.dates import ctf_ended, ctf_paused, ctf_started
 from CTFd.utils.decorators import (
@@ -141,6 +141,70 @@ def _room_difficulty(challenges_for_room):
     for difficulty in difficulties:
         counts[difficulty] = counts.get(difficulty, 0) + 1
     return max(counts, key=counts.get)
+
+
+@challenges.route("/rooms/", methods=["GET"])
+@require_complete_profile
+@during_ctf_time_only
+@require_verified_emails
+@check_challenge_visibility
+def rooms_listing():
+    """List all available rooms."""
+    if (
+        Configs.challenge_visibility == ChallengeVisibilityTypes.PUBLIC
+        and authed() is False
+    ):
+        pass
+    else:
+        if is_teams_mode() and get_current_team() is None:
+            return redirect(url_for("teams.private", next=request.full_path))
+
+    rooms = Rooms.query.all()
+
+    # Build room list enriched with challenge counts and player counts
+    room_list = []
+    for room in rooms:
+        challenges_for_room = (
+            Challenges.query.filter_by(category=room.slug, state="visible").all()
+        )
+        total = len(challenges_for_room)
+        challenge_ids = [c.id for c in challenges_for_room]
+
+        if is_teams_mode():
+            players = (
+                Solves.query.with_entities(func.count(func.distinct(Solves.team_id)))
+                .filter(
+                    Solves.challenge_id.in_(challenge_ids),
+                    Solves.team_id.isnot(None),
+                )
+                .scalar()
+                or 0
+            )
+        else:
+            players = (
+                Solves.query.with_entities(func.count(func.distinct(Solves.user_id)))
+                .filter(
+                    Solves.challenge_id.in_(challenge_ids),
+                    Solves.user_id.isnot(None),
+                )
+                .scalar()
+                or 0
+            )
+
+        room_list.append(
+            {
+                "id": room.id,
+                "name": room.name,
+                "slug": room.slug,
+                "description": room.description,
+                "difficulty": room.difficulty,
+                "duration": room.duration,
+                "total_challenges": total,
+                "players_count": players,
+            }
+        )
+
+    return render_template("rooms.html", rooms=room_list)
 
 
 @challenges.route("/challenges", methods=["GET"])
@@ -336,12 +400,21 @@ def room_detail(room_id):
         "players_count": players_count,
     }
 
+    # Look up Room model for target_ip (fallback to config)
+    room_model = Rooms.query.filter_by(slug=_slugify(room.get("id", ""))).first()
+    target_ip = (
+        room_model.target_ip
+        if room_model and room_model.target_ip
+        else current_app.config.get("CHALLENGE_TARGET_IP", "15.237.60.47")
+    )
+
     return render_template(
         "room_detail.html",
         room=room,
+        room_slug=_slugify(room.get("id", "")),
         progress_percent=progress_percent,
         solved_count=solved_count,
         total_count=total_count,
         challenges=challenge_cards,
-        challenge_target_ip=current_app.config.get("CHALLENGE_TARGET_IP", "10.10.155.42"),
+        challenge_target_ip=target_ip,
     )

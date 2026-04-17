@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 challenges_api = Blueprint("challenges_api", __name__, url_prefix="/api/challenges")
 
 
+@challenges_api.route("/<int:challenge_id>/attempt", methods=["POST"])
 @challenges_api.route("/<int:challenge_id>/submit-flag", methods=["POST"])
 @authed_only
 def submit_room_flag(challenge_id):

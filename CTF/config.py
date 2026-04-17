@@ -275,8 +275,8 @@ class ServerConfig(object):
     SERVER_SENT_EVENTS: bool = process_boolean_str(empty_str_cast(config_ini["optional"]["SERVER_SENT_EVENTS"], default=True))
 
     CHALLENGE_TARGET_IP: str = empty_str_cast(
-        config_ini["optional"].get("CHALLENGE_TARGET_IP", "10.10.155.42"),
-        default="10.10.155.42",
+        config_ini["optional"].get("CHALLENGE_TARGET_IP", "15.237.60.47"),
+        default="15.237.60.47",
     )
 
     HTML_SANITIZATION: bool = process_boolean_str(empty_str_cast(config_ini["optional"]["HTML_SANITIZATION"], default=False))

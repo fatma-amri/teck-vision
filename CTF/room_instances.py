@@ -5,7 +5,9 @@ import logging
 
 from flask import Blueprint, abort, jsonify, request
 
-from CTFd.models import RoomInstances, db
+from flask import current_app
+
+from CTFd.models import RoomInstances, Rooms, db
 from CTFd.utils.decorators import authed_only
 from CTFd.utils.user import get_current_team, get_current_user
 
@@ -16,6 +18,7 @@ room_instances = Blueprint("room_instances", __name__, url_prefix="/api/room-ins
 # Map room slugs to challenge categories
 ROOM_MAPPING = {
     "web-security-challenge": "Web Security Challenge",
+    "lazyadmin": "lazyadmin",
 }
 
 
@@ -56,40 +59,49 @@ def start_machine(room_slug):
         user_id=account_id if account_type == "user" else None,
     ).first()
     
+    # Resolve target IP: Room model > config fallback
+    room_model = Rooms.query.filter_by(slug=room_slug).first()
+    machine_ip = (
+        room_model.target_ip
+        if room_model and room_model.target_ip
+        else current_app.config.get("CHALLENGE_TARGET_IP", "15.237.60.47")
+    )
+
     if existing:
-        # Machine already active - return its details
         return jsonify({
             "success": True,
+            "ip": existing.machine_ip,
             "machine_ip": existing.machine_ip,
             "started_at": existing.started_at.isoformat() if existing.started_at else None,
             "expires_at": existing.expires_at.isoformat() if existing.expires_at else None,
             "time_remaining": existing.time_remaining_seconds,
             "duration_minutes": existing.duration_minutes,
         }), 200
-    
+
     # Create new machine instance
     now = datetime.datetime.utcnow()
-    duration = 30  # Default 30 minutes
+    duration = room_model.duration if room_model else 30
     expires_at = now + datetime.timedelta(minutes=duration)
-    
+
     instance = RoomInstances(
         user_id=user.id if account_type == "user" else None,
         team_id=team.id if account_type == "team" else None,
         category=room_category,
-        machine_ip="15.237.60.47",  # Static IP
+        machine_ip=machine_ip,
         is_active=True,
         started_at=now,
         expires_at=expires_at,
         duration_minutes=duration,
     )
-    
+
     db.session.add(instance)
     db.session.commit()
-    
-    logger.info(f"Machine started: room={room_slug}, category={room_category}, {account_type}_id={account_id}")
-    
+
+    logger.info(f"Machine started: room={room_slug}, {account_type}_id={account_id}")
+
     return jsonify({
         "success": True,
+        "ip": instance.machine_ip,
         "machine_ip": instance.machine_ip,
         "started_at": instance.started_at.isoformat(),
         "expires_at": instance.expires_at.isoformat(),

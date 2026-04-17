@@ -66,68 +66,48 @@
 </div>
 
 <script>
-// Extract room slug from current URL path
-// URL format: /play/{room_slug} or /play/{room_slug}?
 var urlPath = window.location.pathname;
-console.log("Current URL path:", urlPath);
-
-// Extract slug: match /play/{slug} pattern
 var matches = urlPath.match(/\/play\/([^\/]+)/);
 var ROOM_SLUG = matches ? matches[1] : '';
-
-console.log("Extracted ROOM_SLUG:", ROOM_SLUG);
+var csrfToken = (window.init && window.init.csrfNonce) ? window.init.csrfNonce : '';
 
 var timer_interval = null;
-var machine_active = false;
+
+function apiHeaders() {
+  return { "Content-Type": "application/json", "CSRF-Token": csrfToken };
+}
 
 function startMachine() {
-  console.log("startMachine called with slug:", ROOM_SLUG);
-  
   fetch("/api/room-instances/start/" + ROOM_SLUG, {
     method: "POST",
-    headers: { "Content-Type": "application/json" }
+    headers: apiHeaders()
   })
   .then(r => r.json())
   .then(data => {
     if (data.success) {
-      machine_active = true;
       document.getElementById("status").textContent = "Running";
-      document.getElementById("machine-ip").textContent = data.machine_ip;
+      document.getElementById("machine-ip").textContent = data.ip || data.machine_ip;
       document.getElementById("start-btn").disabled = true;
       document.getElementById("stop-btn").disabled = false;
-      
-      var remaining = data.duration_minutes * 60;
+      var remaining = (data.duration_minutes || 30) * 60;
       timer_interval = setInterval(() => {
         remaining--;
         var m = Math.floor(remaining / 60);
         var s = remaining % 60;
-        document.getElementById("timer").textContent = 
+        document.getElementById("timer").textContent =
           String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
-        
-        if (remaining <= 0) {
-          clearInterval(timer_interval);
-          stopMachine();
-        }
+        if (remaining <= 0) { clearInterval(timer_interval); stopMachine(); }
       }, 1000);
-    } else {
-      alert("Error: " + (data.message || "Unknown error"));
     }
   })
-  .catch(e => {
-    console.error("Error:", e);
-    alert("Error starting machine");
-  });
+  .catch(console.error);
 }
 
 function stopMachine() {
   if (timer_interval) clearInterval(timer_interval);
-  
   fetch("/api/room-instances/terminate/" + ROOM_SLUG, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" }
+    method: "POST", headers: apiHeaders()
   }).catch(console.error);
-  
-  machine_active = false;
   document.getElementById("status").textContent = "Stopped";
   document.getElementById("machine-ip").textContent = "-";
   document.getElementById("timer").textContent = "00:00";
@@ -138,21 +118,15 @@ function stopMachine() {
 function submitFlag(challengeId) {
   var input = document.querySelector(".flag-input[data-cid='" + challengeId + "']");
   var flag = input.value.trim();
-  
-  if (!flag) {
-    alert("Please enter a flag");
-    return;
-  }
-  
-  fetch("/api/challenges/" + challengeId + "/submit-flag", {
+  if (!flag) return;
+  fetch("/api/challenges/" + challengeId + "/attempt", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: apiHeaders(),
     body: JSON.stringify({ flag: flag })
   })
   .then(r => r.json())
   .then(data => {
     if (data.success) {
-      alert("Correct! +" + data.points + " points");
       location.reload();
     } else {
       var errorDiv = document.getElementById("error-" + challengeId);
@@ -161,10 +135,7 @@ function submitFlag(challengeId) {
       setTimeout(() => errorDiv.classList.add("d-none"), 5000);
     }
   })
-  .catch(e => {
-    console.error("Error:", e);
-    alert("Error submitting flag");
-  });
+  .catch(console.error);
 }
 </script>
 {% endblock %}
