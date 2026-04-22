@@ -1,4 +1,4 @@
-"""Room instances and machine control endpoints (TryHackMe-like functionality)."""
+"""Room instances and machine control endpoints."""
 
 import datetime
 import logging

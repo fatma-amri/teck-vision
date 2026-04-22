@@ -364,20 +364,41 @@ def settings():
     )
 
 
+@views.route("/home")
+def home():
+    """Hero landing page with live platform statistics."""
+    from CTFd.models import Challenges, Rooms, Solves, Users as UsersModel
+
+    stats = {
+        "challenges": Challenges.query.filter_by(state="visible").count(),
+        "rooms":      Rooms.query.count(),
+        "players":    UsersModel.query.filter_by(banned=False, hidden=False).count(),
+        "solves":     Solves.query.count(),
+    }
+    return render_template("index.html", stats=stats)
+
+
 @views.route("/", defaults={"route": "index"})
 @views.route("/<path:route>")
 def static_html(route):
     """Route users to pages stored in the database.
-    
-    Dynamically loads page content based on route parameter.
-    Redirects to login if page requires authentication.
-    
-    Args:
-        route: The page route/path requested by the user.
-        
-    Returns:
-        Rendered page template or 404 error if page not found.
+
+    For the 'index' route, tries to render the rich hero page (index.html)
+    first; falls back to the CMS page if no hero template is found.
     """
+    if route == "index":
+        try:
+            from CTFd.models import Challenges, Rooms, Solves, Users as UsersModel
+
+            stats = {
+                "challenges": Challenges.query.filter_by(state="visible").count(),
+                "rooms":      Rooms.query.count(),
+                "players":    UsersModel.query.filter_by(banned=False, hidden=False).count(),
+                "solves":     Solves.query.count(),
+            }
+            return render_template("index.html", stats=stats)
+        except TemplateNotFound:
+            pass
     page = get_page(route)
     if page is None:
         abort(404)

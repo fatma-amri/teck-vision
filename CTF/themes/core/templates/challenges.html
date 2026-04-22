@@ -16,14 +16,14 @@
       </div>
     </div>
 
-    <div 
-      x-data="ChallengeBoard" 
-      @load-challenges.window="loadChallenges()" 
+    <div
+      x-data="ChallengeBoard"
+      @load-challenges.window="loadChallenges()"
       @load-challenge.window="loadChallenge($event.detail)"
     >
       <div
-          x-ref="challengeWindow" id="challenge-window" class="modal fade" tabindex="-1" role="dialog" x-data=""
-          x-html="$store.challenge.data.view"
+        x-ref="challengeWindow" id="challenge-window" class="modal fade" tabindex="-1" role="dialog" x-data=""
+        x-html="$store.challenge.data.view"
       ></div>
 
       <div x-show="!loaded">
@@ -35,8 +35,25 @@
       </div>
 
       <div x-show="loaded">
+        <!-- ── Category filter bar ── -->
+        <div class="tv-filter-bar mb-4" id="tv-filter-bar" style="display:none!important;" x-show="loaded">
+          <button
+            class="tv-filter-btn active"
+            data-filter="all"
+            onclick="tvFilter(this,'all')"
+          >All</button>
+          <template x-for="(category, idx) in getCategories()" :key="idx">
+            <button
+              class="tv-filter-btn"
+              :data-filter="category"
+              @click="tvFilter($el, category)"
+              x-text="category"
+            ></button>
+          </template>
+        </div>
+
         <template x-for="(category, idx) in getCategories()" :key="idx">
-          <div class="pt-5">
+          <div class="pt-4 tv-category-section" :data-category="category">
             <div class="category-header mb-3">
               <h3 x-text="category"></h3>
             </div>
@@ -46,14 +63,14 @@
                 <template x-for="(c, idx) in getChallenges(category)" :key="c.id">
                   <div class="col-sm-6 col-md-4 col-lg-3 my-3">
                     <button
-                        class="challenge-button btn btn-dark w-100 h-100"
-                        :class="[
-                          c.solved_by_me ? 'challenge-solved' : '',
-                          ...c.tags.map((tag) => `tag-${tag.value.replace(/ /g, '-')}`),
-                        ];"
-                        :value="c.id" @click="loadChallenge(c.id)"
+                      class="challenge-button btn btn-dark w-100 h-100"
+                      :class="[
+                        c.solved_by_me ? 'challenge-solved' : '',
+                        ...c.tags.map((tag) => 'tag-' + tag.value.replace(/ /g, '-')),
+                      ]"
+                      :value="c.id"
+                      @click="loadChallenge(c.id)"
                     >
-
                       <div class="challenge-inner my-3">
                         <p x-text="c.name"></p>
                         <span x-text="c.value"></span>
@@ -72,4 +89,31 @@
 
 {% block scripts %}
   {{ Assets.js("assets/js/challenges.js") }}
+  <script>
+  (function () {
+    /* Show filter bar once Alpine has rendered categories */
+    document.addEventListener("alpine:initialized", function () {
+      var bar = document.getElementById("tv-filter-bar");
+      if (bar) bar.style.removeProperty("display");
+    });
+
+    window.tvFilter = function (btn, category) {
+      /* Update active button */
+      document.querySelectorAll(".tv-filter-btn").forEach(function (b) {
+        b.classList.remove("active");
+      });
+      btn.classList.add("active");
+
+      /* Show / hide category sections */
+      document.querySelectorAll(".tv-category-section").forEach(function (sec) {
+        var cat = sec.getAttribute("data-category");
+        if (category === "all" || cat === category) {
+          sec.style.display = "";
+        } else {
+          sec.style.display = "none";
+        }
+      });
+    };
+  })();
+  </script>
 {% endblock %}

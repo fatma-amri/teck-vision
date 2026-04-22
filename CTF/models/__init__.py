@@ -1197,7 +1197,7 @@ class Ratings(db.Model):
 
 
 class Rooms(db.Model):
-    """Room definition model (TryHackMe-like rooms)."""
+    """Room definition model."""
 
     __tablename__ = "rooms"
     id = db.Column(db.Integer, primary_key=True)
@@ -1216,7 +1216,7 @@ class Rooms(db.Model):
 
 
 class RoomInstances(db.Model):
-    """Track active machine instances for room challenges (TryHackMe-like)."""
+    """Track active machine instances for room challenges."""
     
     __tablename__ = "room_instances"
     id = db.Column(db.Integer, primary_key=True)

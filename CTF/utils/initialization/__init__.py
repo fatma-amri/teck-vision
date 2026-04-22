@@ -215,18 +215,59 @@ def init_request_processors(app):
                 return
             else:
                 return "Import currently in progress", 403
+        # Allow access to the manual setup wizard when setup is intentionally reset.
+        if request.endpoint == "views.setup":
+            return
         if is_setup() is False:
-            if request.endpoint in (
-                "views.setup",
-                "views.integrations",
-                "views.themes",
-                "views.files",
-                "views.healthcheck",
-                "views.robots",
-            ):
+            _auto_setup(app)
+
+    def _auto_setup(app):
+        """Auto-initialize the platform with safe defaults so users can navigate
+        immediately without going through the manual setup wizard."""
+        from CTFd.constants.config import (
+            AccountVisibilityTypes,
+            ChallengeVisibilityTypes,
+            ConfigTypes,
+            RegistrationVisibilityTypes,
+            ScoreVisibilityTypes,
+        )
+        from CTFd.models import Admins, Pages, db
+        from CTFd.utils import set_config
+        from CTFd.utils.modes import USERS_MODE
+
+        with app.app_context():
+            # Skip if already set up (race-condition guard)
+            if is_setup():
                 return
-            else:
-                return redirect(url_for("views.setup"))
+
+            set_config("ctf_name", "Teck-Vision")
+            set_config("ctf_description", "Plateforme CTF DevSecOps")
+            set_config("user_mode", USERS_MODE)
+            set_config(ConfigTypes.CHALLENGE_VISIBILITY, ChallengeVisibilityTypes.PUBLIC)
+            set_config(ConfigTypes.REGISTRATION_VISIBILITY, RegistrationVisibilityTypes.PUBLIC)
+            set_config(ConfigTypes.SCORE_VISIBILITY, ScoreVisibilityTypes.PUBLIC)
+            set_config(ConfigTypes.ACCOUNT_VISIBILITY, AccountVisibilityTypes.PUBLIC)
+            set_config("verify_emails", False)
+            set_config("start", None)
+            set_config("end", None)
+            set_config("freeze", None)
+
+            if not Admins.query.first():
+                admin = Admins(
+                    name="admin",
+                    email="admin@teck-vision.local",
+                    password="Admin@2025!",
+                    type="admin",
+                    hidden=True,
+                )
+                db.session.add(admin)
+
+            if not Pages.query.filter_by(route="index").first():
+                page = Pages(title="Teck-Vision", route="index", content="", draft=False)
+                db.session.add(page)
+
+            set_config("setup", True)
+            db.session.commit()
 
     @app.before_request
     def tracker():
