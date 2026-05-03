@@ -41,7 +41,9 @@
   {{ Configs.theme_header }}
 </head>
 <body>
+{% block navbar %}
 {% include "components/navbar.html" %}
+{% endblock %}
 
 <main role="main">
   {% block content %}

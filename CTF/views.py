@@ -66,7 +66,7 @@ views = Blueprint("views", __name__)
 @views.route("/setup", methods=["GET", "POST"])
 def setup():
     """Initialize CTFd setup and configuration.
-    
+
     Handles both GET (display setup form) and POST (process setup) requests.
     Creates admin user, initializes configuration, and sets up the CTF.
     """
@@ -260,7 +260,7 @@ def setup():
             with app.app_context():
                 cache.clear()
 
-            return redirect(url_for("views.static_html"))
+            return redirect(url_for("admin.view"))
         try:
             return render_template("setup.html", state=serialize(generate_nonce()))
         except TemplateNotFound as e:
@@ -269,6 +269,9 @@ def setup():
             set_config("ctf_theme", DEFAULT_THEME)
             return render_template("setup.html", state=serialize(generate_nonce()))
     return redirect(url_for("views.static_html"))
+
+
+setup._bypass_csrf = True  # setup runs before any admin exists — no CSRF needed
 
 
 @views.route("/setup/integrations", methods=["GET", "POST"])

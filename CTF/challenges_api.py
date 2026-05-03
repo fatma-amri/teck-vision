@@ -1,13 +1,12 @@
-"""API endpoints for room challenges and flag submissions."""
+"""API endpoints for room challenge flag submission."""
 
 import logging
 
 from flask import Blueprint, abort, jsonify, request
 
-from CTFd.models import Challenges, Flags, Solves, db
-from CTFd.plugins.challenges import get_chal_class
+from CTFd.models import RoomChallenge, RoomSolve, db
 from CTFd.utils.decorators import authed_only
-from CTFd.utils.user import get_current_team, get_current_user
+from CTFd.utils.user import get_current_user
 
 logger = logging.getLogger(__name__)
 
@@ -15,101 +14,54 @@ challenges_api = Blueprint("challenges_api", __name__, url_prefix="/api/challeng
 
 
 @challenges_api.route("/<int:challenge_id>/attempt", methods=["POST"])
-@challenges_api.route("/<int:challenge_id>/submit-flag", methods=["POST"])
 @authed_only
 def submit_room_flag(challenge_id):
     """Submit a flag for a room challenge.
-    
+
     Expected JSON: {"flag": "flag_value"}
-    
-    Returns:
-        - 200: {"success": true, "message": "Correct flag!", "points": X}
-        - 400: {"success": false, "message": "Wrong flag, try again"}
-        - 409: {"success": false, "message": "Challenge already solved"}
+
+    Returns JSON:
+        200 {"success": true,  "message": "Correct!", "points": X}
+        400 {"success": false, "message": "Wrong flag, try again"}
+        409 {"success": false, "message": "Already solved"}
     """
     user = get_current_user()
-    team = get_current_team()
-    
-    challenge = Challenges.query.filter_by(id=challenge_id).first()
+
+    challenge = RoomChallenge.query.get(challenge_id)
     if not challenge:
-        abort(404)
-    
-    # Check if already solved
-    if team:
-        existing_solve = Solves.query.filter_by(
-            challenge_id=challenge_id,
-            team_id=team.id
-        ).first()
-    else:
-        existing_solve = Solves.query.filter_by(
-            challenge_id=challenge_id,
-            user_id=user.id
-        ).first()
-    
-    if existing_solve:
-        return jsonify({
-            "success": False,
-            "message": "Challenge already solved"
-        }), 409
-    
-    # Get the flag from request
-    data = request.get_json() or {}
-    submitted_flag = (data.get("flag") or "").strip()
-    
-    if not submitted_flag:
-        return jsonify({
-            "success": False,
-            "message": "No flag provided"
-        }), 400
-    
-    # Get all flags for this challenge
-    flags = Flags.query.filter_by(challenge_id=challenge_id).all()
-    
-    # Check if flag is correct (case-insensitive)
-    is_correct = False
-    for flag_obj in flags:
-        if flag_obj.content and submitted_flag.lower() == flag_obj.content.lower():
-            is_correct = True
-            break
-    
-    if not is_correct:
-        logger.warning(
-            f"Wrong flag submitted for challenge {challenge_id}: "
-            f"user={user.id}, team={team.id if team else None}, flag={submitted_flag}"
+        return jsonify({"success": False, "message": "Challenge not found"}), 404
+
+    # Check already solved
+    existing = RoomSolve.query.filter_by(
+        user_id=user.id, challenge_id=challenge_id
+    ).first()
+    if existing:
+        return jsonify({"success": False, "message": "Already solved"}), 409
+
+    data = request.get_json(silent=True) or {}
+    submitted = (data.get("flag") or "").strip()
+
+    if not submitted:
+        return jsonify({"success": False, "message": "No flag provided"}), 400
+
+    if submitted.lower() != (challenge.answer or "").lower():
+        logger.info(
+            "Wrong flag: challenge=%d user=%d submitted=%r",
+            challenge_id,
+            user.id,
+            submitted,
         )
-        return jsonify({
-            "success": False,
-            "message": "Wrong flag, try again"
-        }), 400
-    
-    # Flag is correct - create solve
+        return jsonify({"success": False, "message": "Wrong flag, try again"}), 200
+
+    # Correct flag — record solve
     try:
-        solve = Solves(
-            user_id=user.id if not team else None,
-            team_id=team.id if team else None,
-            challenge_id=challenge_id,
-            ip=request.remote_addr,
-            provided=submitted_flag,
-        )
-        
+        solve = RoomSolve(user_id=user.id, challenge_id=challenge_id)
         db.session.add(solve)
         db.session.commit()
-        
-        logger.info(
-            f"Correct flag for challenge {challenge_id}: "
-            f"user={user.id}, team={team.id if team else None}"
-        )
-        
-        return jsonify({
-            "success": True,
-            "message": "Correct flag!",
-            "points": challenge.value
-        }), 200
-        
-    except Exception as e:
+    except Exception as exc:
         db.session.rollback()
-        logger.error(f"Error creating solve: {str(e)}")
-        return jsonify({
-            "success": False,
-            "message": "Error submitting flag"
-        }), 500
+        logger.error("Error saving solve: %s", exc)
+        return jsonify({"success": False, "message": "Server error"}), 500
+
+    logger.info("Correct flag: challenge=%d user=%d", challenge_id, user.id)
+    return jsonify({"success": True, "message": "Correct!", "points": challenge.points}), 200

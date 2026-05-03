@@ -489,7 +489,8 @@ def login():
                 )
                 return render_template("login.html", errors=errors)
 
-            if user and verify_password(request.form["password"], user.password):
+            submitted_password = request.form.get("password", "")
+            if verify_password(submitted_password, user.password):
                 session.regenerate()
 
                 login_user(user)
@@ -503,10 +504,9 @@ def login():
                 return redirect(url_for("challenges.listing"))
 
             else:
-                # This user exists but the password is wrong
                 log(
                     "logins",
-                    "[{date}] {ip} - submitted invalid password for {name}",
+                    "[{date}] {ip} - invalid password for {name}",
                     name=user.name,
                 )
                 errors.append("Your username or password is incorrect")

@@ -1207,12 +1207,74 @@ class Rooms(db.Model):
     difficulty = db.Column(db.String(32), default="Easy")
     duration = db.Column(db.Integer, default=30)  # minutes
     target_ip = db.Column(db.String(45), default="15.237.60.47")
+    is_active = db.Column(db.Boolean, default=True)
+
+    challenges = db.relationship(
+        "RoomChallenge",
+        backref="room",
+        lazy="dynamic",
+        order_by="RoomChallenge.position",
+        cascade="all, delete-orphan",
+    )
 
     def __init__(self, *args, **kwargs):
         super(Rooms, self).__init__(**kwargs)
 
     def __repr__(self):
         return f"<Room slug={self.slug}>"
+
+
+class RoomChallenge(db.Model):
+    """Challenge belonging to a specific room."""
+
+    __tablename__ = "room_challenges"
+    id = db.Column(db.Integer, primary_key=True)
+    room_id = db.Column(
+        db.Integer, db.ForeignKey("rooms.id", ondelete="CASCADE"), nullable=False
+    )
+    title = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text, default="")
+    question = db.Column(db.Text, default="")
+    answer = db.Column(db.Text, nullable=False)
+    points = db.Column(db.Integer, default=100)
+    difficulty = db.Column(db.String(32), default="Easy")
+    position = db.Column(db.Integer, default=0)
+
+    solves = db.relationship(
+        "RoomSolve",
+        backref="challenge",
+        lazy="dynamic",
+        cascade="all, delete-orphan",
+    )
+
+    def __init__(self, *args, **kwargs):
+        super(RoomChallenge, self).__init__(**kwargs)
+
+    def __repr__(self):
+        return f"<RoomChallenge id={self.id} title={self.title}>"
+
+
+class RoomSolve(db.Model):
+    """Record of a user solving a room challenge."""
+
+    __tablename__ = "room_solves"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(
+        db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    challenge_id = db.Column(
+        db.Integer,
+        db.ForeignKey("room_challenges.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    solved_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+
+    __table_args__ = (db.UniqueConstraint("user_id", "challenge_id"),)
+
+    user = db.relationship("Users", foreign_keys="RoomSolve.user_id", lazy="select")
+
+    def __init__(self, *args, **kwargs):
+        super(RoomSolve, self).__init__(**kwargs)
 
 
 class RoomInstances(db.Model):

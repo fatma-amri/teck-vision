@@ -1,0 +1,63 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+<div class="jumbotron">
+  <div class="container">
+    <h1>Add Challenge to: {{ room.name }}</h1>
+  </div>
+</div>
+
+<div class="container">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }}">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <form method="POST" action="{{ url_for('admin.room_challenges_new', room_id=room.id) }}">
+    <input type="hidden" name="nonce" value="{{ Session.nonce }}">
+
+    <div class="form-group">
+      <label>Title <span class="text-danger">*</span></label>
+      <input type="text" name="title" class="form-control" required placeholder="e.g. Initial Access">
+    </div>
+
+    <div class="form-group">
+      <label>Description</label>
+      <textarea name="description" class="form-control" rows="2" placeholder="Context or background…"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Question</label>
+      <textarea name="question" class="form-control" rows="2" placeholder="What does the player need to find?"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Correct Answer <span class="text-danger">*</span></label>
+      <input type="text" name="answer" class="form-control" required placeholder="Flag or answer (case-insensitive match)">
+    </div>
+
+    <div class="row">
+      <div class="col-md-3 form-group">
+        <label>Points</label>
+        <input type="number" name="points" class="form-control" value="100" min="1">
+      </div>
+      <div class="col-md-3 form-group">
+        <label>Difficulty</label>
+        <select name="difficulty" class="form-control">
+          <option value="Easy">Easy</option>
+          <option value="Medium">Medium</option>
+          <option value="Hard">Hard</option>
+        </select>
+      </div>
+      <div class="col-md-3 form-group">
+        <label>Position</label>
+        <input type="number" name="position" class="form-control" value="{{ next_position }}" min="0">
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-success">Add Challenge</button>
+    <a href="{{ url_for('admin.rooms_edit', room_id=room.id) }}" class="btn btn-secondary ml-2">Cancel</a>
+  </form>
+</div>
+{% endblock %}

@@ -1,5 +1,16 @@
 {% extends "base.html" %}
 
+{% block navbar %}
+<nav class="navbar navbar-dark fixed-top" style="background:#0a0e1a;border-bottom:1px solid rgba(0,212,255,.15);">
+  <div class="container">
+    <span class="navbar-brand fw-bold" style="font-size:1.2rem;">
+      <span style="color:#00d4ff;">Teck</span><span style="color:#7b2ff7;">-Vision</span>
+      <small style="color:#475569;font-size:.7rem;margin-left:.5rem;">Platform Setup</small>
+    </span>
+  </div>
+</nav>
+{% endblock %}
+
 {% block stylesheets %}
 {{ super() }}
 <style>
@@ -280,6 +291,11 @@
 						<small class="form-text text-muted">
 							{{ form.password.description }}
 						</small>
+						<div class="alert alert-info mt-2 py-2 px-3" style="font-size:.85rem;">
+							<strong>Password requirements:</strong>
+							min 8 characters &bull; one uppercase &bull; one lowercase &bull; one digit &bull; one special character
+							<br><em>Example: <code>MyCtf@2026!</code></em>
+						</div>
 					</div>
 
 					<div class="mb-3 form-check">
@@ -454,4 +470,15 @@
 	var STATE = "{{ state }}";
 </script>
 {{ Assets.js("assets/js/setup.js") }}
+{% if errors %}
+<script>
+// Jump to Administration tab when there are validation errors
+document.addEventListener('DOMContentLoaded', function () {
+	var tab = document.querySelector('[data-bs-target="#administration"]');
+	if (tab && typeof bootstrap !== 'undefined') {
+		bootstrap.Tab.getOrCreateInstance(tab).show();
+	}
+});
+</script>
+{% endif %}
 {% endblock %}

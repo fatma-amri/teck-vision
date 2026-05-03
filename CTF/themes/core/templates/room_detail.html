@@ -42,7 +42,7 @@
   <div class="thm-card p-4 mb-4">
     <div class="d-flex flex-wrap align-items-start justify-content-between">
       <div>
-        <div class="room-title mb-1">{{ room.title }}</div>
+        <div class="room-title mb-1">{{ room.name }}</div>
         <p class="room-desc mb-3">{{ room.description }}</p>
         <div>
           {% set diff = room.difficulty | lower %}
@@ -56,7 +56,7 @@
             <span class="meta-pill">{{ room.difficulty }}</span>
           {% endif %}
           <span class="meta-pill">&#9201; {{ room.duration }} min</span>
-          <span class="meta-pill">&#128100; {{ room.players_count }} players</span>
+          <span class="meta-pill">&#128100; {{ players_count }} players</span>
           <span class="meta-pill">{{ total_count }} tasks</span>
         </div>
       </div>
@@ -100,8 +100,8 @@
     <div class="challenge-card p-4 mb-3 {% if challenge.solved %}solved{% endif %}" id="chal-{{ challenge.id }}" data-challenge-id="{{ challenge.id }}">
       <div class="d-flex justify-content-between align-items-start mb-2">
         <div>
-          <div class="chal-title">{{ challenge.name }}</div>
-          <div class="chal-desc mt-1">{{ challenge.description }}</div>
+          <div class="chal-title">{{ challenge.title }}</div>
+          <div class="chal-desc mt-1">{{ challenge.question or challenge.description }}</div>
         </div>
         <div class="d-flex flex-column align-items-end ml-3">
           <span class="thm-badge-pts meta-pill mb-1">{{ challenge.value }} pts</span>
