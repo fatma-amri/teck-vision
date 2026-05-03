@@ -1,6 +1,12 @@
 #!/bin/bash
 set -euo pipefail
 
+# Debugging
+echo "[ DEBUG ] Current directory: $(pwd)"
+echo "[ DEBUG ] Directory listing:"
+ls -F
+echo "[ DEBUG ] PYTHONPATH: ${PYTHONPATH:-not set}"
+
 WORKERS=${WORKERS:-1}
 WORKER_CLASS=${WORKER_CLASS:-gevent}
 ACCESS_LOG=${ACCESS_LOG:--}
