@@ -1,0 +1,84 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+<div class="jumbotron">
+  <div class="container">
+    <h1>Rooms</h1>
+  </div>
+</div>
+
+<div class="container">
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible" role="alert">
+        <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endwith %}
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3>All Rooms ({{ rooms|length }})</h3>
+    <a href="{{ url_for('admin.rooms_new') }}" class="btn btn-success">+ New Room</a>
+  </div>
+
+  {% if rooms %}
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Name</th>
+        <th>Slug</th>
+        <th>Difficulty</th>
+        <th>Duration (min)</th>
+        <th>Target IP</th>
+        <th>Challenges</th>
+        <th>Active</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in rooms %}
+      {% set room = item.room %}
+      <tr>
+        <td>{{ room.id }}</td>
+        <td><strong>{{ room.name }}</strong></td>
+        <td><code>{{ room.slug }}</code></td>
+        <td>
+          {% if room.difficulty|lower == 'easy' %}
+            <span class="badge badge-success">Easy</span>
+          {% elif room.difficulty|lower == 'medium' %}
+            <span class="badge badge-warning">Medium</span>
+          {% elif room.difficulty|lower == 'hard' %}
+            <span class="badge badge-danger">Hard</span>
+          {% else %}
+            <span class="badge badge-secondary">{{ room.difficulty }}</span>
+          {% endif %}
+        </td>
+        <td>{{ room.duration }}</td>
+        <td><code>{{ room.target_ip }}</code></td>
+        <td>{{ item.challenge_count }}</td>
+        <td>
+          {% if room.is_active %}
+            <span class="badge badge-success">Yes</span>
+          {% else %}
+            <span class="badge badge-secondary">No</span>
+          {% endif %}
+        </td>
+        <td>
+          <a href="{{ url_for('admin.rooms_edit', room_id=room.id) }}" class="btn btn-sm btn-primary">Edit</a>
+          <form method="POST" action="{{ url_for('admin.rooms_delete', room_id=room.id) }}" style="display:inline;" onsubmit="return confirm('Delete room \'{{ room.name }}\'?');">
+            <input type="hidden" name="nonce" value="{{ Session.nonce }}">
+            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="alert alert-info">No rooms yet. <a href="{{ url_for('admin.rooms_new') }}">Create the first one.</a></div>
+  {% endif %}
+</div>
+{% endblock %}

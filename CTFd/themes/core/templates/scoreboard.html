@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block stylesheets %}
+{{ super() }}
+<style>
+  .tv-score-header { padding: 1.5rem 0 0; }
+  .tv-rank-1 td:first-child::before { content: "🥇 "; }
+  .tv-rank-2 td:first-child::before { content: "🥈 "; }
+  .tv-rank-3 td:first-child::before { content: "🥉 "; }
+  #score-chart-canvas { max-height: 320px; }
+  .tv-tabs { display:flex; gap:0; border-bottom: 1px solid rgba(255,255,255,.07); margin-bottom:1.5rem; }
+  .tv-tab { background:none; border:none; border-bottom:2px solid transparent; color:#64748b;
+            cursor:pointer; font-size:.9rem; font-weight:600; padding:.6rem 1.2rem; transition:all .2s; }
+  .tv-tab.active  { border-bottom-color:#00d4ff; color:#00d4ff; }
+  .tv-tab:hover   { color:#e2e8f0; }
+  .tv-graph-card  { background:#111827; border:1px solid rgba(255,255,255,.07); border-radius:10px; padding:1.5rem; margin-bottom:2rem; }
+  .tv-graph-title { color:#94a3b8; font-size:.8rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; margin-bottom:1rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+  <div class="jumbotron">
+    <div class="container">
+      <h1>
+        <i class="fas fa-trophy me-3"></i>{% trans %}Scoreboard{% endtrans %}
+      </h1>
+    </div>
+  </div>
+
+  <div class="container">
+    {% include "components/errors.html" %}
+
+    <!-- ── Score progression graph ── -->
+    <div class="tv-graph-card" id="score-graph" x-data="ScoreboardDetail" x-ref="scoregraph"
+         @bracket-change.window="activeBracket=$event.detail; update();">
+      <div class="tv-graph-title">&#128200; Score Progression</div>
+      <div class="text-center" x-show="!loaded">
+        <i class="fas fa-circle-notch fa-spin fa-2x fa-fw spinner"></i>
+      </div>
+      <canvas id="score-chart-canvas" x-show="loaded"></canvas>
+    </div>
+
+    <!-- ── Standings table ── -->
+    <div id="scoreboard" x-data="ScoreboardList">
+
+      <!-- Bracket filter tabs -->
+      <template x-if="brackets.length && standings.length">
+        <nav class="tv-tabs mb-3">
+          <button :class="{'tv-tab': true, 'active': !activeBracket}" @click="activeBracket=null">
+            {% trans %}All{% endtrans %}
+          </button>
+          <template x-for="bracket in brackets">
+            <button :class="{'tv-tab': true, 'active': activeBracket == bracket.id}"
+                    x-text="bracket.name"
+                    @click="activeBracket=bracket.id">
+            </button>
+          </template>
+        </nav>
+      </template>
+
+      <!-- Table -->
+      <div class="col-md-12" x-show="standings.length">
+        <table class="table table-striped align-middle">
+          <thead>
+            <tr>
+              <th style="width:50px;">{% trans %}Place{% endtrans %}</th>
+              <th class="text-start ps-3">{{ get_mode_as_word(capitalize=True) }}</th>
+              <th>{% trans %}Score{% endtrans %}</th>
+              <th class="d-none d-md-table-cell">{% trans %}Solves{% endtrans %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <template x-for="(standing, index) in standings.filter(i => activeBracket ? i.bracket_id==activeBracket : true)">
+              <tr :class="{ 'tv-rank-1': index===0, 'tv-rank-2': index===1, 'tv-rank-3': index===2 }">
+                <th scope="row" class="text-center" x-text="index + 1"></th>
+                <td class="text-start ps-3">
+                  <a :href="standing.account_url" x-text="standing.name"></a>
+                  <template x-if="standing.bracket_name">
+                    <span class="badge bg-secondary ms-2" x-text="standing.bracket_name"></span>
+                  </template>
+                </td>
+                <td><strong x-text="standing.score" style="color:#00d4ff;"></strong></td>
+                <td class="d-none d-md-table-cell" x-text="standing.solves || '—'"></td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="col-md-12 text-center py-4" x-show="!standings.length">
+        <i class="fas fa-trophy fa-2x mb-3" style="color:#64748b;"></i>
+        <h5 class="text-muted">{% trans %}Scoreboard is empty{% endtrans %}</h5>
+        <p class="text-muted" style="font-size:.9rem;">Be the first to solve a challenge!</p>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  {{ Assets.js("assets/js/scoreboard.js") }}
+{% endblock %}
