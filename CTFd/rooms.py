@@ -7,7 +7,7 @@ from sqlalchemy import func
 
 from CTFd.cache import cache
 from CTFd.constants.config import ChallengeVisibilityTypes, Configs
-from CTFd.models import RoomChallenge, RoomSolve, Rooms, db
+from CTFd.models import RoomChallenge, RoomSolve, Rooms, Users, db
 from CTFd.utils.config import is_teams_mode
 from CTFd.utils.decorators import authed_only, require_complete_profile, require_verified_emails
 from CTFd.utils.decorators.visibility import check_challenge_visibility
@@ -135,8 +135,34 @@ def room_detail(slug):
             .scalar()
             or 0
         )
+        completed_rows = (
+            db.session.query(
+                Users.id,
+                Users.name,
+                func.count(func.distinct(RoomSolve.challenge_id)).label("solve_count"),
+                func.max(RoomSolve.solved_at).label("completed_at"),
+            )
+            .join(RoomSolve, RoomSolve.user_id == Users.id)
+            .filter(RoomSolve.challenge_id.in_(challenge_ids))
+            .group_by(Users.id, Users.name)
+            .having(func.count(func.distinct(RoomSolve.challenge_id)) == total_count)
+            .order_by(func.max(RoomSolve.solved_at).asc())
+            .all()
+        )
     else:
         players_count = 0
+        completed_rows = []
+
+    completed_users = [
+        {
+            "rank": index + 1,
+            "id": row.id,
+            "name": row.name,
+            "solve_count": row.solve_count,
+            "completed_at": row.completed_at,
+        }
+        for index, row in enumerate(completed_rows)
+    ]
 
     target_ip = room.target_ip or current_app.config.get("CHALLENGE_TARGET_IP", "15.237.60.47")
 
@@ -149,6 +175,7 @@ def room_detail(slug):
         total_count=total_count,
         progress_percent=progress_percent,
         players_count=players_count,
+        completed_users=completed_users,
         challenge_target_ip=target_ip,
     )
 

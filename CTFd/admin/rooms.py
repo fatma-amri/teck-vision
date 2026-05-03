@@ -1,8 +1,11 @@
 """Admin routes for room and room-challenge management."""
 
+import os
 import re
+import uuid
 
-from flask import flash, redirect, render_template, request, url_for
+from flask import current_app, flash, redirect, render_template, request, url_for
+from werkzeug.utils import secure_filename
 
 from CTFd.admin import admin
 from CTFd.models import RoomChallenge, Rooms, db
@@ -12,6 +15,123 @@ from CTFd.utils.decorators import admins_only
 def _slugify(value):
     value = (value or "").strip().lower()
     return re.sub(r"[^a-z0-9]+", "-", value).strip("-")
+
+
+def _save_ova_file(file_storage, slug):
+    filename = secure_filename(file_storage.filename or "")
+    if not filename.lower().endswith(".ova"):
+        raise ValueError("Only .ova files are allowed.")
+
+    upload_root = current_app.config.get("UPLOAD_FOLDER")
+    ova_dir = os.path.join(upload_root, "ctf_ovas")
+    os.makedirs(ova_dir, exist_ok=True)
+
+    unique_name = f"{slug}-{uuid.uuid4().hex[:8]}.ova"
+    full_path = os.path.join(ova_dir, unique_name)
+    file_storage.save(full_path)
+    return os.path.join("ctf_ovas", unique_name).replace("\\", "/")
+
+
+@admin.route("/admin/create-ctf", methods=["GET", "POST"])
+@admins_only
+def create_ctf():
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        description = request.form.get("description", "").strip()
+        difficulty = request.form.get("difficulty", "Easy")
+        duration = request.form.get("duration", 30)
+        ova_file = request.files.get("ova_image")
+
+        titles = request.form.getlist("flag_title[]")
+        questions = request.form.getlist("flag_question[]")
+        answers = request.form.getlist("flag_answer[]")
+        points_values = request.form.getlist("flag_points[]")
+
+        if not name:
+            flash("CTF name is required.", "error")
+            return render_template("admin/create_ctf.html")
+
+        if not ova_file or not ova_file.filename:
+            flash("Drop Your OVA Image is required.", "error")
+            return render_template("admin/create_ctf.html")
+
+        flag_rows = []
+        for index, answer in enumerate(answers):
+            answer = (answer or "").strip()
+            if not answer:
+                continue
+            title = titles[index].strip() if index < len(titles) else ""
+            question = questions[index].strip() if index < len(questions) else ""
+            points = points_values[index] if index < len(points_values) else 100
+            try:
+                points = int(points)
+            except (ValueError, TypeError):
+                points = 100
+            flag_rows.append(
+                {
+                    "title": title or f"Flag {len(flag_rows) + 1}",
+                    "question": question,
+                    "answer": answer,
+                    "points": points,
+                    "position": len(flag_rows),
+                }
+            )
+
+        if not flag_rows:
+            flash("Add at least one flag.", "error")
+            return render_template("admin/create_ctf.html")
+
+        slug = _slugify(name)
+        if Rooms.query.filter_by(slug=slug).first():
+            flash(f"A CTF with slug '{slug}' already exists.", "error")
+            return render_template("admin/create_ctf.html")
+
+        try:
+            duration = int(duration)
+        except (ValueError, TypeError):
+            duration = 30
+
+        try:
+            ova_location = _save_ova_file(ova_file, slug)
+        except ValueError as e:
+            flash(str(e), "error")
+            return render_template("admin/create_ctf.html")
+
+        room_description = description
+        if ova_location:
+            room_description = f"{description}\n\nOVA Image: {ova_location}".strip()
+
+        room = Rooms(
+            name=name,
+            slug=slug,
+            description=room_description,
+            difficulty=difficulty,
+            duration=duration,
+            target_ip="15.237.60.47",
+            is_active=True,
+        )
+        db.session.add(room)
+        db.session.flush()
+
+        for row in flag_rows:
+            db.session.add(
+                RoomChallenge(
+                    room_id=room.id,
+                    title=row["title"],
+                    description="",
+                    question=row["question"],
+                    answer=row["answer"],
+                    points=row["points"],
+                    difficulty=difficulty,
+                    position=row["position"],
+                )
+            )
+
+        db.session.commit()
+        flash(f"CTF '{name}' created with {len(flag_rows)} flags.", "success")
+        return redirect(url_for("admin.rooms_edit", room_id=room.id))
+
+    return render_template("admin/create_ctf.html")
 
 
 # ── Rooms listing ────────────────────────────────────────────────────────────

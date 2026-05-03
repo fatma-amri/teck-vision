@@ -2,48 +2,144 @@
 
 {% block content %}
 <style>
-  body { background: #1a1d21 !important; color: #e0e0e0; }
-  .thm-card { background: #212529; border: 1px solid #2e3338; border-radius: 10px; }
-  .thm-badge-easy    { background: #1a7f4b; color: #fff; }
-  .thm-badge-medium  { background: #c57c00; color: #fff; }
-  .thm-badge-hard    { background: #9b1c1c; color: #fff; }
-  .thm-badge-pts     { background: #1a3a5c; color: #5ba4cf; border: 1px solid #5ba4cf; }
-  .thm-progress-wrap { background: #2e3338; border-radius: 999px; height: 10px; }
-  .thm-progress-bar  { background: linear-gradient(90deg,#1dd75f,#3bba6c); height: 10px; border-radius: 999px; transition: width .9s ease; }
-  .challenge-card    { background: #212529; border: 2px solid #2e3338; border-radius: 10px; transition: border-color .2s; }
-  .challenge-card.solved { border-color: #1dd75f; background: #1a2b1e; }
-  .status-dot { display:inline-block; width:10px; height:10px; border-radius:50%; background:#6c757d; margin-right:6px; vertical-align:middle; }
-  .status-dot.active { background:#1dd75f; animation: pulse 1.4s infinite; }
-  @keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(29,215,95,.65)} 70%{box-shadow:0 0 0 12px rgba(29,215,95,0)} 100%{box-shadow:0 0 0 0 rgba(29,215,95,0)} }
-  .thm-btn-green  { background:#1dd75f; border:none; color:#111; font-weight:600; }
-  .thm-btn-green:hover { background:#3bba6c; color:#111; }
-  .thm-btn-red    { background:transparent; border:1px solid #e74c3c; color:#e74c3c; font-weight:600; }
-  .thm-btn-red:hover { background:#e74c3c; color:#fff; }
-  .thm-btn-grey   { background:transparent; border:1px solid #6c757d; color:#adb5bd; font-weight:600; }
-  .thm-btn-grey:hover { background:#6c757d; color:#fff; }
-  .thm-input { background:#2e3338; border:1px solid #3e4348; color:#e0e0e0; border-radius:6px; }
-  .thm-input::placeholder { color:#6c757d; }
-  .thm-input:focus { background:#2e3338; border-color:#1dd75f; color:#e0e0e0; box-shadow:none; }
-  .ip-block { background:#1a2b1e; border:1px solid #1dd75f33; border-radius:8px; font-family:monospace; }
-  .timer-text { font-family:monospace; font-size:1rem; color:#adb5bd; }
-  .room-title { font-size:2rem; font-weight:700; color:#fff; }
-  .room-desc  { color:#adb5bd; }
-  .meta-pill  { background:#2e3338; color:#adb5bd; border-radius:6px; padding:4px 12px; font-size:.85rem; display:inline-block; margin-right:6px; }
-  .solved-tag { color:#1dd75f; font-weight:600; }
-  .wrong-msg  { color:#e74c3c; font-size:.85rem; margin-top:4px; }
-  .correct-msg { color:#1dd75f; font-size:.85rem; margin-top:4px; font-weight:600; }
-  .chal-title { font-size:1rem; font-weight:600; color:#e0e0e0; }
-  .chal-desc  { color:#adb5bd; font-size:.9rem; }
+  body { background: #f4f7fb !important; color: #111827; }
+  .tv-room-hero {
+    background: linear-gradient(100deg, #121a2b 0%, #162238 54%, #071026 100%);
+    border-bottom: 1px solid rgba(255,255,255,.08);
+    color: #fff;
+    padding: 2.4rem 0 0;
+    position: relative;
+    overflow: hidden;
+  }
+  .tv-room-hero::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(90deg, transparent 0%, rgba(147,197,253,.07) 52%, transparent 100%),
+      repeating-linear-gradient(90deg, rgba(255,255,255,.025) 0 1px, transparent 1px 74px);
+    pointer-events: none;
+  }
+  .tv-room-inner { max-width: 1180px; margin: 0 auto; padding: 0 1.25rem; position: relative; z-index: 1; }
+  .tv-breadcrumb { color: #8fa0b8; font-size: .82rem; margin-bottom: 1.4rem; }
+  .tv-hero-grid { display: grid; grid-template-columns: 86px minmax(0, 1fr) auto; gap: 1.25rem; align-items: center; }
+  .tv-room-cover {
+    width: 86px;
+    height: 86px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #1dd75f, #00d4ff);
+    display: grid;
+    place-items: center;
+    color: #071026;
+    font-size: 2.1rem;
+    box-shadow: 0 18px 42px rgba(0,0,0,.24);
+  }
+  .room-title { font-size: clamp(2rem, 4vw, 3.25rem); font-weight: 800; letter-spacing: 0; line-height: 1.05; color: #fff; margin: 0; }
+  .room-desc { color: #cbd5e1; max-width: 720px; margin: .7rem 0 1rem; font-size: 1rem; }
+  .meta-pill {
+    border: 1px solid rgba(255,255,255,.12);
+    background: rgba(255,255,255,.06);
+    color: #cbd5e1;
+    border-radius: 6px;
+    padding: .38rem .72rem;
+    font-size: .84rem;
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    margin: .2rem .35rem .2rem 0;
+    white-space: nowrap;
+  }
+  .thm-badge-easy { background: rgba(29,215,95,.16); color: #9af04d; border-color: rgba(154,240,77,.35); }
+  .thm-badge-medium { background: rgba(251,191,36,.14); color: #fbbf24; border-color: rgba(251,191,36,.35); }
+  .thm-badge-hard { background: rgba(248,113,113,.14); color: #f87171; border-color: rgba(248,113,113,.35); }
+  .tv-status-panel { min-width: 184px; text-align: right; color: #cbd5e1; }
+  .status-dot { display:inline-block; width:10px; height:10px; border-radius:50%; background:#64748b; margin-right:6px; vertical-align:middle; }
+  .status-dot.active { background:#9af04d; animation: pulse 1.4s infinite; }
+  @keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(154,240,77,.6)} 70%{box-shadow:0 0 0 12px rgba(154,240,77,0)} 100%{box-shadow:0 0 0 0 rgba(154,240,77,0)} }
+  .timer-text { font-family: Consolas, monospace; color: #94a3b8; margin-top: .25rem; }
+  .tv-action-bar { display: flex; flex-wrap: wrap; gap: .7rem; padding: 2rem 0 2.2rem; }
+  .tv-machine-active {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .65rem;
+    padding: .55rem;
+    border: 1px solid rgba(154,240,77,.28);
+    background: rgba(7,16,38,.55);
+    border-radius: 8px;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.04);
+  }
+  .tv-ip-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .55rem;
+    min-height: 38px;
+    padding: .42rem .78rem;
+    border-radius: 6px;
+    background: rgba(154,240,77,.12);
+    border: 1px solid rgba(154,240,77,.35);
+    color: #eaffdc;
+    font-family: Consolas, monospace;
+    font-weight: 800;
+  }
+  .tv-ip-label { color: #9af04d; font-family: inherit; font-size: .76rem; text-transform: uppercase; letter-spacing: .08em; }
+  .tv-copy-feedback { color:#9af04d; font-size:.82rem; font-weight:800; }
+  .thm-btn-green { background:#9af04d; border:1px solid #9af04d; color:#12200b; font-weight:700; }
+  .thm-btn-green:hover { background:#86dd3f; color:#12200b; }
+  .thm-btn-red { background:transparent; border:1px solid rgba(248,113,113,.7); color:#fecaca; font-weight:700; }
+  .thm-btn-red:hover { background:#ef4444; color:#fff; }
+  .thm-btn-grey { background:transparent; border:1px solid rgba(203,213,225,.22); color:#cbd5e1; font-weight:700; }
+  .thm-btn-grey:hover { background:rgba(255,255,255,.08); color:#fff; }
+  .tv-progress-strip { height: 16px; background: rgba(154,240,77,.18); position: relative; z-index: 2; }
+  .thm-progress-bar { background: #9af04d; height: 16px; transition: width .9s ease; display: flex; align-items: center; justify-content: center; color: #12200b; font-size: .72rem; font-weight: 800; min-width: 0; white-space: nowrap; }
+  .tv-room-main { max-width: 1180px; margin: 0 auto; padding: 2rem 1.25rem 3.5rem; }
+  .tv-content-panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 18px 45px rgba(15,23,42,.08); overflow: hidden; }
+  .tv-tabs { display:flex; gap: 2rem; border-bottom: 1px solid #e5e7eb; padding: 0 1.75rem; }
+  .tv-tab { padding: 1.3rem 0 1rem; color: #64748b; font-weight: 700; border:0; border-bottom: 3px solid transparent; background:transparent; cursor:pointer; }
+  .tv-tab.active { color: #111827; border-bottom-color: #9af04d; }
+  .tv-tab:focus { outline: none; }
+  .tv-scoreboard { padding: 1.75rem; border-top: 1px solid #e5e7eb; background: #fbfdff; }
+  .tv-scoreboard-title { color:#111827; font-weight:850; font-size:1.15rem; margin:0; }
+  .tv-scoreboard-sub { color:#64748b; font-size:.9rem; margin:.25rem 0 1rem; }
+  .tv-score-table { width:100%; border-collapse: separate; border-spacing:0; overflow:hidden; border:1px solid #e5e7eb; border-radius:8px; background:#fff; }
+  .tv-score-table th { background:#f8fafc; color:#64748b; font-size:.75rem; text-transform:uppercase; letter-spacing:.06em; padding:.85rem 1rem; border-bottom:1px solid #e5e7eb; }
+  .tv-score-table td { padding:.9rem 1rem; border-bottom:1px solid #edf2f7; color:#111827; }
+  .tv-score-table tr:last-child td { border-bottom:0; }
+  .tv-rank { font-weight:850; color:#16a34a; }
+  .tv-empty-score { border:1px dashed #cbd5e1; border-radius:8px; padding:1.5rem; color:#64748b; text-align:center; background:#fff; }
+  .ip-block { background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; color:#0f172a; font-family:Consolas, monospace; }
+  .challenge-card { border-bottom: 1px solid #e5e7eb; padding: 1.5rem 1.75rem; transition: background .2s; }
+  .challenge-card:last-child { border-bottom: 0; }
+  .challenge-card:hover { background: #f8fafc; }
+  .challenge-card.solved { background: #f2fbe9; }
+  .chal-title { color:#111827; font-size:1.05rem; font-weight:800; }
+  .chal-desc { color:#64748b; font-size:.94rem; margin-top:.35rem; }
+  .thm-badge-pts { background:#eef6ff; color:#2563eb; border:1px solid #bfdbfe; }
+  .thm-input { background:#fff; border:1px solid #d1d5db; color:#111827; border-radius:6px; }
+  .thm-input:focus { border-color:#9af04d; box-shadow:0 0 0 3px rgba(154,240,77,.24); }
+  .solved-tag { color:#166534; font-weight:800; }
+  .wrong-msg { color:#dc2626; font-size:.86rem; margin-top:.35rem; }
+  .correct-msg { color:#166534; font-size:.86rem; margin-top:.35rem; font-weight:800; }
+  @media (max-width: 768px) {
+    .tv-hero-grid { grid-template-columns: 1fr; }
+    .tv-status-panel { text-align: left; }
+    .tv-action-bar .btn { width: 100%; }
+    .tv-machine-active { width: 100%; }
+    .tv-ip-chip { width: 100%; justify-content: space-between; }
+    .challenge-card { padding: 1.2rem; }
+  }
 </style>
 
-<div class="container-fluid py-4 px-3 px-md-5" style="max-width:1000px;margin:auto;">
-
-  <!-- Room Header -->
-  <div class="thm-card p-4 mb-4">
-    <div class="d-flex flex-wrap align-items-start justify-content-between">
+<section class="tv-room-hero">
+  <div class="tv-room-inner">
+    <div class="tv-breadcrumb">Learn &gt; {{ room.name }}</div>
+    <div class="tv-hero-grid">
+      <div class="tv-room-cover">
+        <i class="fas fa-terminal"></i>
+      </div>
       <div>
-        <div class="room-title mb-1">{{ room.name }}</div>
-        <p class="room-desc mb-3">{{ room.description }}</p>
+        <h1 class="room-title">{{ room.name }}</h1>
+        <p class="room-desc">{{ room.description.split('OVA Image:')[0] }}</p>
         <div>
           {% set diff = room.difficulty | lower %}
           {% if diff == 'easy' or diff == 'facile' %}
@@ -55,83 +151,119 @@
           {% else %}
             <span class="meta-pill">{{ room.difficulty }}</span>
           {% endif %}
-          <span class="meta-pill">&#9201; {{ room.duration }} min</span>
-          <span class="meta-pill">&#128100; {{ players_count }} players</span>
-          <span class="meta-pill">{{ total_count }} tasks</span>
+          <span class="meta-pill"><i class="far fa-clock"></i> {{ room.duration }} min</span>
+          <span class="meta-pill"><i class="fas fa-users"></i> {{ players_count }} players</span>
+          <span class="meta-pill"><i class="fas fa-flag"></i> {{ total_count }} tasks</span>
         </div>
       </div>
-      <div class="mt-3 mt-md-0 text-right">
+      <div class="tv-status-panel">
         <div>
           <span class="status-dot" id="status-dot"></span>
-          <span id="status-text" style="font-size:.9rem;color:#adb5bd;">Machine Off</span>
+          <span id="status-text">Machine Off</span>
         </div>
-        <div class="timer-text mt-1" id="countdown-timer">--:--</div>
+        <div class="timer-text" id="countdown-timer">--:--</div>
       </div>
     </div>
 
-    <!-- Progress -->
-    <div class="mt-4">
-      <div class="d-flex justify-content-between mb-1">
-        <span style="font-size:.85rem;color:#adb5bd;">Progress</span>
-        <span style="font-size:.85rem;color:#e0e0e0;font-weight:600;">{{ solved_count }}/{{ total_count }} ({{ progress_percent }}%)</span>
+    <div class="tv-action-bar">
+      <button class="btn thm-btn-green px-4" id="start-btn"><i class="fas fa-laptop-code mr-2"></i>Start Machine</button>
+      <div class="tv-machine-active d-none" id="machine-active-panel">
+        <div class="tv-ip-chip">
+          <span class="tv-ip-label">IP</span>
+          <span id="ip-display">--.--.--.--</span>
+        </div>
+        <button class="btn thm-btn-grey px-3" id="copy-ip-btn"><i class="far fa-copy mr-2"></i>Copy IP</button>
+        <button class="btn thm-btn-red px-3" id="terminate-btn"><i class="fas fa-power-off mr-2"></i>Terminate Machine</button>
+        <span id="copy-feedback" class="tv-copy-feedback" style="display:none;">Copied</span>
       </div>
-      <div class="thm-progress-wrap">
-        <div class="thm-progress-bar" id="progress-bar" style="width:0%;" data-target="{{ progress_percent }}"></div>
-      </div>
-    </div>
-
-    <!-- Machine Controls -->
-    <div class="mt-4 d-flex flex-wrap align-items-center" style="gap:10px;">
-      <button class="btn thm-btn-green px-4" id="start-btn">Start Machine</button>
-      <button class="btn thm-btn-red px-4" id="terminate-btn" disabled>Terminate Machine</button>
-      <button class="btn thm-btn-grey px-4" id="copy-ip-btn" disabled>Copy IP</button>
-    </div>
-
-    <!-- IP Display -->
-    <div class="ip-block p-3 mt-3 d-none" id="ip-block">
-      Target IP: <strong id="ip-display">{{ challenge_target_ip }}</strong>
-      <span id="copy-feedback" class="ml-2" style="color:#1dd75f;font-size:.85rem;display:none;">Copied!</span>
     </div>
   </div>
+  <div class="tv-progress-strip">
+    <div class="thm-progress-bar" id="progress-bar" style="width:0%;" data-target="{{ progress_percent }}">
+      <span>{{ solved_count }}/{{ total_count }} completed ({{ progress_percent }}%)</span>
+    </div>
+  </div>
+</section>
 
-  <!-- Challenge List -->
-  <div id="challenges-container">
-    {% for challenge in challenges %}
-    <div class="challenge-card p-4 mb-3 {% if challenge.solved %}solved{% endif %}" id="chal-{{ challenge.id }}" data-challenge-id="{{ challenge.id }}">
-      <div class="d-flex justify-content-between align-items-start mb-2">
-        <div>
-          <div class="chal-title">{{ challenge.title }}</div>
-          <div class="chal-desc mt-1">{{ challenge.question or challenge.description }}</div>
+<section class="tv-room-main">
+  <div class="tv-content-panel">
+    <nav class="tv-tabs">
+      <button type="button" class="tv-tab active" data-room-tab="tasks"><i class="fas fa-list-check mr-2"></i>Tasks</button>
+      <button type="button" class="tv-tab" data-room-tab="scoreboard"><i class="fas fa-trophy mr-2"></i>Scoreboard</button>
+    </nav>
+
+    <div id="tasks-panel" data-room-panel="tasks">
+      {% for challenge in challenges %}
+      <div class="challenge-card {% if challenge.solved %}solved{% endif %}" id="chal-{{ challenge.id }}" data-challenge-id="{{ challenge.id }}">
+        <div class="d-flex flex-wrap justify-content-between align-items-start">
+          <div class="pr-md-4" style="min-width:220px;flex:1;">
+            <div class="chal-title">{{ loop.index }}. {{ challenge.title }}</div>
+            <div class="chal-desc">{{ challenge.question or challenge.description }}</div>
+          </div>
+          <div class="d-flex align-items-center mt-3 mt-md-0" style="gap:.5rem;">
+            <span class="thm-badge-pts meta-pill">{{ challenge.points }} pts</span>
+            {% set cdiff = challenge.difficulty | lower %}
+            {% if cdiff == 'easy' or cdiff == 'facile' %}
+              <span class="thm-badge-easy meta-pill">Easy</span>
+            {% elif cdiff == 'medium' or cdiff == 'intermediaire' %}
+              <span class="thm-badge-medium meta-pill">Medium</span>
+            {% elif cdiff == 'hard' or cdiff == 'difficile' %}
+              <span class="thm-badge-hard meta-pill">Hard</span>
+            {% else %}
+              <span class="meta-pill">{{ challenge.difficulty }}</span>
+            {% endif %}
+          </div>
         </div>
-        <div class="d-flex flex-column align-items-end ml-3">
-          <span class="thm-badge-pts meta-pill mb-1">{{ challenge.value }} pts</span>
-          {% set cdiff = challenge.difficulty | lower %}
-          {% if cdiff == 'easy' or cdiff == 'facile' %}
-            <span class="thm-badge-easy meta-pill" style="font-size:.75rem;">Easy</span>
-          {% elif cdiff == 'medium' or cdiff == 'intermediaire' %}
-            <span class="thm-badge-medium meta-pill" style="font-size:.75rem;">Medium</span>
-          {% elif cdiff == 'hard' or cdiff == 'difficile' %}
-            <span class="thm-badge-hard meta-pill" style="font-size:.75rem;">Hard</span>
-          {% else %}
-            <span class="meta-pill" style="font-size:.75rem;">{{ challenge.difficulty }}</span>
-          {% endif %}
-        </div>
+
+        {% if challenge.solved %}
+          <div class="solved-tag mt-3"><i class="fas fa-check-circle mr-1"></i>Solved</div>
+        {% else %}
+          <div class="mt-3 d-flex flex-wrap" style="gap:8px;">
+            <input type="text" class="form-control thm-input flag-input" placeholder="Enter flag..." data-id="{{ challenge.id }}" autocomplete="off" style="max-width:460px;" />
+            <button class="btn thm-btn-green submit-btn" data-id="{{ challenge.id }}">Submit</button>
+          </div>
+          <div class="wrong-msg d-none" id="err-{{ challenge.id }}"></div>
+          <div class="correct-msg d-none" id="ok-{{ challenge.id }}"><i class="fas fa-check-circle mr-1"></i>Correct! +{{ challenge.points }} pts</div>
+        {% endif %}
       </div>
+      {% endfor %}
+    </div>
 
-      {% if challenge.solved %}
-        <div class="solved-tag mt-2">&#10003; Solved</div>
-      {% else %}
-        <div class="mt-3 d-flex" style="gap:8px;">
-          <input type="text" class="form-control thm-input flag-input" placeholder="Enter flag..." data-id="{{ challenge.id }}" autocomplete="off" style="max-width:420px;" />
-          <button class="btn thm-btn-green submit-btn" data-id="{{ challenge.id }}">Submit</button>
+    <div class="tv-scoreboard d-none" id="scoreboard-panel" data-room-panel="scoreboard">
+      <h3 class="tv-scoreboard-title">Scoreboard</h3>
+      <p class="tv-scoreboard-sub">Users who completed every flag in this CTF room.</p>
+
+      {% if completed_users %}
+        <div class="table-responsive">
+          <table class="tv-score-table">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>User</th>
+                <th>Flags</th>
+                <th>Completed At</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for player in completed_users %}
+                <tr>
+                  <td class="tv-rank">#{{ player.rank }}</td>
+                  <td>
+                    <a href="{{ url_for('users.public', user_id=player.id) }}">{{ player.name }}</a>
+                  </td>
+                  <td>{{ player.solve_count }}/{{ total_count }}</td>
+                  <td>{{ player.completed_at.strftime('%Y-%m-%d %H:%M') if player.completed_at else '-' }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
         </div>
-        <div class="wrong-msg d-none" id="err-{{ challenge.id }}"></div>
-        <div class="correct-msg d-none" id="ok-{{ challenge.id }}">&#10003; Correct! +{{ challenge.value }} pts</div>
+      {% else %}
+        <div class="tv-empty-score">No user has completed this room yet.</div>
       {% endif %}
     </div>
-    {% endfor %}
   </div>
-</div>
+</section>
 {% endblock %}
 
 {% block scripts %}
@@ -144,7 +276,7 @@
   var startBtn     = document.getElementById("start-btn");
   var terminateBtn = document.getElementById("terminate-btn");
   var copyIpBtn    = document.getElementById("copy-ip-btn");
-  var ipBlock      = document.getElementById("ip-block");
+  var activePanel  = document.getElementById("machine-active-panel");
   var ipDisplay    = document.getElementById("ip-display");
   var copyFeedback = document.getElementById("copy-feedback");
   var statusDot    = document.getElementById("status-dot");
@@ -161,24 +293,45 @@
     requestAnimationFrame(function () { progressBar.style.width = target + "%"; });
   }
 
+  document.querySelectorAll("[data-room-tab]").forEach(function (tab) {
+    tab.addEventListener("click", function () {
+      var target = tab.getAttribute("data-room-tab");
+
+      document.querySelectorAll("[data-room-tab]").forEach(function (item) {
+        item.classList.toggle("active", item === tab);
+      });
+
+      document.querySelectorAll("[data-room-panel]").forEach(function (panel) {
+        panel.classList.toggle("d-none", panel.getAttribute("data-room-panel") !== target);
+      });
+    });
+  });
+
   function pad(n) { return String(n).padStart(2, "0"); }
   function fmtTime(s) { return pad(Math.floor(s / 60)) + ":" + pad(s % 60); }
+  function randomIp() {
+    return [
+      10,
+      Math.floor(Math.random() * 256),
+      Math.floor(Math.random() * 256),
+      Math.floor(Math.random() * 254) + 1
+    ].join(".");
+  }
 
   function setActive(active) {
     if (active) {
       statusDot.classList.add("active");
       statusText.textContent = "Machine On";
-      startBtn.disabled     = true;
-      terminateBtn.disabled = false;
-      copyIpBtn.disabled    = false;
-      ipBlock.classList.remove("d-none");
+      startBtn.classList.add("d-none");
+      activePanel.classList.remove("d-none");
     } else {
       statusDot.classList.remove("active");
       statusText.textContent = "Machine Off";
-      startBtn.disabled     = false;
-      terminateBtn.disabled = true;
-      copyIpBtn.disabled    = true;
-      ipBlock.classList.add("d-none");
+      startBtn.disabled = false;
+      startBtn.classList.remove("d-none");
+      activePanel.classList.add("d-none");
+      ipDisplay.textContent = "--.--.--.--";
+      copyFeedback.style.display = "none";
       timerEl.textContent = "--:--";
     }
   }
@@ -201,6 +354,9 @@
   startBtn.addEventListener("click", function () {
     startBtn.disabled = true;
     startBtn.textContent = "Starting...";
+    ipDisplay.textContent = randomIp();
+    setActive(true);
+    startCountdown({{ room.duration | int }} * 60);
     fetch("/api/room-instances/start/" + ROOM_SLUG, {
       method: "POST",
       headers: { "Content-Type": "application/json", "CSRF-Token": csrfToken }
@@ -209,15 +365,12 @@
     .then(function (data) {
       startBtn.textContent = "Start Machine";
       if (data.success) {
-        var ip = data.ip || data.machine_ip || "15.237.60.47";
-        ipDisplay.textContent = ip;
-        setActive(true);
-        startCountdown((data.duration_minutes || 45) * 60);
+        startCountdown((data.duration_minutes || {{ room.duration | int }}) * 60);
       } else {
         startBtn.disabled = false;
       }
     })
-    .catch(function () { startBtn.disabled = false; startBtn.textContent = "Start Machine"; });
+    .catch(function () { startBtn.textContent = "Start Machine"; });
   });
 
   terminateBtn.addEventListener("click", function () {
@@ -231,7 +384,7 @@
 
   copyIpBtn.addEventListener("click", function () {
     var ip = ipDisplay.textContent;
-    if (navigator.clipboard) {
+    if (navigator.clipboard && ip !== "--.--.--.--") {
       navigator.clipboard.writeText(ip).then(function () {
         copyFeedback.style.display = "inline";
         setTimeout(function () { copyFeedback.style.display = "none"; }, 2000);
@@ -273,9 +426,9 @@
           var total     = allCards.length;
           var pct       = total ? Math.round(solvedCount / total * 100) : 0;
           progressBar.style.width = pct + "%";
-          var progLabel = document.querySelector(".thm-progress-wrap").previousElementSibling;
+          var progLabel = progressBar.querySelector("span");
           if (progLabel) {
-            progLabel.querySelector("span:last-child").textContent = solvedCount + "/" + total + " (" + pct + "%)";
+            progLabel.textContent = solvedCount + "/" + total + " completed (" + pct + "%)";
           }
         } else {
           var errEl = document.getElementById("err-" + id);

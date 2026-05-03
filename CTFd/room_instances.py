@@ -25,9 +25,14 @@ ROOM_MAPPING = {
 def get_room_category(room_slug):
     """Convert room slug to category name."""
     category = ROOM_MAPPING.get(room_slug)
-    if not category:
-        return None
-    return category
+    if category:
+        return category
+
+    room = Rooms.query.filter_by(slug=room_slug, is_active=True).first()
+    if room:
+        return room.slug
+
+    return None
 
 
 @room_instances.route("/start/<room_slug>", methods=["POST"])
