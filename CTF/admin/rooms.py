@@ -1,9 +1,10 @@
 """Admin routes for room and room-challenge management."""
 
-import os
+import json
 import re
 import uuid
 
+import requests
 from flask import current_app, flash, redirect, render_template, request, url_for
 from werkzeug.utils import secure_filename
 
@@ -11,25 +12,78 @@ from CTFd.admin import admin
 from CTFd.models import RoomChallenge, Rooms, db
 from CTFd.utils.decorators import admins_only
 
+OVA_UPLOAD_API_URL = (
+    "https://5b5s89lx86.execute-api.eu-west-3.amazonaws.com/dev/UploadFileAPI"
+)
+
 
 def _slugify(value):
     value = (value or "").strip().lower()
     return re.sub(r"[^a-z0-9]+", "-", value).strip("-")
 
 
-def _save_ova_file(file_storage, slug):
+def _extract_upload_location(response_json, fallback_name):
+    if not isinstance(response_json, dict):
+        return fallback_name
+
+    for key in ("url", "file_url", "fileUrl", "location", "Location"):
+        value = response_json.get(key)
+        if value:
+            return value
+
+    for key in ("key", "file_key", "fileKey", "filename", "fileName"):
+        value = response_json.get(key)
+        if value:
+            return value
+
+    data = response_json.get("data")
+    if isinstance(data, dict):
+        return _extract_upload_location(data, fallback_name)
+
+    body = response_json.get("body")
+    if isinstance(body, dict):
+        return _extract_upload_location(body, fallback_name)
+    if isinstance(body, str) and body.strip():
+        try:
+            return _extract_upload_location(json.loads(body), fallback_name)
+        except ValueError:
+            return body.strip()
+
+    return fallback_name
+
+
+def _upload_ova_file(file_storage, slug):
     filename = secure_filename(file_storage.filename or "")
     if not filename.lower().endswith(".ova"):
         raise ValueError("Only .ova files are allowed.")
 
-    upload_root = current_app.config.get("UPLOAD_FOLDER")
-    ova_dir = os.path.join(upload_root, "ctf_ovas")
-    os.makedirs(ova_dir, exist_ok=True)
-
     unique_name = f"{slug}-{uuid.uuid4().hex[:8]}.ova"
-    full_path = os.path.join(ova_dir, unique_name)
-    file_storage.save(full_path)
-    return os.path.join("ctf_ovas", unique_name).replace("\\", "/")
+    upload_url = current_app.config.get("OVA_UPLOAD_API_URL", OVA_UPLOAD_API_URL)
+    file_storage.stream.seek(0)
+
+    try:
+        response = requests.post(
+            upload_url,
+            files={
+                "file": (
+                    unique_name,
+                    file_storage.stream,
+                    file_storage.mimetype or "application/octet-stream",
+                )
+            },
+            data={"filename": unique_name},
+            timeout=120,
+        )
+        response.raise_for_status()
+    except requests.RequestException as e:
+        raise ValueError(f"OVA upload failed: {e}") from e
+
+    try:
+        response_json = response.json()
+    except ValueError:
+        return response.text.strip() or unique_name
+
+    return _extract_upload_location(response_json, unique_name)
 
 
 @admin.route("/admin/create-ctf", methods=["GET", "POST"])
@@ -41,6 +95,7 @@ def create_ctf():
         difficulty = request.form.get("difficulty", "Easy")
         duration = request.form.get("duration", 30)
         ova_file = request.files.get("ova_image")
+        ova_location = request.form.get("ova_location", "").strip()
 
         titles = request.form.getlist("flag_title[]")
         questions = request.form.getlist("flag_question[]")
@@ -51,7 +106,7 @@ def create_ctf():
             flash("CTF name is required.", "error")
             return render_template("admin/create_ctf.html")
 
-        if not ova_file or not ova_file.filename:
+        if not ova_location and (not ova_file or not ova_file.filename):
             flash("Drop Your OVA Image is required.", "error")
             return render_template("admin/create_ctf.html")
 
@@ -91,11 +146,12 @@ def create_ctf():
         except (ValueError, TypeError):
             duration = 30
 
-        try:
-            ova_location = _save_ova_file(ova_file, slug)
-        except ValueError as e:
-            flash(str(e), "error")
-            return render_template("admin/create_ctf.html")
+        if not ova_location:
+            try:
+                ova_location = _upload_ova_file(ova_file, slug)
+            except ValueError as e:
+                flash(str(e), "error")
+                return render_template("admin/create_ctf.html")
 
         room_description = description
         if ova_location:
