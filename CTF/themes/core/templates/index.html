@@ -1,0 +1,353 @@
+{% extends "base.html" %}
+
+{% block stylesheets %}
+{{ super() }}
+<style>
+  :root {
+    --cyan: #00d4ff;
+    --violet: #7b2ff7;
+    --green: #00ff88;
+    --bg-dark: #0a0e1a;
+    --card-bg: #111827;
+    --text: #e2e8f0;
+  }
+
+  body { background: var(--bg-dark) !important; color: var(--text); }
+
+  /* ── Hero ── */
+  .tv-hero {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    overflow: hidden;
+    padding-top: 56px;
+  }
+
+  #matrix-canvas {
+    position: absolute;
+    inset: 0;
+    opacity: .12;
+    pointer-events: none;
+  }
+
+  .tv-hero-content { position: relative; z-index: 2; padding: 0 1rem; }
+
+  .tv-badge {
+    display: inline-block;
+    background: rgba(0,212,255,.1);
+    border: 1px solid rgba(0,212,255,.3);
+    border-radius: 20px;
+    color: var(--cyan);
+    font-size: .8rem;
+    letter-spacing: .12em;
+    padding: .35rem .9rem;
+    margin-bottom: 1.5rem;
+    text-transform: uppercase;
+  }
+
+  .tv-hero-title {
+    font-size: clamp(2.2rem, 6vw, 4.5rem);
+    font-weight: 900;
+    line-height: 1.1;
+    letter-spacing: -.02em;
+    margin-bottom: 1.5rem;
+    text-transform: uppercase;
+  }
+
+  .tv-word-hack   { color: var(--cyan); }
+  .tv-word-learn  { color: var(--violet); }
+  .tv-word-conquer{ background: linear-gradient(135deg, var(--green), #00bfff);
+                    -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+  .tv-hero-sub {
+    color: #94a3b8;
+    font-size: 1.15rem;
+    max-width: 520px;
+    margin: 0 auto 2.5rem;
+    line-height: 1.6;
+  }
+
+  .tv-cta-group { display: flex; gap: .9rem; justify-content: center; flex-wrap: wrap; margin-bottom: 3.5rem; }
+
+  .tv-btn-primary {
+    background: linear-gradient(135deg, var(--cyan), var(--violet));
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-weight: 700;
+    padding: .75rem 2rem;
+    text-decoration: none;
+    transition: opacity .2s, transform .2s;
+    font-size: .97rem;
+  }
+  .tv-btn-primary:hover { opacity: .88; transform: translateY(-2px); color: #fff; text-decoration: none; }
+
+  .tv-btn-outline {
+    background: transparent;
+    border: 2px solid rgba(123,47,247,.5);
+    border-radius: 8px;
+    color: var(--violet);
+    font-weight: 700;
+    padding: .75rem 2rem;
+    text-decoration: none;
+    transition: background .2s, color .2s, transform .2s;
+    font-size: .97rem;
+  }
+  .tv-btn-outline:hover { background: rgba(123,47,247,.15); color: #c084fc; transform: translateY(-2px); text-decoration: none; }
+
+  /* ── Stats bar ── */
+  .tv-stats {
+    display: flex;
+    gap: 2.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    padding: 2rem 1rem;
+    background: rgba(17,24,39,.6);
+    border-top: 1px solid rgba(255,255,255,.05);
+    border-bottom: 1px solid rgba(255,255,255,.05);
+  }
+  .tv-stat { text-align: center; }
+  .tv-stat-number { font-size: 2rem; font-weight: 800; color: var(--cyan); line-height: 1; }
+  .tv-stat-label  { color: #64748b; font-size: .82rem; margin-top: .25rem; text-transform: uppercase; letter-spacing: .08em; }
+
+  /* ── Feature cards ── */
+  .tv-section { padding: 5rem 0; }
+  .tv-section-title { font-size: 1.8rem; font-weight: 800; color: #f1f5f9; margin-bottom: .6rem; }
+  .tv-section-sub   { color: #64748b; margin-bottom: 3rem; font-size: 1rem; }
+
+  .tv-card {
+    background: var(--card-bg);
+    border: 1px solid rgba(255,255,255,.06);
+    border-radius: 14px;
+    padding: 1.75rem;
+    height: 100%;
+    transition: border-color .25s, transform .25s;
+  }
+  .tv-card:hover { border-color: rgba(0,212,255,.3); transform: translateY(-4px); }
+  .tv-card-icon { font-size: 2rem; margin-bottom: 1rem; }
+  .tv-card-title { color: #f1f5f9; font-weight: 700; font-size: 1.05rem; margin-bottom: .5rem; }
+  .tv-card-text  { color: #64748b; font-size: .9rem; line-height: 1.6; }
+
+  /* ── Category pills ── */
+  .tv-category-grid { display: flex; flex-wrap: wrap; gap: .75rem; justify-content: center; }
+  .tv-cat {
+    padding: .55rem 1.25rem;
+    border-radius: 30px;
+    font-size: .88rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: opacity .2s, transform .2s;
+    display: inline-block;
+  }
+  .tv-cat:hover { opacity: .8; transform: translateY(-2px); text-decoration: none; }
+  .tv-cat-web      { background: rgba(0,212,255,.15); color: var(--cyan);   border: 1px solid rgba(0,212,255,.3); }
+  .tv-cat-crypto   { background: rgba(123,47,247,.15); color: #c084fc;       border: 1px solid rgba(123,47,247,.3); }
+  .tv-cat-reverse  { background: rgba(0,255,136,.12); color: var(--green);   border: 1px solid rgba(0,255,136,.3); }
+  .tv-cat-pwn      { background: rgba(239,68,68,.12);  color: #f87171;       border: 1px solid rgba(239,68,68,.3); }
+  .tv-cat-forensics{ background: rgba(251,191,36,.12); color: #fbbf24;       border: 1px solid rgba(251,191,36,.3); }
+  .tv-cat-misc     { background: rgba(148,163,184,.1); color: #94a3b8;       border: 1px solid rgba(148,163,184,.3); }
+
+  /* ── Footer bar ── */
+  footer.footer { background: rgba(10,14,26,.8); border-top: 1px solid rgba(255,255,255,.05); }
+
+  /* Typed cursor blink */
+  .tv-cursor { animation: blink 1s step-end infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- ══════════ HERO ══════════ -->
+<section class="tv-hero">
+  <canvas id="matrix-canvas"></canvas>
+  <div class="tv-hero-content">
+    <div class="tv-badge">&#x26A1; DevSecOps CTF Platform</div>
+
+    <h1 class="tv-hero-title">
+      <span class="tv-word-hack">HACK</span><span style="color:#475569;">.</span>
+      <span class="tv-word-learn">LEARN</span><span style="color:#475569;">.</span>
+      <span class="tv-word-conquer">CONQUER</span><span class="tv-cursor" style="color:var(--cyan);">_</span>
+    </h1>
+
+    <p class="tv-hero-sub">
+      Sharpen your skills with real-world security challenges.
+      From web exploits to reverse engineering — master them all.
+    </p>
+
+    <div class="tv-cta-group">
+      <a href="{{ url_for('challenges.listing') }}" class="tv-btn-primary">
+        &#127922; Start Hacking
+      </a>
+      <a href="{{ url_for('rooms.rooms_listing') }}" class="tv-btn-outline">
+        &#127306; Browse Rooms
+      </a>
+    </div>
+
+    <!-- Live stats -->
+    <div class="d-flex gap-4 justify-content-center flex-wrap" style="font-size:.82rem;color:#475569;">
+      <span>&#128994; Platform Online</span>
+      <span>&#128274; TLS Secured</span>
+      <span>&#9203; 24/7 Available</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ STATS BAR ══════════ -->
+<div class="tv-stats">
+  <div class="tv-stat">
+    <div class="tv-stat-number" id="stat-challenges">{{ stats.challenges }}</div>
+    <div class="tv-stat-label">Challenges</div>
+  </div>
+  <div class="tv-stat">
+    <div class="tv-stat-number" id="stat-rooms">{{ stats.rooms }}</div>
+    <div class="tv-stat-label">Rooms</div>
+  </div>
+  <div class="tv-stat">
+    <div class="tv-stat-number" id="stat-players">{{ stats.players }}</div>
+    <div class="tv-stat-label">Players</div>
+  </div>
+  <div class="tv-stat">
+    <div class="tv-stat-number" id="stat-solves">{{ stats.solves }}</div>
+    <div class="tv-stat-label">Total Solves</div>
+  </div>
+</div>
+
+<!-- ══════════ FEATURES ══════════ -->
+<section class="tv-section">
+  <div class="container">
+    <div class="text-center">
+      <h2 class="tv-section-title">Why Teck-Vision?</h2>
+      <p class="tv-section-sub">A full-featured platform built for learning by doing.</p>
+    </div>
+    <div class="row g-4">
+      <div class="col-sm-6 col-lg-3">
+        <div class="tv-card">
+          <div class="tv-card-icon">&#127981;</div>
+          <div class="tv-card-title">Guided Rooms</div>
+          <div class="tv-card-text">Launch isolated VMs, complete guided tasks, and submit flags in real time.</div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-lg-3">
+        <div class="tv-card">
+          <div class="tv-card-icon">&#9874;&#65039;</div>
+          <div class="tv-card-title">Dynamic Scoring</div>
+          <div class="tv-card-text">Points decrease as more players solve a challenge — first blood is worth more.</div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-lg-3">
+        <div class="tv-card">
+          <div class="tv-card-icon">&#128101;</div>
+          <div class="tv-card-title">Team Mode</div>
+          <div class="tv-card-text">Compete solo or form teams. Collaborate, share strategies, and climb the leaderboard.</div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-lg-3">
+        <div class="tv-card">
+          <div class="tv-card-icon">&#128202;</div>
+          <div class="tv-card-title">Live Scoreboard</div>
+          <div class="tv-card-text">Real-time rankings with score progression graphs powered by Chart.js.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ CATEGORIES ══════════ -->
+<section class="tv-section" style="padding-top:0;">
+  <div class="container text-center">
+    <h2 class="tv-section-title">Challenge Categories</h2>
+    <p class="tv-section-sub">Pick your battlefield.</p>
+    <div class="tv-category-grid">
+      <a href="{{ url_for('challenges.listing') }}" class="tv-cat tv-cat-web">&#127760; Web</a>
+      <a href="{{ url_for('challenges.listing') }}" class="tv-cat tv-cat-crypto">&#128272; Cryptography</a>
+      <a href="{{ url_for('challenges.listing') }}" class="tv-cat tv-cat-reverse">&#128295; Reverse Engineering</a>
+      <a href="{{ url_for('challenges.listing') }}" class="tv-cat tv-cat-pwn">&#128163; Binary Exploitation</a>
+      <a href="{{ url_for('challenges.listing') }}" class="tv-cat tv-cat-forensics">&#128269; Forensics</a>
+      <a href="{{ url_for('challenges.listing') }}" class="tv-cat tv-cat-misc">&#127381; Misc</a>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ CTA BOTTOM ══════════ -->
+<section class="tv-section" style="padding-top:0;">
+  <div class="container text-center">
+    <div style="background:var(--card-bg);border:1px solid rgba(0,212,255,.15);border-radius:16px;padding:3rem 2rem;max-width:640px;margin:auto;">
+      <h2 style="color:#f1f5f9;font-weight:800;font-size:1.8rem;margin-bottom:.6rem;">Ready to start?</h2>
+      <p style="color:#64748b;margin-bottom:2rem;">Create a free account and join the competition.</p>
+      {% if not authed() %}
+        <a href="{{ url_for('auth.register') }}" class="tv-btn-primary" style="margin-right:.75rem;">
+          &#128100; Register Now
+        </a>
+        <a href="{{ url_for('auth.login') }}" class="tv-btn-outline">Login</a>
+      {% else %}
+        <a href="{{ url_for('challenges.listing') }}" class="tv-btn-primary">Go to Challenges &#8594;</a>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+(function () {
+  /* ── Matrix rain canvas ── */
+  var canvas = document.getElementById("matrix-canvas");
+  var ctx    = canvas.getContext("2d");
+  var chars  = "01アイウエオカキクケコサシスセソタチツテトナニヌネノ</>{}[]";
+  var cols, drops;
+
+  function resize() {
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+    cols  = Math.floor(canvas.width / 18);
+    drops = Array.from({length: cols}, function () { return Math.random() * -50 | 0; });
+  }
+
+  function draw() {
+    ctx.fillStyle = "rgba(10,14,26,.08)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#00d4ff";
+    ctx.font = "13px monospace";
+    for (var i = 0; i < drops.length; i++) {
+      var ch = chars[Math.random() * chars.length | 0];
+      ctx.fillText(ch, i * 18, drops[i] * 18);
+      if (drops[i] * 18 > canvas.height && Math.random() > .975) drops[i] = 0;
+      drops[i]++;
+    }
+  }
+
+  resize();
+  window.addEventListener("resize", resize);
+  setInterval(draw, 55);
+
+  /* ── Count-up animation for stats ── */
+  function animateCount(el, target) {
+    var start = 0;
+    var step  = Math.ceil(target / 60);
+    var timer = setInterval(function () {
+      start = Math.min(start + step, target);
+      el.textContent = start;
+      if (start >= target) clearInterval(timer);
+    }, 20);
+  }
+
+  var observed = false;
+  var statsSection = document.querySelector(".tv-stats");
+  if (statsSection && "IntersectionObserver" in window) {
+    new IntersectionObserver(function (entries) {
+      if (entries[0].isIntersecting && !observed) {
+        observed = true;
+        ["stat-challenges","stat-rooms","stat-players","stat-solves"].forEach(function (id) {
+          var el = document.getElementById(id);
+          if (el) animateCount(el, parseInt(el.textContent) || 0);
+        });
+      }
+    }, {threshold: .3}).observe(statsSection);
+  }
+})();
+</script>
+{% endblock %}
