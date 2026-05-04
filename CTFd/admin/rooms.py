@@ -51,9 +51,7 @@ def create_ctf():
             flash("CTF name is required.", "error")
             return render_template("admin/create_ctf.html")
 
-        if not ova_file or not ova_file.filename:
-            flash("Drop Your OVA Image is required.", "error")
-            return render_template("admin/create_ctf.html")
+
 
         flag_rows = []
         for index, answer in enumerate(answers):
@@ -91,11 +89,13 @@ def create_ctf():
         except (ValueError, TypeError):
             duration = 30
 
-        try:
-            ova_location = _save_ova_file(ova_file, slug)
-        except ValueError as e:
-            flash(str(e), "error")
-            return render_template("admin/create_ctf.html")
+        ova_location = None
+        if ova_file and ova_file.filename:
+            try:
+                ova_location = _save_ova_file(ova_file, slug)
+            except ValueError as e:
+                flash(str(e), "error")
+                return render_template("admin/create_ctf.html")
 
         room_description = description
         if ova_location:
