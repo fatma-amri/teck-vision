@@ -1,0 +1,10 @@
+[
+  {
+    "Description": "Ready OVA",
+    "Format": "ova",
+    "UserBucket": {
+      "S3Bucket": "test-ctf-machine1",
+      "S3Key": "Ready.ova"
+    }
+  }
+]

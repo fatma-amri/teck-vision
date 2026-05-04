@@ -1,0 +1,27 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": [
+        "s3:GetBucketLocation",
+        "s3:GetObject",
+        "s3:ListBucket"
+      ],
+      "Effect": "Allow",
+      "Resource": [
+        "arn:aws:s3:::ctf-tekup",
+        "arn:aws:s3:::ctf-tekup/*"
+      ]
+    },
+    {
+      "Action": [
+        "ec2:ModifySnapshotAttribute",
+        "ec2:CopySnapshot",
+        "ec2:RegisterImage",
+        "ec2:Describe*"
+      ],
+      "Effect": "Allow",
+      "Resource": "*"
+    }
+  ]
+}
