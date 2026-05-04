@@ -9,9 +9,12 @@ services:
       - "8000:8000"
     environment:
       - UPLOAD_FOLDER=/var/uploads
-      - DATABASE_URL=mysql+pymysql://teck_vision:teck_vision@db/teck_vision
-      - REDIS_URL=redis://cache:6379
-      - WORKERS=1
+      # Host/env overrides (Elastic Beanstalk exports these before `docker compose up`).
+      # Local fallback keeps MariaDB + Redis containers working without exporting vars.
+      - DATABASE_URL=${DATABASE_URL:-mysql+pymysql://teck_vision:teck_vision@db/teck_vision}
+      - REDIS_URL=${REDIS_URL:-redis://cache:6379}
+      - SECRET_KEY=${SECRET_KEY:-}
+      - WORKERS=${WORKERS:-1}
       - LOG_FOLDER=/var/log/teck-vision
       - ACCESS_LOG=-
       - ERROR_LOG=-
@@ -19,7 +22,9 @@ services:
     volumes:
       - .data/teck-vision/logs:/var/log/teck-vision
       - .data/teck-vision/uploads:/var/uploads
-      - .:/opt/teck-vision:ro
+      # Do NOT bind-mount source over /opt/teck-vision on Elastic Beanstalk: the deploy dir is often
+      # read-only at the host level, which breaks `.ctfd_secret_key` + filesystem cache writes.
+      # Code comes from the built image; override this locally via docker-compose.override.yml if needed.
     depends_on:
       - db
     networks:
@@ -32,7 +37,9 @@ services:
     volumes:
       - ./conf/nginx/http.conf:/etc/nginx/nginx.conf
     ports:
-      - 8080:80
+      # Elastic Beanstalk forwards ALB traffic to instance port 80 (process default).
+      # Mapping nginx here avoids “healthy container but 502 from ELB” when nginx only listens on 8080.
+      - "80:80"
     depends_on:
       - teck-vision
 
