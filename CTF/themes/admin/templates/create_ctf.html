@@ -1,0 +1,170 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+<div class="jumbotron">
+  <div class="container">
+    <h1>Create CTF</h1>
+  </div>
+</div>
+
+<div class="container">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible" role="alert">
+        <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endwith %}
+
+  <form method="POST" action="{{ url_for('admin.create_ctf') }}" enctype="multipart/form-data">
+    <input type="hidden" name="nonce" value="{{ Session.nonce }}">
+
+    <div class="row">
+      <div class="col-lg-7">
+        <div class="form-group">
+          <label>CTF Name <span class="text-danger">*</span></label>
+          <input type="text" name="name" class="form-control" required placeholder="e.g. Web Exploitation Lab">
+          <small class="form-text text-muted">This will create a room for players.</small>
+        </div>
+
+        <div class="form-group">
+          <label>Description</label>
+          <textarea name="description" class="form-control" rows="4" placeholder="Context, scenario, or instructions for this CTF."></textarea>
+        </div>
+
+        <div class="row">
+          <div class="col-md-6 form-group">
+            <label>Difficulty</label>
+            <select name="difficulty" class="form-control">
+              <option value="Easy">Easy</option>
+              <option value="Medium">Medium</option>
+              <option value="Hard">Hard</option>
+            </select>
+          </div>
+          <div class="col-md-6 form-group">
+            <label>Duration (minutes)</label>
+            <input type="number" name="duration" class="form-control" value="30" min="5" max="480">
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-5">
+        <div class="form-group">
+          <label>OVA Image <span class="text-danger">*</span></label>
+          <label id="ova-drop-zone" class="d-flex flex-column align-items-center justify-content-center border rounded p-5 text-center bg-light" for="ova-image-input">
+            <i class="fas fa-cloud-upload-alt fa-3x mb-3 text-primary"></i>
+            <strong>Drop Your OVA Image</strong>
+            <span id="ova-file-name" class="text-muted mt-2">or click to choose a .ova file</span>
+          </label>
+          <input id="ova-image-input" type="file" name="ova_image" class="d-none" accept=".ova" required>
+        </div>
+      </div>
+    </div>
+
+    <hr>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h4 class="mb-0">Flags</h4>
+      <button type="button" id="add-flag" class="btn btn-sm btn-outline-success">
+        <i class="fas fa-plus-circle"></i> Add Flag
+      </button>
+    </div>
+
+    <div id="flags-list">
+      <div class="flag-row border rounded p-3 mb-3">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <strong>Flag</strong>
+          <button type="button" class="btn btn-sm btn-outline-danger remove-flag">
+            <i class="fas fa-trash-alt"></i>
+          </button>
+        </div>
+        <div class="row">
+          <div class="col-md-4 form-group">
+            <label>Title</label>
+            <input type="text" name="flag_title[]" class="form-control" placeholder="e.g. User Flag">
+          </div>
+          <div class="col-md-2 form-group">
+            <label>Points</label>
+            <input type="number" name="flag_points[]" class="form-control" value="100" min="1">
+          </div>
+          <div class="col-md-6 form-group">
+            <label>Correct Flag <span class="text-danger">*</span></label>
+            <input type="text" name="flag_answer[]" class="form-control" required placeholder="TECK{example_flag}">
+          </div>
+        </div>
+        <div class="form-group mb-0">
+          <label>Question</label>
+          <textarea name="flag_question[]" class="form-control" rows="2" placeholder="What should the player find?"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-success">Create CTF</button>
+    <a href="{{ url_for('admin.rooms_listing') }}" class="btn btn-secondary ml-2">Cancel</a>
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const input = document.getElementById("ova-image-input");
+  const dropZone = document.getElementById("ova-drop-zone");
+  const fileName = document.getElementById("ova-file-name");
+  const flagsList = document.getElementById("flags-list");
+  const addFlag = document.getElementById("add-flag");
+
+  function setFile(files) {
+    if (!files || !files.length) {
+      return;
+    }
+    input.files = files;
+    fileName.textContent = files[0].name;
+  }
+
+  input.addEventListener("change", function () {
+    if (input.files.length) {
+      fileName.textContent = input.files[0].name;
+    }
+  });
+
+  dropZone.addEventListener("dragover", function (event) {
+    event.preventDefault();
+    dropZone.classList.add("border-primary");
+  });
+
+  dropZone.addEventListener("dragleave", function () {
+    dropZone.classList.remove("border-primary");
+  });
+
+  dropZone.addEventListener("drop", function (event) {
+    event.preventDefault();
+    dropZone.classList.remove("border-primary");
+    setFile(event.dataTransfer.files);
+  });
+
+  addFlag.addEventListener("click", function () {
+    const row = flagsList.querySelector(".flag-row").cloneNode(true);
+    row.querySelectorAll("input, textarea").forEach(function (field) {
+      if (field.name === "flag_points[]") {
+        field.value = "100";
+      } else {
+        field.value = "";
+      }
+    });
+    flagsList.appendChild(row);
+  });
+
+  flagsList.addEventListener("click", function (event) {
+    const button = event.target.closest(".remove-flag");
+    if (!button) {
+      return;
+    }
+    if (flagsList.querySelectorAll(".flag-row").length > 1) {
+      button.closest(".flag-row").remove();
+    }
+  });
+});
+</script>
+{% endblock %}
