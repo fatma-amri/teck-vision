@@ -397,6 +397,7 @@ def static_html(route):
                 "challenges": Challenges.query.filter_by(state="visible").count(),
                 "rooms":      Rooms.query.count(),
                 "players":    UsersModel.query.filter_by(banned=False, hidden=False).count(),
+                "teams":      Teams.query.filter_by(banned=False, hidden=False).count(),
                 "solves":     Solves.query.count(),
             }
             return render_template("index.html", stats=stats)
