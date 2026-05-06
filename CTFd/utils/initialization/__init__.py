@@ -208,24 +208,6 @@ def init_request_processors(app):
         ):
             values["theme"] = ctf_theme()
 
-    @app.before_request
-    def needs_setup():
-        if import_in_progress():
-            if request.endpoint == "admin.import_ctf":
-                return
-            else:
-                return "Import currently in progress", 403
-        if is_setup() is False:
-            # Only the setup wizard and static asset endpoints bypass this check.
-            passthrough_endpoints = {
-                "views.setup",
-                "views.themes",
-                "views.healthcheck",
-                "health.healthcheck",
-            }
-            if request.endpoint in passthrough_endpoints:
-                return
-            return redirect(url_for("views.setup"))
 
     @app.before_request
     def tracker():
