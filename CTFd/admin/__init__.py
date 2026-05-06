@@ -36,7 +36,7 @@ from CTFd.cache import (
     clear_pages,
     clear_standings,
 )
-from CTFd.constants.config import DEFAULTS
+from CTFd.constants.options import DEFAULTS
 from CTFd.models import (
     Awards,
     Challenges,

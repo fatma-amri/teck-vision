@@ -7,7 +7,7 @@ from flask import current_app as app
 
 # isort:imports-firstparty
 from CTFd.cache import cache
-from CTFd.constants.config import DEFAULTS
+from CTFd.constants.options import DEFAULTS
 from CTFd.models import Configs, db
 
 string_types = (str,)
