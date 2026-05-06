@@ -2,11 +2,12 @@
 
 import logging
 
-from flask import Blueprint, abort, jsonify, request
+from flask import Blueprint, jsonify, request
+from sqlalchemy import or_
 
-from CTFd.models import RoomChallenge, RoomSolve, db
+from CTFd.models import Awards, RoomChallenge, RoomInstances, RoomSolve, db
 from CTFd.utils.decorators import authed_only
-from CTFd.utils.user import get_current_user
+from CTFd.utils.user import get_current_team, get_current_user
 
 logger = logging.getLogger(__name__)
 
@@ -23,11 +24,12 @@ def submit_room_flag(challenge_id):
     Returns JSON:
         200 {"success": true,  "message": "Correct!", "points": X}
         400 {"success": false, "message": "Wrong flag, try again"}
+        403 {"success": false, "message": "Start the machine first"}
         409 {"success": false, "message": "Already solved"}
     """
     user = get_current_user()
 
-    challenge = RoomChallenge.query.get(challenge_id)
+    challenge = db.session.get(RoomChallenge, challenge_id)
     if not challenge:
         return jsonify({"success": False, "message": "Challenge not found"}), 404
 
@@ -37,6 +39,31 @@ def submit_room_flag(challenge_id):
     ).first()
     if existing:
         return jsonify({"success": False, "message": "Already solved"}), 409
+
+    # Require an active machine for the room this challenge belongs to
+    room = challenge.room
+    team = get_current_team()
+    if team:
+        active_instance = RoomInstances.query.filter(
+            RoomInstances.is_active == True,
+            RoomInstances.team_id == team.id,
+            or_(
+                RoomInstances.category == room.slug,
+                RoomInstances.category == room.name,
+            ),
+        ).first()
+    else:
+        active_instance = RoomInstances.query.filter(
+            RoomInstances.is_active == True,
+            RoomInstances.user_id == user.id,
+            or_(
+                RoomInstances.category == room.slug,
+                RoomInstances.category == room.name,
+            ),
+        ).first()
+
+    if not active_instance:
+        return jsonify({"success": False, "message": "Start the machine first"}), 403
 
     data = request.get_json(silent=True) or {}
     submitted = (data.get("flag") or "").strip()
@@ -51,12 +78,22 @@ def submit_room_flag(challenge_id):
             user.id,
             submitted,
         )
-        return jsonify({"success": False, "message": "Wrong flag, try again"}), 200
+        return jsonify({"success": False, "message": "Wrong flag, try again"}), 400
 
-    # Correct flag — record solve
+    # Correct flag — record solve and award points on the scoreboard
     try:
         solve = RoomSolve(user_id=user.id, challenge_id=challenge_id)
         db.session.add(solve)
+
+        award = Awards(
+            user_id=user.id,
+            team_id=team.id if team else None,
+            name=challenge.title,
+            description=f"Solved in room: {room.name}",
+            value=challenge.points,
+            category=room.name,
+        )
+        db.session.add(award)
         db.session.commit()
     except Exception as exc:
         db.session.rollback()

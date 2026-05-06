@@ -126,6 +126,7 @@ class Challenges(db.Model):
     decay = db.Column(db.Integer, nullable=True)
     position = db.Column(db.Integer, nullable=False, default=0)
     function = db.Column(db.String(32), default="static")
+    room_id = db.Column(db.Integer, db.ForeignKey("rooms.id", ondelete="SET NULL"), nullable=True)
 
     requirements = db.Column(db.JSON)
 
@@ -1206,7 +1207,7 @@ class Rooms(db.Model):
     description = db.Column(db.Text, default="")
     difficulty = db.Column(db.String(32), default="Easy")
     duration = db.Column(db.Integer, default=30)  # minutes
-    target_ip = db.Column(db.String(45), default="15.237.60.47")
+    target_ip = db.Column(db.String(45), default=None, nullable=True)
     is_active = db.Column(db.Boolean, default=True)
 
     challenges = db.relationship(
@@ -1285,7 +1286,7 @@ class RoomInstances(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"))
     team_id = db.Column(db.Integer, db.ForeignKey("teams.id", ondelete="CASCADE"))
     category = db.Column(db.String(80), nullable=False)  # Room category/name
-    machine_ip = db.Column(db.String(15), default="15.237.60.47")  # Static IP
+    machine_ip = db.Column(db.String(45), default=None, nullable=True)
     is_active = db.Column(db.Boolean, default=False)
     started_at = db.Column(db.DateTime, nullable=True)
     expires_at = db.Column(db.DateTime, nullable=True)

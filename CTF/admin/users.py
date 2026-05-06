@@ -89,12 +89,8 @@ def users_detail(user_id):
 
     # Check if the user has an account (team or user)
     # so that we don't throw an error if they dont
-    if user.account:
-        score = user.account.get_score(admin=True)
-        place = user.account.get_place(admin=True)
-    else:
-        score = None
-        place = None
+    score = user.get_score(admin=True)
+    place = user.get_place(admin=True)
 
     return render_template(
         "admin/users/user.html",

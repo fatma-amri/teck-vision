@@ -41,7 +41,18 @@ def ctf_theme_candidates():
 
 
 def is_setup():
-    return bool(get_config("setup")) is True
+    # Bypass cache — query DB directly so a DB reset always shows the setup page.
+    try:
+        from CTFd.models import db
+        from CTFd.utils import _get_config as _cached
+        from sqlalchemy import text
+
+        row = db.session.execute(
+            text("SELECT value FROM config WHERE key = 'setup'")
+        ).fetchone()
+        return bool(row and row[0]) is True
+    except Exception:
+        return False
 
 
 def is_scoreboard_frozen():

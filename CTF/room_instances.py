@@ -23,11 +23,14 @@ ROOM_MAPPING = {
 
 
 def get_room_category(room_slug):
-    """Convert room slug to category name."""
+    """Convert room slug to category name, falling back to a DB lookup."""
     category = ROOM_MAPPING.get(room_slug)
-    if not category:
-        return None
-    return category
+    if category:
+        return category
+    room = Rooms.query.filter_by(slug=room_slug, is_active=True).first()
+    if room:
+        return room.slug
+    return None
 
 
 @room_instances.route("/start/<room_slug>", methods=["POST"])
@@ -59,13 +62,9 @@ def start_machine(room_slug):
         user_id=account_id if account_type == "user" else None,
     ).first()
     
-    # Resolve target IP: Room model > config fallback
+    # Use the room's target IP only if explicitly set — no fallback
     room_model = Rooms.query.filter_by(slug=room_slug).first()
-    machine_ip = (
-        room_model.target_ip
-        if room_model and room_model.target_ip
-        else current_app.config.get("CHALLENGE_TARGET_IP", "15.237.60.47")
-    )
+    machine_ip = room_model.target_ip if room_model and room_model.target_ip else None
 
     if existing:
         return jsonify({

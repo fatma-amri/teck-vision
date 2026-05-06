@@ -73,7 +73,7 @@
     <div class="mt-4">
       <div class="d-flex justify-content-between mb-1">
         <span style="font-size:.85rem;color:#adb5bd;">Progress</span>
-        <span style="font-size:.85rem;color:#e0e0e0;font-weight:600;">{{ solved_count }}/{{ total_count }} ({{ progress_percent }}%)</span>
+        <span id="progress-text" style="font-size:.85rem;color:#e0e0e0;font-weight:600;">{{ solved_count }}/{{ total_count }} ({{ progress_percent }}%)</span>
       </div>
       <div class="thm-progress-wrap">
         <div class="thm-progress-bar" id="progress-bar" style="width:0%;" data-target="{{ progress_percent }}"></div>
@@ -87,9 +87,9 @@
       <button class="btn thm-btn-grey px-4" id="copy-ip-btn" disabled>Copy IP</button>
     </div>
 
-    <!-- IP Display -->
+    <!-- IP Display (shown only when machine is active) -->
     <div class="ip-block p-3 mt-3 d-none" id="ip-block">
-      Target IP: <strong id="ip-display">{{ challenge_target_ip }}</strong>
+      Target IP: <strong id="ip-display"></strong>
       <span id="copy-feedback" class="ml-2" style="color:#1dd75f;font-size:.85rem;display:none;">Copied!</span>
     </div>
   </div>
@@ -104,7 +104,7 @@
           <div class="chal-desc mt-1">{{ challenge.question or challenge.description }}</div>
         </div>
         <div class="d-flex flex-column align-items-end ml-3">
-          <span class="thm-badge-pts meta-pill mb-1">{{ challenge.value }} pts</span>
+          <span class="thm-badge-pts meta-pill mb-1">{{ challenge.points }} pts</span>
           {% set cdiff = challenge.difficulty | lower %}
           {% if cdiff == 'easy' or cdiff == 'facile' %}
             <span class="thm-badge-easy meta-pill" style="font-size:.75rem;">Easy</span>
@@ -126,11 +126,42 @@
           <button class="btn thm-btn-green submit-btn" data-id="{{ challenge.id }}">Submit</button>
         </div>
         <div class="wrong-msg d-none" id="err-{{ challenge.id }}"></div>
-        <div class="correct-msg d-none" id="ok-{{ challenge.id }}">&#10003; Correct! +{{ challenge.value }} pts</div>
+        <div class="correct-msg d-none" id="ok-{{ challenge.id }}">&#10003; Correct! +{{ challenge.points }} pts</div>
       {% endif %}
     </div>
     {% endfor %}
   </div>
+
+  <!-- Linked CTFd Challenges -->
+  {% if linked_challenges %}
+  <div class="mt-4">
+    <div style="font-size:.85rem;color:#adb5bd;margin-bottom:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Linked Challenges</div>
+    {% for ch in linked_challenges %}
+    <div class="challenge-card p-4 mb-3 {% if ch.solved %}solved{% endif %}" id="ctfd-chal-{{ ch.id }}">
+      <div class="d-flex justify-content-between align-items-start mb-2">
+        <div>
+          <div class="chal-title">{{ ch.title }}</div>
+          {% if ch.description %}<div class="chal-desc mt-1">{{ ch.description }}</div>{% endif %}
+        </div>
+        <div class="d-flex flex-column align-items-end ml-3">
+          <span class="thm-badge-pts meta-pill mb-1">{{ ch.points }} pts</span>
+          {% if ch.category %}<span class="meta-pill" style="font-size:.75rem;">{{ ch.category }}</span>{% endif %}
+        </div>
+      </div>
+      {% if ch.solved %}
+        <div class="solved-tag mt-2">&#10003; Solved</div>
+      {% else %}
+        <div class="mt-3 d-flex" style="gap:8px;">
+          <input type="text" class="form-control thm-input ctfd-flag-input" placeholder="Enter flag..." data-id="{{ ch.id }}" autocomplete="off" style="max-width:420px;" />
+          <button class="btn thm-btn-green ctfd-submit-btn" data-id="{{ ch.id }}">Submit</button>
+        </div>
+        <div class="wrong-msg d-none" id="ctfd-err-{{ ch.id }}"></div>
+        <div class="correct-msg d-none" id="ctfd-ok-{{ ch.id }}">&#10003; Correct! +{{ ch.points }} pts</div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
 </div>
 {% endblock %}
 
@@ -151,6 +182,7 @@
   var statusText   = document.getElementById("status-text");
   var timerEl      = document.getElementById("countdown-timer");
   var progressBar  = document.getElementById("progress-bar");
+  var progressText = document.getElementById("progress-text");
 
   var countdownInterval = null;
   var remainingSeconds  = 0;
@@ -164,14 +196,20 @@
   function pad(n) { return String(n).padStart(2, "0"); }
   function fmtTime(s) { return pad(Math.floor(s / 60)) + ":" + pad(s % 60); }
 
-  function setActive(active) {
+  function setActive(active, ip) {
     if (active) {
       statusDot.classList.add("active");
       statusText.textContent = "Machine On";
       startBtn.disabled     = true;
       terminateBtn.disabled = false;
-      copyIpBtn.disabled    = false;
-      ipBlock.classList.remove("d-none");
+      if (ip) {
+        ipDisplay.textContent = ip;
+        ipBlock.classList.remove("d-none");
+        copyIpBtn.disabled = false;
+      } else {
+        ipBlock.classList.add("d-none");
+        copyIpBtn.disabled = true;
+      }
     } else {
       statusDot.classList.remove("active");
       statusText.textContent = "Machine Off";
@@ -179,6 +217,7 @@
       terminateBtn.disabled = true;
       copyIpBtn.disabled    = true;
       ipBlock.classList.add("d-none");
+      ipDisplay.textContent = "";
       timerEl.textContent = "--:--";
     }
   }
@@ -198,6 +237,19 @@
     }, 1000);
   }
 
+  // Restore machine state on page load
+  fetch("/api/room-instances/status/" + ROOM_SLUG, {
+    headers: { "CSRF-Token": csrfToken }
+  })
+  .then(function (r) { return r.json(); })
+  .then(function (data) {
+    if (data.is_active && data.time_remaining > 0) {
+      setActive(true, data.machine_ip);
+      startCountdown(data.time_remaining);
+    }
+  })
+  .catch(function () {});
+
   startBtn.addEventListener("click", function () {
     startBtn.disabled = true;
     startBtn.textContent = "Starting...";
@@ -209,10 +261,9 @@
     .then(function (data) {
       startBtn.textContent = "Start Machine";
       if (data.success) {
-        var ip = data.ip || data.machine_ip || "15.237.60.47";
-        ipDisplay.textContent = ip;
-        setActive(true);
-        startCountdown((data.duration_minutes || 45) * 60);
+        var ip = data.ip || data.machine_ip;
+        setActive(true, ip);
+        startCountdown((data.time_remaining > 0 ? data.time_remaining : (data.duration_minutes || 30) * 60));
       } else {
         startBtn.disabled = false;
       }
@@ -221,12 +272,16 @@
   });
 
   terminateBtn.addEventListener("click", function () {
-    if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
+    terminateBtn.disabled = true;
     fetch("/api/room-instances/terminate/" + ROOM_SLUG, {
       method: "POST",
       headers: { "Content-Type": "application/json", "CSRF-Token": csrfToken }
-    }).catch(function () {});
-    setActive(false);
+    })
+    .then(function () {
+      if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
+      setActive(false);
+    })
+    .catch(function () { terminateBtn.disabled = false; });
   });
 
   copyIpBtn.addEventListener("click", function () {
@@ -273,9 +328,8 @@
           var total     = allCards.length;
           var pct       = total ? Math.round(solvedCount / total * 100) : 0;
           progressBar.style.width = pct + "%";
-          var progLabel = document.querySelector(".thm-progress-wrap").previousElementSibling;
-          if (progLabel) {
-            progLabel.querySelector("span:last-child").textContent = solvedCount + "/" + total + " (" + pct + "%)";
+          if (progressText) {
+            progressText.textContent = solvedCount + "/" + total + " (" + pct + "%)";
           }
         } else {
           var errEl = document.getElementById("err-" + id);
@@ -300,6 +354,71 @@
     input.addEventListener("keydown", function (e) {
       if (e.key === "Enter") {
         var btn = document.querySelector(".submit-btn[data-id='" + input.getAttribute("data-id") + "']");
+        if (btn) btn.click();
+      }
+    });
+  });
+
+  // Linked CTFd challenge submission (standard /api/v1/challenges/attempt)
+  document.querySelectorAll(".ctfd-submit-btn").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var id    = btn.getAttribute("data-id");
+      var input = document.querySelector(".ctfd-flag-input[data-id='" + id + "']");
+      var flag  = (input.value || "").trim();
+      if (!flag) return;
+
+      btn.disabled = true;
+      btn.textContent = "...";
+
+      fetch("/api/v1/challenges/attempt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "CSRF-Token": csrfToken },
+        body: JSON.stringify({ challenge_id: parseInt(id, 10), submission: flag })
+      })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        var status = data.data && data.data.status;
+        if (status === "correct") {
+          var card = document.getElementById("ctfd-chal-" + id);
+          card.classList.add("solved");
+          var inputRow = input.parentElement;
+          if (inputRow) inputRow.remove();
+          var errEl = document.getElementById("ctfd-err-" + id);
+          var okEl  = document.getElementById("ctfd-ok-"  + id);
+          if (errEl) errEl.remove();
+          if (okEl) okEl.classList.remove("d-none");
+          // Refresh overall progress count (includes both challenge types)
+          var allCards    = document.querySelectorAll(".challenge-card");
+          var solvedCount = document.querySelectorAll(".challenge-card.solved").length;
+          var total       = allCards.length;
+          var pct         = total ? Math.round(solvedCount / total * 100) : 0;
+          progressBar.style.width = pct + "%";
+          if (progressText) {
+            progressText.textContent = solvedCount + "/" + total + " (" + pct + "%)";
+          }
+        } else {
+          var msg   = (data.data && data.data.message) || "Wrong flag, try again";
+          var errEl = document.getElementById("ctfd-err-" + id);
+          if (errEl) {
+            errEl.textContent = msg;
+            errEl.classList.remove("d-none");
+            setTimeout(function () { errEl.classList.add("d-none"); }, 4000);
+          }
+          btn.disabled = false;
+          btn.textContent = "Submit";
+        }
+      })
+      .catch(function () {
+        btn.disabled = false;
+        btn.textContent = "Submit";
+      });
+    });
+  });
+
+  document.querySelectorAll(".ctfd-flag-input").forEach(function (input) {
+    input.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") {
+        var btn = document.querySelector(".ctfd-submit-btn[data-id='" + input.getAttribute("data-id") + "']");
         if (btn) btn.click();
       }
     });

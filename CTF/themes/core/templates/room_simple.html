@@ -45,7 +45,7 @@
     <div class="col-md-6 mb-3">
       <div class="card {% if challenge.solved %}border-success{% else %}border-secondary{% endif %}">
         <div class="card-header">
-          <h6>{{ challenge.name }} - {{ challenge.value }} pts</h6>
+          <h6>{{ challenge.title }} - {{ challenge.points }} pts</h6>
         </div>
         <div class="card-body">
           <p class="small text-muted">{{ challenge.description or 'No description' }}</p>
