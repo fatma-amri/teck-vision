@@ -385,8 +385,8 @@
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ 
-        challenge_id: ROOM_SLUG, 
-        user_id: userId 
+        challenge_id: "redis001", 
+        user_id: "user1234" 
       })
     })
     .then(function(res) { return res.json(); })
@@ -439,8 +439,8 @@
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ 
-        challenge_id: ROOM_SLUG, 
-        user_id: userId 
+        challenge_id: "redis001", 
+        user_id: "user1234" 
       })
     }).catch(function(err) { console.error("AWS Stop Trigger Failed:", err); });
 
