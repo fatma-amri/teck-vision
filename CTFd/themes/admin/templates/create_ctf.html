@@ -19,7 +19,6 @@
 
   <form method="POST" action="{{ url_for('admin.create_ctf') }}" enctype="multipart/form-data">
     <input type="hidden" name="nonce" value="{{ Session.nonce }}">
-    <input type="hidden" id="ova-location" name="ova_location">
 
     <div class="row">
       <div class="col-lg-7">
@@ -114,94 +113,20 @@ document.addEventListener("DOMContentLoaded", function () {
   const input = document.getElementById("ova-image-input");
   const dropZone = document.getElementById("ova-drop-zone");
   const fileName = document.getElementById("ova-file-name");
-  const uploadLocation = document.getElementById("ova-location");
   const uploadStatus = document.getElementById("ova-upload-status");
   const submitButton = document.getElementById("create-ctf-submit");
   const flagsList = document.getElementById("flags-list");
   const addFlag = document.getElementById("add-flag");
-  const uploadApiUrl = "https://5b5s89lx86.execute-api.eu-west-3.amazonaws.com/dev/UploadFileAPI";
 
-  function extractUploadLocation(payload) {
-    if (!payload || typeof payload !== "object") {
-      return "";
-    }
-
-    const keys = ["url", "file_url", "fileUrl", "location", "Location", "key", "file_key", "fileKey", "filename", "fileName"];
-    for (const key of keys) {
-      if (payload[key]) {
-        return payload[key];
-      }
-    }
-
-    if (payload.data && typeof payload.data === "object") {
-      return extractUploadLocation(payload.data);
-    }
-
-    if (payload.body) {
-      if (typeof payload.body === "object") {
-        return extractUploadLocation(payload.body);
-      }
-      if (typeof payload.body === "string") {
-        try {
-          return extractUploadLocation(JSON.parse(payload.body)) || payload.body;
-        } catch (error) {
-          return payload.body;
-        }
-      }
-    }
-
-    return "";
-  }
-
-  async function uploadOva(file) {
-    if (!file) {
-      return;
-    }
-
+  function showSelectedOva(file) {
     if (!file.name.toLowerCase().endsWith(".ova")) {
-      uploadLocation.value = "";
       uploadStatus.textContent = "Only .ova files are allowed.";
       uploadStatus.className = "form-text text-danger";
       return;
     }
 
-    uploadLocation.value = "";
-    uploadStatus.textContent = "Uploading OVA to S3...";
-    uploadStatus.className = "form-text text-primary";
-    submitButton.disabled = true;
-
-    const formData = new FormData();
-    formData.append("file", file, file.name);
-    formData.append("filename", file.name);
-
-    try {
-      const response = await fetch(uploadApiUrl, {
-        method: "POST",
-        body: formData,
-      });
-
-      const text = await response.text();
-      let payload = text;
-      try {
-        payload = JSON.parse(text);
-      } catch (error) {
-        payload = text;
-      }
-
-      if (!response.ok) {
-        throw new Error(text || "Upload failed");
-      }
-
-      uploadLocation.value = typeof payload === "string" ? payload : extractUploadLocation(payload);
-      uploadStatus.textContent = "OVA uploaded successfully.";
-      uploadStatus.className = "form-text text-success";
-    } catch (error) {
-      uploadLocation.value = "";
-      uploadStatus.textContent = "Browser upload failed. It will retry when you create the CTF.";
-      uploadStatus.className = "form-text text-danger";
-    } finally {
-      submitButton.disabled = false;
-    }
+    uploadStatus.textContent = "Ready to upload when you create the CTF.";
+    uploadStatus.className = "form-text text-success";
   }
 
   function setFile(files) {
@@ -210,13 +135,22 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     input.files = files;
     fileName.textContent = files[0].name;
-    uploadOva(files[0]);
+    showSelectedOva(files[0]);
   }
 
   input.addEventListener("change", function () {
     if (input.files.length) {
       fileName.textContent = input.files[0].name;
-      uploadOva(input.files[0]);
+      showSelectedOva(input.files[0]);
+    }
+  });
+
+  input.form.addEventListener("submit", function () {
+    if (input.files.length) {
+      uploadStatus.textContent = "Uploading OVA to S3. Keep this page open.";
+      uploadStatus.className = "form-text text-primary";
+      submitButton.disabled = true;
+      submitButton.textContent = "Uploading...";
     }
   });
 

@@ -9,6 +9,7 @@ echo "[ DEBUG ] PYTHONPATH: ${PYTHONPATH:-not set}"
 
 WORKERS=${WORKERS:-1}
 WORKER_CLASS=${WORKER_CLASS:-gevent}
+GUNICORN_TIMEOUT=${GUNICORN_TIMEOUT:-3600}
 ACCESS_LOG=${ACCESS_LOG:--}
 ERROR_LOG=${ERROR_LOG:--}
 WORKER_TEMP_DIR=${WORKER_TEMP_DIR:-/dev/shm}
@@ -41,5 +42,6 @@ exec gunicorn 'CTFd:create_app()' \
     --workers $WORKERS \
     --worker-tmp-dir "$WORKER_TEMP_DIR" \
     --worker-class "$WORKER_CLASS" \
+    --timeout "$GUNICORN_TIMEOUT" \
     --access-logfile "$ACCESS_LOG" \
     --error-logfile "$ERROR_LOG"

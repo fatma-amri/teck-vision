@@ -1,20 +1,23 @@
 """Admin routes for room and room-challenge management."""
 
-import json
+import os
 import re
 import uuid
 
-import requests
+import boto3
+from boto3.s3.transfer import TransferConfig
+from botocore.exceptions import BotoCoreError, ClientError
 from flask import current_app, flash, redirect, render_template, request, url_for
 from werkzeug.utils import secure_filename
 
 from CTFd.admin import admin
 from CTFd.models import RoomChallenge, Rooms, db
+from CTFd.utils import get_app_config
 from CTFd.utils.decorators import admins_only
 
-OVA_UPLOAD_API_URL = (
-    "https://5b5s89lx86.execute-api.eu-west-3.amazonaws.com/dev/UploadFileAPI"
-)
+OVA_S3_BUCKET = "ctf-tekup"
+OVA_S3_PREFIX = "ctf_ovas"
+OVA_S3_REGION = "eu-west-3"
 
 
 def _slugify(value):
@@ -22,34 +25,31 @@ def _slugify(value):
     return re.sub(r"[^a-z0-9]+", "-", value).strip("-")
 
 
-def _extract_upload_location(response_json, fallback_name):
-    if not isinstance(response_json, dict):
-        return fallback_name
+def _get_upload_config(name, default=None):
+    return (
+        current_app.config.get(name)
+        or get_app_config(name)
+        or os.environ.get(name)
+        or default
+    )
 
-    for key in ("url", "file_url", "fileUrl", "location", "Location"):
-        value = response_json.get(key)
-        if value:
-            return value
 
-    for key in ("key", "file_key", "fileKey", "filename", "fileName"):
-        value = response_json.get(key)
-        if value:
-            return value
+def _get_s3_client():
+    client_kwargs = {
+        "region_name": _get_upload_config("OVA_S3_REGION", OVA_S3_REGION),
+    }
 
-    data = response_json.get("data")
-    if isinstance(data, dict):
-        return _extract_upload_location(data, fallback_name)
+    endpoint_url = _get_upload_config("AWS_S3_ENDPOINT_URL")
+    if endpoint_url:
+        client_kwargs["endpoint_url"] = endpoint_url
 
-    body = response_json.get("body")
-    if isinstance(body, dict):
-        return _extract_upload_location(body, fallback_name)
-    if isinstance(body, str) and body.strip():
-        try:
-            return _extract_upload_location(json.loads(body), fallback_name)
-        except ValueError:
-            return body.strip()
+    access_key = _get_upload_config("AWS_ACCESS_KEY_ID")
+    secret_key = _get_upload_config("AWS_SECRET_ACCESS_KEY")
+    if access_key and secret_key:
+        client_kwargs["aws_access_key_id"] = access_key
+        client_kwargs["aws_secret_access_key"] = secret_key
 
-    return fallback_name
+    return boto3.client("s3", **client_kwargs)
 
 
 def _upload_ova_file(file_storage, slug):
@@ -57,33 +57,36 @@ def _upload_ova_file(file_storage, slug):
     if not filename.lower().endswith(".ova"):
         raise ValueError("Only .ova files are allowed.")
 
-    unique_name = f"{slug}-{uuid.uuid4().hex[:8]}.ova"
-    upload_url = current_app.config.get("OVA_UPLOAD_API_URL", OVA_UPLOAD_API_URL)
+    bucket = _get_upload_config(
+        "OVA_S3_BUCKET", _get_upload_config("AWS_S3_BUCKET", OVA_S3_BUCKET)
+    )
+    if not bucket:
+        raise ValueError("OVA S3 bucket is not configured.")
+
+    prefix = _get_upload_config("OVA_S3_PREFIX", OVA_S3_PREFIX).strip("/")
+    unique_name = f"{slug}-{uuid.uuid4().hex[:8]}-{filename}"
+    key = f"{prefix}/{unique_name}" if prefix else unique_name
     file_storage.stream.seek(0)
 
     try:
-        response = requests.post(
-            upload_url,
-            files={
-                "file": (
-                    unique_name,
-                    file_storage.stream,
-                    file_storage.mimetype or "application/octet-stream",
-                )
+        _get_s3_client().upload_fileobj(
+            file_storage.stream,
+            bucket,
+            key,
+            ExtraArgs={
+                "ContentType": file_storage.mimetype or "application/octet-stream"
             },
-            data={"filename": unique_name},
-            timeout=120,
+            Config=TransferConfig(
+                multipart_threshold=8 * 1024 * 1024,
+                multipart_chunksize=8 * 1024 * 1024,
+                max_concurrency=4,
+                use_threads=True,
+            ),
         )
-        response.raise_for_status()
-    except requests.RequestException as e:
+    except (BotoCoreError, ClientError) as e:
         raise ValueError(f"OVA upload failed: {e}") from e
 
-    try:
-        response_json = response.json()
-    except ValueError:
-        return response.text.strip() or unique_name
-
-    return _extract_upload_location(response_json, unique_name)
+    return f"s3://{bucket}/{key}"
 
 
 @admin.route("/admin/create-ctf", methods=["GET", "POST"])
