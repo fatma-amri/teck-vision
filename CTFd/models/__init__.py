@@ -1208,6 +1208,7 @@ class Rooms(db.Model):
     difficulty = db.Column(db.String(32), default="Easy")
     duration = db.Column(db.Integer, default=30)  # minutes
     target_ip = db.Column(db.String(45), default=None, nullable=True)
+    aws_challenge_id = db.Column(db.String(64), default=None, nullable=True)
     is_active = db.Column(db.Boolean, default=True)
 
     challenges = db.relationship(

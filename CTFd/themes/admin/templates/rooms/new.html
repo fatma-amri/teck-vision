@@ -47,6 +47,12 @@
       </div>
     </div>
 
+    <div class="form-group">
+      <label>AWS Challenge ID</label>
+      <input type="text" name="aws_challenge_id" class="form-control" placeholder="redis0002">
+      <small class="form-text text-muted">Use the ID created by the OVA importer for this room's AMI.</small>
+    </div>
+
     <button type="submit" class="btn btn-success">Create Room</button>
     <a href="{{ url_for('admin.rooms_listing') }}" class="btn btn-secondary ml-2">Cancel</a>
   </form>

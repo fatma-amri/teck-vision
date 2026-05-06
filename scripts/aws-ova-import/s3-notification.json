@@ -1,0 +1,25 @@
+{
+  "LambdaFunctionConfigurations": [
+    {
+      "Id": "InvokeOvaImporter",
+      "LambdaFunctionArn": "arn:aws:lambda:eu-west-3:853169228413:function:ctf-ova-importer",
+      "Events": [
+        "s3:ObjectCreated:*"
+      ],
+      "Filter": {
+        "Key": {
+          "FilterRules": [
+            {
+              "Name": "prefix",
+              "Value": "ctf_ovas/"
+            },
+            {
+              "Name": "suffix",
+              "Value": ".ova"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

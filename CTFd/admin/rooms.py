@@ -219,6 +219,7 @@ def rooms_new():
         difficulty = request.form.get("difficulty", "Easy")
         duration = request.form.get("duration", 30)
         target_ip = request.form.get("target_ip", "").strip()
+        aws_challenge_id = request.form.get("aws_challenge_id", "").strip()
 
         if not name:
             flash("Room name is required.", "error")
@@ -241,6 +242,7 @@ def rooms_new():
             difficulty=difficulty,
             duration=duration,
             target_ip=target_ip or None,
+            aws_challenge_id=aws_challenge_id or None,
             is_active=True,
         )
         db.session.add(room)
@@ -264,6 +266,7 @@ def rooms_edit(room_id):
         difficulty = request.form.get("difficulty", "Easy")
         duration = request.form.get("duration", 30)
         target_ip = request.form.get("target_ip", "").strip()
+        aws_challenge_id = request.form.get("aws_challenge_id", "").strip()
         is_active = request.form.get("is_active") == "1"
 
         if not name:
@@ -280,6 +283,7 @@ def rooms_edit(room_id):
         room.difficulty = difficulty
         room.duration = duration
         room.target_ip = target_ip or None
+        room.aws_challenge_id = aws_challenge_id or None
         room.is_active = is_active
         db.session.commit()
         flash(f"Room '{name}' updated.", "success")

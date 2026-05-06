@@ -177,6 +177,7 @@ def room_detail(slug):
         players_count=players_count,
         completed_users=completed_users,
         challenge_target_ip=target_ip,
+        machine_challenge_id=room.aws_challenge_id,
     )
 
 

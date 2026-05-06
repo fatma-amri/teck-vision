@@ -188,6 +188,7 @@
   {# Hidden config for JS to avoid IDE syntax errors #}
   <div id="tv-room-config" 
        data-slug="{{ room_slug }}" 
+       data-aws-challenge-id="{{ machine_challenge_id or '' }}"
        data-duration="{{ room.duration | int }}" 
        style="display:none;"></div>
 </section>
@@ -279,6 +280,7 @@
 (function () {
   var configEl      = document.getElementById("tv-room-config");
   var ROOM_SLUG     = configEl ? configEl.getAttribute("data-slug") : "";
+  var AWS_CHALLENGE_ID = configEl ? configEl.getAttribute("data-aws-challenge-id") : "";
   var DEFAULT_DUR   = configEl ? parseInt(configEl.getAttribute("data-duration") || "0", 10) : 0;
   var CSRF_TOKEN    = (window.init && window.init.csrfNonce) ? window.init.csrfNonce : "";
   var AWS_API_BASE  = "https://5b5s89lx86.execute-api.eu-west-3.amazonaws.com/dev";
@@ -375,6 +377,12 @@
   }
 
   startBtn.addEventListener("click", function () {
+    if (!AWS_CHALLENGE_ID) {
+      console.error("Missing AWS challenge id for room", ROOM_SLUG);
+      alert("This room is not linked to an AWS machine yet.");
+      return;
+    }
+
     if (startBtn) {
       startBtn.disabled = true;
       startBtn.textContent = "Starting...";
@@ -387,11 +395,16 @@
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ 
-        challenge_id: "redis001", 
-        user_id: "user123" 
+        challenge_id: AWS_CHALLENGE_ID,
+        user_id: userId
       })
     })
-    .then(function(res) { return res.json(); })
+    .then(function(res) {
+      return res.json().then(function(payload) {
+        if (!res.ok) throw payload;
+        return payload;
+      });
+    })
     .then(function(awsData) {
       var awsIp = awsData.public_ip || null;
       
@@ -441,8 +454,8 @@
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ 
-        challenge_id: "redis001", 
-        user_id: "user123" 
+        challenge_id: AWS_CHALLENGE_ID,
+        user_id: userId
       })
     }).catch(function(err) { console.error("AWS Stop Trigger Failed:", err); });
 
@@ -462,8 +475,8 @@
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ 
-        challenge_id: "redis001", 
-        user_id: "user123" 
+        challenge_id: AWS_CHALLENGE_ID,
+        user_id: userId
       })
     })
     .then(function(res) { return res.json(); })

@@ -53,6 +53,12 @@
       </div>
     </div>
 
+    <div class="form-group">
+      <label>AWS Challenge ID</label>
+      <input type="text" name="aws_challenge_id" class="form-control" value="{{ room.aws_challenge_id or '' }}" placeholder="redis0002">
+      <small class="form-text text-muted">This links the room's Start Machine button to the AMI record in DynamoDB.</small>
+    </div>
+
     <button type="submit" class="btn btn-primary">Save Changes</button>
     <a href="{{ url_for('admin.rooms_listing') }}" class="btn btn-secondary ml-2">Back to Rooms</a>
   </form>

@@ -1,0 +1,7 @@
+[
+  {
+    "Id": "OvaImportReconcileLambda",
+    "Arn": "arn:aws:lambda:eu-west-3:853169228413:function:ctf-ova-importer",
+    "Input": "{\"source\":\"eventbridge.reconcile\"}"
+  }
+]
