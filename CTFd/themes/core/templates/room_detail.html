@@ -272,6 +272,7 @@
 (function () {
   var ROOM_SLUG = {{ room_slug | tojson }};
   var csrfToken = (window.init && window.init.csrfNonce) ? window.init.csrfNonce : "";
+  var AWS_API_BASE = "https://5b5s89lx86.execute-api.eu-west-3.amazonaws.com";
 
   var startBtn     = document.getElementById("start-btn");
   var terminateBtn = document.getElementById("terminate-btn");
@@ -364,6 +365,19 @@
   startBtn.addEventListener("click", function () {
     startBtn.disabled = true;
     startBtn.textContent = "Starting...";
+<<<<<<< HEAD
+=======
+    ipDisplay.textContent = randomIp();
+    setActive(true);
+    startCountdown({{ room.duration | int }} * 60);
+    // Trigger AWS API Gateway / StartChallenge Lambda
+    fetch(AWS_API_BASE + "/start-challenge", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ room_slug: ROOM_SLUG, action: "start" })
+    }).catch(function(err) { console.error("AWS Start Trigger Failed:", err); });
+
+>>>>>>> 48231dc (feat: integrate AWS API Gateway for machine start/stop triggers)
     fetch("/api/room-instances/start/" + ROOM_SLUG, {
       method: "POST",
       headers: { "Content-Type": "application/json", "CSRF-Token": csrfToken }
@@ -384,6 +398,14 @@
 
   terminateBtn.addEventListener("click", function () {
     if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
+
+    // Trigger AWS API Gateway / stop_challenge Lambda
+    fetch(AWS_API_BASE + "/stop-challenge", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ room_slug: ROOM_SLUG, action: "stop" })
+    }).catch(function(err) { console.error("AWS Stop Trigger Failed:", err); });
+
     fetch("/api/room-instances/terminate/" + ROOM_SLUG, {
       method: "POST",
       headers: { "Content-Type": "application/json", "CSRF-Token": csrfToken }
