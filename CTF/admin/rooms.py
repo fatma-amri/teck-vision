@@ -9,7 +9,7 @@ from flask import current_app, flash, redirect, render_template, request, url_fo
 from werkzeug.utils import secure_filename
 
 from CTFd.admin import admin
-from CTFd.models import Challenges, RoomChallenge, Rooms, db
+from CTFd.models import RoomChallenge, Rooms, db
 from CTFd.utils.decorators import admins_only
 
 OVA_UPLOAD_API_URL = (
@@ -25,15 +25,21 @@ def _slugify(value):
 def _extract_upload_location(response_json, fallback_name):
     if not isinstance(response_json, dict):
         return fallback_name
+
     for key in ("url", "file_url", "fileUrl", "location", "Location"):
-        if response_json.get(key):
-            return response_json[key]
+        value = response_json.get(key)
+        if value:
+            return value
+
     for key in ("key", "file_key", "fileKey", "filename", "fileName"):
-        if response_json.get(key):
-            return response_json[key]
+        value = response_json.get(key)
+        if value:
+            return value
+
     data = response_json.get("data")
     if isinstance(data, dict):
         return _extract_upload_location(data, fallback_name)
+
     body = response_json.get("body")
     if isinstance(body, dict):
         return _extract_upload_location(body, fallback_name)
@@ -42,6 +48,7 @@ def _extract_upload_location(response_json, fallback_name):
             return _extract_upload_location(json.loads(body), fallback_name)
         except ValueError:
             return body.strip()
+
     return fallback_name
 
 
@@ -49,27 +56,35 @@ def _upload_ova_file(file_storage, slug):
     filename = secure_filename(file_storage.filename or "")
     if not filename.lower().endswith(".ova"):
         raise ValueError("Only .ova files are allowed.")
+
     unique_name = f"{slug}-{uuid.uuid4().hex[:8]}.ova"
     upload_url = current_app.config.get("OVA_UPLOAD_API_URL", OVA_UPLOAD_API_URL)
     file_storage.stream.seek(0)
+
     try:
         response = requests.post(
             upload_url,
-            files={"file": (unique_name, file_storage.stream, file_storage.mimetype or "application/octet-stream")},
+            files={
+                "file": (
+                    unique_name,
+                    file_storage.stream,
+                    file_storage.mimetype or "application/octet-stream",
+                )
+            },
             data={"filename": unique_name},
             timeout=120,
         )
         response.raise_for_status()
     except requests.RequestException as e:
         raise ValueError(f"OVA upload failed: {e}") from e
+
     try:
         response_json = response.json()
     except ValueError:
         return response.text.strip() or unique_name
+
     return _extract_upload_location(response_json, unique_name)
 
-
-# ── Create CTF (room + flags + OVA in one form) ───────────────────────────────
 
 @admin.route("/admin/create-ctf", methods=["GET", "POST"])
 @admins_only
@@ -79,7 +94,6 @@ def create_ctf():
         description = request.form.get("description", "").strip()
         difficulty = request.form.get("difficulty", "Easy")
         duration = request.form.get("duration", 30)
-        target_ip = request.form.get("target_ip", "").strip() or None
         ova_file = request.files.get("ova_image")
         ova_location = request.form.get("ova_location", "").strip()
 
@@ -92,24 +106,31 @@ def create_ctf():
             flash("CTF name is required.", "error")
             return render_template("admin/create_ctf.html")
 
+        if not ova_location and (not ova_file or not ova_file.filename):
+            flash("Drop Your OVA Image is required.", "error")
+            return render_template("admin/create_ctf.html")
+
         flag_rows = []
-        for i, answer in enumerate(answers):
+        for index, answer in enumerate(answers):
             answer = (answer or "").strip()
             if not answer:
                 continue
-            title = titles[i].strip() if i < len(titles) else ""
-            question = questions[i].strip() if i < len(questions) else ""
+            title = titles[index].strip() if index < len(titles) else ""
+            question = questions[index].strip() if index < len(questions) else ""
+            points = points_values[index] if index < len(points_values) else 100
             try:
-                pts = int(points_values[i]) if i < len(points_values) else 100
+                points = int(points)
             except (ValueError, TypeError):
-                pts = 100
-            flag_rows.append({
-                "title": title or f"Flag {len(flag_rows) + 1}",
-                "question": question,
-                "answer": answer,
-                "points": pts,
-                "position": len(flag_rows),
-            })
+                points = 100
+            flag_rows.append(
+                {
+                    "title": title or f"Flag {len(flag_rows) + 1}",
+                    "question": question,
+                    "answer": answer,
+                    "points": points,
+                    "position": len(flag_rows),
+                }
+            )
 
         if not flag_rows:
             flash("Add at least one flag.", "error")
@@ -125,7 +146,7 @@ def create_ctf():
         except (ValueError, TypeError):
             duration = 30
 
-        if ova_file and ova_file.filename and not ova_location:
+        if not ova_location:
             try:
                 ova_location = _upload_ova_file(ova_file, slug)
             except ValueError as e:
@@ -142,23 +163,25 @@ def create_ctf():
             description=room_description,
             difficulty=difficulty,
             duration=duration,
-            target_ip=target_ip,
+            target_ip=None,
             is_active=True,
         )
         db.session.add(room)
         db.session.flush()
 
         for row in flag_rows:
-            db.session.add(RoomChallenge(
-                room_id=room.id,
-                title=row["title"],
-                description="",
-                question=row["question"],
-                answer=row["answer"],
-                points=row["points"],
-                difficulty=difficulty,
-                position=row["position"],
-            ))
+            db.session.add(
+                RoomChallenge(
+                    room_id=room.id,
+                    title=row["title"],
+                    description="",
+                    question=row["question"],
+                    answer=row["answer"],
+                    points=row["points"],
+                    difficulty=difficulty,
+                    position=row["position"],
+                )
+            )
 
         db.session.commit()
         flash(f"CTF '{name}' created with {len(flag_rows)} flags.", "success")
@@ -182,12 +205,47 @@ def rooms_listing():
     return render_template("admin/rooms/list.html", rooms=room_data)
 
 
-# ── Create room (redirect to unified Create CTF flow) ─────────────────────────
+# ── Create room ───────────────────────────────────────────────────────────────
 
 @admin.route("/admin/rooms/new", methods=["GET", "POST"])
 @admins_only
 def rooms_new():
-    return redirect(url_for("admin.create_ctf"))
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        description = request.form.get("description", "").strip()
+        difficulty = request.form.get("difficulty", "Easy")
+        duration = request.form.get("duration", 30)
+        target_ip = request.form.get("target_ip", "").strip()
+
+        if not name:
+            flash("Room name is required.", "error")
+            return render_template("admin/rooms/new.html")
+
+        slug = _slugify(name)
+        if Rooms.query.filter_by(slug=slug).first():
+            flash(f"A room with slug '{slug}' already exists.", "error")
+            return render_template("admin/rooms/new.html")
+
+        try:
+            duration = int(duration)
+        except (ValueError, TypeError):
+            duration = 30
+
+        room = Rooms(
+            name=name,
+            slug=slug,
+            description=description,
+            difficulty=difficulty,
+            duration=duration,
+            target_ip=target_ip or None,
+            is_active=True,
+        )
+        db.session.add(room)
+        db.session.commit()
+        flash(f"Room '{name}' created.", "success")
+        return redirect(url_for("admin.rooms_listing"))
+
+    return render_template("admin/rooms/new.html")
 
 
 # ── Edit room ─────────────────────────────────────────────────────────────────
@@ -214,19 +272,6 @@ def rooms_edit(room_id):
         except (ValueError, TypeError):
             duration = 30
 
-        if name != room.name:
-            new_slug = _slugify(name)
-            conflict = Rooms.query.filter(
-                Rooms.slug == new_slug, Rooms.id != room.id
-            ).first()
-            if conflict:
-                flash(
-                    f"A room with slug '{new_slug}' already exists — slug not updated.",
-                    "warning",
-                )
-            else:
-                room.slug = new_slug
-
         room.name = name
         room.description = description
         room.difficulty = difficulty
@@ -237,34 +282,7 @@ def rooms_edit(room_id):
         flash(f"Room '{name}' updated.", "success")
         return redirect(url_for("admin.rooms_listing"))
 
-    linked = Challenges.query.filter_by(room_id=room.id).order_by(Challenges.id.asc()).all()
-    available = Challenges.query.filter_by(room_id=None).order_by(Challenges.name.asc()).all()
-    return render_template("admin/rooms/edit.html", room=room, linked_challenges=linked, available_challenges=available)
-
-
-# ── Link / unlink standard challenges to a room ───────────────────────────────
-
-@admin.route("/admin/rooms/<int:room_id>/link-challenge", methods=["POST"])
-@admins_only
-def room_link_challenge(room_id):
-    room = Rooms.query.get_or_404(room_id)
-    challenge_id = request.form.get("challenge_id", type=int)
-    challenge = Challenges.query.get_or_404(challenge_id)
-    challenge.room_id = room.id
-    db.session.commit()
-    flash(f"Challenge '{challenge.name}' linked to room '{room.name}'.", "success")
-    return redirect(url_for("admin.rooms_edit", room_id=room.id))
-
-
-@admin.route("/admin/rooms/<int:room_id>/unlink-challenge/<int:challenge_id>", methods=["POST"])
-@admins_only
-def room_unlink_challenge(room_id, challenge_id):
-    room = Rooms.query.get_or_404(room_id)
-    challenge = Challenges.query.filter_by(id=challenge_id, room_id=room.id).first_or_404()
-    challenge.room_id = None
-    db.session.commit()
-    flash(f"Challenge '{challenge.name}' unlinked.", "success")
-    return redirect(url_for("admin.rooms_edit", room_id=room.id))
+    return render_template("admin/rooms/edit.html", room=room)
 
 
 # ── Delete room ───────────────────────────────────────────────────────────────

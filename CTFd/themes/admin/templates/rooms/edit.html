@@ -1,0 +1,104 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+<div class="jumbotron">
+  <div class="container">
+    <h1>Edit Room: {{ room.name }}</h1>
+  </div>
+</div>
+
+<div class="container">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }}">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <form method="POST" action="{{ url_for('admin.rooms_edit', room_id=room.id) }}">
+    <input type="hidden" name="nonce" value="{{ Session.nonce }}">
+
+    <div class="form-group">
+      <label>Name <span class="text-danger">*</span></label>
+      <input type="text" name="name" class="form-control" required value="{{ room.name }}">
+    </div>
+
+    <div class="form-group">
+      <label>Description</label>
+      <textarea name="description" class="form-control" rows="3">{{ room.description }}</textarea>
+    </div>
+
+    <div class="row">
+      <div class="col-md-3 form-group">
+        <label>Difficulty</label>
+        <select name="difficulty" class="form-control">
+          {% for d in ['Easy', 'Medium', 'Hard'] %}
+            <option value="{{ d }}" {% if room.difficulty == d %}selected{% endif %}>{{ d }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3 form-group">
+        <label>Duration (minutes)</label>
+        <input type="number" name="duration" class="form-control" value="{{ room.duration }}" min="5" max="480">
+      </div>
+      <div class="col-md-3 form-group">
+        <label>Target IP</label>
+        <input type="text" name="target_ip" class="form-control" value="{{ room.target_ip }}">
+      </div>
+      <div class="col-md-3 form-group">
+        <label>Active</label>
+        <select name="is_active" class="form-control">
+          <option value="1" {% if room.is_active %}selected{% endif %}>Yes</option>
+          <option value="0" {% if not room.is_active %}selected{% endif %}>No</option>
+        </select>
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save Changes</button>
+    <a href="{{ url_for('admin.rooms_listing') }}" class="btn btn-secondary ml-2">Back to Rooms</a>
+  </form>
+
+  <hr>
+
+  <!-- Challenges -->
+  <div class="d-flex justify-content-between align-items-center mt-4 mb-3">
+    <h4>Challenges ({{ room.challenges.count() }})</h4>
+    <a href="{{ url_for('admin.room_challenges_new', room_id=room.id) }}" class="btn btn-success btn-sm">+ Add Challenge</a>
+  </div>
+
+  {% set challenges = room.challenges.all() %}
+  {% if challenges %}
+  <table class="table table-sm table-bordered">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Pos</th>
+        <th>Title</th>
+        <th>Difficulty</th>
+        <th>Points</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in challenges %}
+      <tr>
+        <td>{{ c.id }}</td>
+        <td>{{ c.position }}</td>
+        <td>{{ c.title }}</td>
+        <td>{{ c.difficulty }}</td>
+        <td>{{ c.points }}</td>
+        <td>
+          <a href="{{ url_for('admin.room_challenges_edit', room_id=room.id, cid=c.id) }}" class="btn btn-xs btn-primary">Edit</a>
+          <form method="POST" action="{{ url_for('admin.room_challenges_delete', room_id=room.id, cid=c.id) }}" style="display:inline;" onsubmit="return confirm('Delete challenge \'{{ c.title }}\'?');">
+            <input type="hidden" name="nonce" value="{{ Session.nonce }}">
+            <button class="btn btn-xs btn-danger">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="alert alert-info">No challenges yet. <a href="{{ url_for('admin.room_challenges_new', room_id=room.id) }}">Add the first challenge.</a></div>
+  {% endif %}
+</div>
+{% endblock %}

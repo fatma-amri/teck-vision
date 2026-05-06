@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+  body { background: #1a1d21 !important; color: #e0e0e0; }
+  .thm-card { background: #212529; border: 1px solid #2e3338; border-radius: 10px; }
+  .thm-badge-easy   { background: #1a7f4b; color: #fff; }
+  .thm-badge-medium { background: #c57c00; color: #fff; }
+  .thm-badge-hard   { background: #9b1c1c; color: #fff; }
+  .room-card:hover  { border-color: #1dd75f !important; box-shadow: 0 0 0 2px #1dd75f33; }
+  .room-link { text-decoration: none; color: inherit; display: block; }
+  .room-link:hover { text-decoration: none; color: inherit; }
+  .meta-pill { background: #2e3338; color: #adb5bd; border-radius: 6px; padding: 3px 10px; font-size: .82rem; display: inline-block; margin-right: 5px; }
+</style>
+
+<div class="container py-5" style="max-width:900px;margin:auto;">
+  <h1 class="mb-1" style="font-weight:700;color:#fff;">Rooms</h1>
+  <p class="mb-4" style="color:#adb5bd;">Choose a room to start hacking.</p>
+
+  {% if rooms %}
+    {% for room in rooms %}
+    <a class="room-link mb-3 d-block" href="{{ url_for('rooms.room_detail', slug=room.slug) }}">
+      <div class="thm-card room-card p-4" style="transition:border-color .2s,box-shadow .2s;">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <h4 class="mb-1" style="color:#fff;font-weight:700;">{{ room.name }}</h4>
+            <p class="mb-2" style="color:#adb5bd;font-size:.9rem;">{{ room.description }}</p>
+            <div>
+              {% set diff = room.difficulty | lower %}
+              {% if diff == 'easy' %}
+                <span class="thm-badge-easy meta-pill">Easy</span>
+              {% elif diff == 'medium' %}
+                <span class="thm-badge-medium meta-pill">Medium</span>
+              {% elif diff == 'hard' %}
+                <span class="thm-badge-hard meta-pill">Hard</span>
+              {% else %}
+                <span class="meta-pill">{{ room.difficulty }}</span>
+              {% endif %}
+              <span class="meta-pill">&#9201; {{ room.duration }} min</span>
+              <span class="meta-pill">{{ room.total_challenges }} tasks</span>
+              <span class="meta-pill">&#128100; {{ room.players_count }} players</span>
+            </div>
+          </div>
+          <span class="btn btn-sm" style="background:#1dd75f;color:#111;font-weight:600;white-space:nowrap;margin-left:16px;">Start &rarr;</span>
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+  {% else %}
+    <div class="thm-card p-4 text-center" style="color:#adb5bd;">No rooms available yet.</div>
+  {% endif %}
+</div>
+{% endblock %}

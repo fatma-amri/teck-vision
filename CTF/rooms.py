@@ -7,7 +7,7 @@ from sqlalchemy import func
 
 from CTFd.cache import cache
 from CTFd.constants.config import ChallengeVisibilityTypes, Configs
-from CTFd.models import Challenges, RoomChallenge, RoomSolve, Rooms, Solves, db
+from CTFd.models import RoomChallenge, RoomSolve, Rooms, Users, db
 from CTFd.utils.config import is_teams_mode
 from CTFd.utils.decorators import authed_only, require_complete_profile, require_verified_emails
 from CTFd.utils.decorators.visibility import check_challenge_visibility
@@ -37,54 +37,32 @@ def rooms_listing():
     all_rooms = Rooms.query.filter_by(is_active=True).order_by(Rooms.id.asc()).all()
 
     user = get_current_user() if authed() else None
-
-    if not all_rooms:
-        return render_template("rooms.html", rooms=[])
-
-    room_ids = [r.id for r in all_rooms]
-
-    # Load all challenges for all rooms in one query
-    all_challenges = RoomChallenge.query.filter(
-        RoomChallenge.room_id.in_(room_ids)
-    ).all()
-
-    room_challenge_ids = {}  # room_id -> [challenge_id, ...]
-    for c in all_challenges:
-        room_challenge_ids.setdefault(c.room_id, []).append(c.id)
-
-    all_challenge_ids = [c.id for c in all_challenges]
-
-    # Count unique players per room in one query (challenge_id -> set of user_ids)
-    room_player_sets = {}  # room_id -> set of user_ids
-    if all_challenge_ids:
-        challenge_to_room = {c.id: c.room_id for c in all_challenges}
-        solve_rows = (
-            db.session.query(RoomSolve.challenge_id, RoomSolve.user_id)
-            .filter(RoomSolve.challenge_id.in_(all_challenge_ids))
-            .distinct()
-            .all()
-        )
-        for cid, uid in solve_rows:
-            rid = challenge_to_room[cid]
-            room_player_sets.setdefault(rid, set()).add(uid)
-
-    # Load current user's solved challenge IDs in one query
-    user_solved_ids = set()
-    if user and all_challenge_ids:
-        user_solved_ids = {
-            rs.challenge_id
-            for rs in RoomSolve.query.filter(
-                RoomSolve.user_id == user.id,
-                RoomSolve.challenge_id.in_(all_challenge_ids),
-            ).all()
-        }
-
     room_list = []
     for room in all_rooms:
-        cids = room_challenge_ids.get(room.id, [])
-        total = len(cids)
-        players_count = len(room_player_sets.get(room.id, set()))
-        solved_count = sum(1 for cid in cids if cid in user_solved_ids)
+        challenges = room.challenges.all()
+        total = len(challenges)
+        challenge_ids = [c.id for c in challenges]
+
+        # Count unique players who solved at least one challenge in this room
+        if challenge_ids:
+            players_count = (
+                db.session.query(func.count(func.distinct(RoomSolve.user_id)))
+                .filter(RoomSolve.challenge_id.in_(challenge_ids))
+                .scalar()
+                or 0
+            )
+        else:
+            players_count = 0
+
+        # Current user progress
+        solved_count = 0
+        if user and challenge_ids:
+            solved_count = (
+                RoomSolve.query.filter(
+                    RoomSolve.user_id == user.id,
+                    RoomSolve.challenge_id.in_(challenge_ids),
+                ).count()
+            )
 
         room_list.append({
             "id": room.id,
@@ -157,46 +135,47 @@ def room_detail(slug):
             .scalar()
             or 0
         )
+        completed_rows = (
+            db.session.query(
+                Users.id,
+                Users.name,
+                func.count(func.distinct(RoomSolve.challenge_id)).label("solve_count"),
+                func.max(RoomSolve.solved_at).label("completed_at"),
+            )
+            .join(RoomSolve, RoomSolve.user_id == Users.id)
+            .filter(RoomSolve.challenge_id.in_(challenge_ids))
+            .group_by(Users.id, Users.name)
+            .having(func.count(func.distinct(RoomSolve.challenge_id)) == total_count)
+            .order_by(func.max(RoomSolve.solved_at).asc())
+            .all()
+        )
     else:
         players_count = 0
+        completed_rows = []
+
+    completed_users = [
+        {
+            "rank": index + 1,
+            "id": row.id,
+            "name": row.name,
+            "solve_count": row.solve_count,
+            "completed_at": row.completed_at,
+        }
+        for index, row in enumerate(completed_rows)
+    ]
 
     target_ip = room.target_ip or None
-
-    # Linked standard CTFd challenges
-    linked = Challenges.query.filter_by(room_id=room.id, state="visible").order_by(Challenges.id.asc()).all()
-    linked_ids = [c.id for c in linked]
-    ctfd_solved_ids = set()
-    if user and linked_ids:
-        ctfd_solved_ids = {
-            s.challenge_id
-            for s in Solves.query.filter(
-                Solves.user_id == user.id,
-                Solves.challenge_id.in_(linked_ids),
-            ).all()
-        }
-    linked_cards = [
-        {
-            "id": c.id,
-            "title": c.name,
-            "description": c.description or "",
-            "points": c.value,
-            "category": c.category or "",
-            "solved": c.id in ctfd_solved_ids,
-            "type": "ctfd",
-        }
-        for c in linked
-    ]
 
     return render_template(
         "room_detail.html",
         room=room,
         room_slug=room.slug,
         challenges=challenge_cards,
-        linked_challenges=linked_cards,
         solved_count=solved_count,
         total_count=total_count,
         progress_percent=progress_percent,
         players_count=players_count,
+        completed_users=completed_users,
         challenge_target_ip=target_ip,
     )
 

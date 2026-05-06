@@ -23,13 +23,15 @@ ROOM_MAPPING = {
 
 
 def get_room_category(room_slug):
-    """Convert room slug to category name, falling back to a DB lookup."""
+    """Convert room slug to category name."""
     category = ROOM_MAPPING.get(room_slug)
     if category:
         return category
+
     room = Rooms.query.filter_by(slug=room_slug, is_active=True).first()
     if room:
         return room.slug
+
     return None
 
 
@@ -62,7 +64,6 @@ def start_machine(room_slug):
         user_id=account_id if account_type == "user" else None,
     ).first()
     
-    # Use the room's target IP only if explicitly set — no fallback
     room_model = Rooms.query.filter_by(slug=room_slug).first()
     machine_ip = room_model.target_ip if room_model and room_model.target_ip else None
 

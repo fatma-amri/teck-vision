@@ -1,0 +1,609 @@
+import logging
+import os
+
+from flask import Blueprint, abort
+from flask import current_app as app
+from flask import (
+    make_response,
+    redirect,
+    render_template,
+    request,
+    send_file,
+    session,
+    url_for,
+)
+from jinja2.exceptions import TemplateNotFound
+from sqlalchemy.exc import IntegrityError
+from werkzeug.utils import safe_join
+
+from CTFd.cache import cache
+from CTFd.constants.config import (
+    AccountVisibilityTypes,
+    ChallengeVisibilityTypes,
+    ConfigTypes,
+    RegistrationVisibilityTypes,
+    ScoreVisibilityTypes,
+)
+from CTFd.constants.themes import DEFAULT_THEME
+from CTFd.models import (
+    Admins,
+    Files,
+    Notifications,
+    Pages,
+    Solutions,
+    Teams,
+    Users,
+    UserTokens,
+    db,
+)
+from CTFd.utils import config, get_config, set_config
+from CTFd.utils import user as current_user
+from CTFd.utils import validators
+from CTFd.utils.config import can_send_mail, is_setup, is_teams_mode
+from CTFd.utils.config.pages import build_markdown, get_page
+from CTFd.utils.config.visibility import challenges_visible
+from CTFd.utils.dates import ctf_ended, ctftime, view_after_ctf
+from CTFd.utils.decorators import authed_only
+from CTFd.utils.health import check_config, check_database
+from CTFd.utils.helpers import get_errors, get_infos, markup
+from CTFd.utils.modes import USERS_MODE
+from CTFd.utils.passwords import validate_password_strength
+from CTFd.utils.security.auth import login_user
+from CTFd.utils.security.csrf import generate_nonce
+from CTFd.utils.security.signing import (
+    BadSignature,
+    BadTimeSignature,
+    SignatureExpired,
+    serialize,
+    unserialize,
+)
+from CTFd.utils.uploads import get_uploader, upload_file
+from CTFd.utils.user import authed, get_current_team, get_current_user, get_ip, is_admin
+
+views = Blueprint("views", __name__)
+
+
+@views.route("/setup", methods=["GET", "POST"])
+def setup():
+    """Initialize CTFd setup and configuration.
+
+    Handles both GET (display setup form) and POST (process setup) requests.
+    Creates admin user, initializes configuration, and sets up the CTF.
+    """
+    errors = get_errors()
+    if not config.is_setup():
+        if not session.get("nonce"):
+            session["nonce"] = generate_nonce()
+        if request.method == "POST":
+            # General
+            ctf_name = request.form.get("ctf_name")
+            ctf_description = request.form.get("ctf_description")
+            user_mode = request.form.get("user_mode", USERS_MODE)
+            set_config("ctf_name", ctf_name)
+            set_config("ctf_description", ctf_description)
+            set_config("user_mode", user_mode)
+
+            # Settings
+            challenge_visibility = ChallengeVisibilityTypes(
+                request.form.get(
+                    "challenge_visibility", default=ChallengeVisibilityTypes.PRIVATE
+                )
+            )
+            account_visibility = AccountVisibilityTypes(
+                request.form.get(
+                    "account_visibility", default=AccountVisibilityTypes.PUBLIC
+                )
+            )
+            score_visibility = ScoreVisibilityTypes(
+                request.form.get(
+                    "score_visibility", default=ScoreVisibilityTypes.PUBLIC
+                )
+            )
+            registration_visibility = RegistrationVisibilityTypes(
+                request.form.get(
+                    "registration_visibility",
+                    default=RegistrationVisibilityTypes.PUBLIC,
+                )
+            )
+            verify_emails = request.form.get("verify_emails")
+            social_shares = request.form.get("social_shares")
+            team_size = request.form.get("team_size")
+
+            # Style
+            ctf_logo = request.files.get("ctf_logo")
+            if ctf_logo:
+                uploaded_file = upload_file(file=ctf_logo)
+                set_config("ctf_logo", uploaded_file.location)
+
+            ctf_small_icon = request.files.get("ctf_small_icon")
+            if ctf_small_icon:
+                uploaded_file = upload_file(file=ctf_small_icon)
+                set_config("ctf_small_icon", uploaded_file.location)
+
+            theme = request.form.get("ctf_theme", DEFAULT_THEME)
+            set_config("ctf_theme", theme)
+            theme_color = request.form.get("theme_color")
+            theme_header = get_config("theme_header")
+            if theme_color and bool(theme_header) is False:
+                # Uses {{ and }} to insert curly braces while using the format method
+                css = (
+                    '<style id="theme-color">\n'
+                    ":root {{--theme-color: {theme_color};}}\n"
+                    ".navbar{{"
+                    "background-color: var(--theme-color) !important;}}\n"
+                    ".jumbotron{{"
+                    "background-color: var(--theme-color) !important;}}\n"
+                    "</style>\n"
+                ).format(theme_color=theme_color)
+                set_config("theme_header", css)
+
+            # DateTime
+            start = request.form.get("start")
+            end = request.form.get("end")
+            set_config("start", start)
+            set_config("end", end)
+            set_config("freeze", None)
+
+            # Administration
+            name = request.form["name"]
+            email = request.form["email"]
+            password = request.form["password"]
+
+            name_len = len(name) == 0
+            names = (
+                Users.query.add_columns(Users.name, Users.id)
+                .filter_by(name=name)
+                .first()
+            )
+            emails = (
+                Users.query.add_columns(Users.email, Users.id)
+                .filter_by(email=email)
+                .first()
+            )
+            valid_email = validators.validate_email(request.form["email"])
+            team_name_email_check = validators.validate_email(name)
+            password_errors = validate_password_strength(password, configured_min_length=0)
+
+            if not valid_email:
+                errors.append("Please enter a valid email address")
+            if names:
+                errors.append("That user name is already taken")
+            if team_name_email_check is True:
+                errors.append("Your user name cannot be an email address")
+            if emails:
+                errors.append("That email has already been used")
+            errors.extend(password_errors)
+            if name_len:
+                errors.append("Pick a longer user name")
+
+            if len(errors) > 0:
+                return render_template(
+                    "setup.html",
+                    errors=errors,
+                    name=name,
+                    email=email,
+                    state=serialize(generate_nonce()),
+                )
+
+            admin = Admins(
+                name=name, email=email, password=password, type="admin", hidden=True
+            )
+
+            # Create an empty index page
+            page = Pages(title=ctf_name, route="index", content="", draft=False)
+
+            # Upload banner
+            default_ctf_banner_location = url_for("views.themes", path="img/logo.png")
+            ctf_banner = request.files.get("ctf_banner")
+            if ctf_banner:
+                uploaded_file = upload_file(file=ctf_banner, page_id=page.id)
+                default_ctf_banner_location = url_for("views.files", path=uploaded_file.location)
+                set_config("ctf_banner", uploaded_file.location)
+
+            # Splice in our banner
+            index = f"""<div class="row">
+    <div class="col-md-6 offset-md-3">
+        <img class="w-100 mx-auto d-block" style="max-width: 500px;padding: 50px;padding-top: 14vh;" src="{default_ctf_banner_location}" />
+        <h3 class="text-center">
+            <p>Bienvenue sur <strong>Teck-Vision</strong></p>
+        </h3>
+        <br>
+        <h4 class="text-center">
+            <a href="admin">Cliquez ici</a> pour accéder au panneau d'administration
+        </h4>
+    </div>
+</div>"""
+            page.content = index
+
+            # Visibility
+            set_config(ConfigTypes.CHALLENGE_VISIBILITY, challenge_visibility)
+            set_config(ConfigTypes.REGISTRATION_VISIBILITY, registration_visibility)
+            set_config(ConfigTypes.SCORE_VISIBILITY, score_visibility)
+            set_config(ConfigTypes.ACCOUNT_VISIBILITY, account_visibility)
+
+            # Verify emails
+            set_config("verify_emails", verify_emails)
+
+            # Social shares
+            set_config("social_shares", social_shares)
+
+            # Team Size
+            set_config("team_size", team_size)
+
+            set_config("mail_server", None)
+            set_config("mail_port", None)
+            set_config("mail_tls", None)
+            set_config("mail_ssl", None)
+            set_config("mail_username", None)
+            set_config("mail_password", None)
+            set_config("mail_useauth", None)
+
+            set_config("setup", True)
+
+            try:
+                db.session.add(admin)
+                db.session.commit()
+            except IntegrityError as e:
+                logging.warning(f"Failed to add admin user: {e}")
+                db.session.rollback()
+
+            try:
+                db.session.add(page)
+                db.session.commit()
+            except IntegrityError as e:
+                logging.warning(f"Failed to add index page: {e}")
+                db.session.rollback()
+
+            login_user(admin)
+
+            db.session.close()
+            with app.app_context():
+                cache.clear()
+
+            return redirect(url_for("admin.view"))
+        try:
+            return render_template("setup.html", state=serialize(generate_nonce()))
+        except TemplateNotFound as e:
+            # Set theme to default and try again
+            logging.warning(f"Setup template not found, resetting to default theme: {e}")
+            set_config("ctf_theme", DEFAULT_THEME)
+            return render_template("setup.html", state=serialize(generate_nonce()))
+    return redirect(url_for("views.static_html"))
+
+
+setup._bypass_csrf = True  # setup runs before any admin exists — no CSRF needed
+
+
+@views.route("/setup/integrations", methods=["GET", "POST"])
+def integrations():
+    """Configure CTFd integrations.
+    
+    Handles OAuth and other third-party integrations setup.
+    Requires admin access or pre-setup state.
+    """
+    if is_admin() or is_setup() is False:
+        name = request.values.get("name")
+        state = request.values.get("state")
+
+        try:
+            state = unserialize(state, max_age=3600)
+        except (BadSignature, BadTimeSignature):
+            state = False
+        except Exception as e:
+            logging.warning(f"Failed to unserialize state: {e}")
+            state = False
+
+        if state:
+            if name == "mlc":
+                mlc_client_id = request.values.get("mlc_client_id")
+                mlc_client_secret = request.values.get("mlc_client_secret")
+                set_config("oauth_client_id", mlc_client_id)
+                set_config("oauth_client_secret", mlc_client_secret)
+                return render_template("admin/integrations.html")
+            else:
+                abort(404)
+        else:
+            abort(403)
+    else:
+        abort(403)
+
+
+@views.route("/notifications", methods=["GET"])
+def notifications():
+    """Display user notifications.
+    
+    Returns all notifications ordered by most recent.
+    """
+    notifications = Notifications.query.order_by(Notifications.id.desc()).all()
+    return render_template("notifications.html", notifications=notifications)
+
+
+@views.route("/settings", methods=["GET"])
+@authed_only
+def settings():
+    """Display user settings and profile management.
+    
+    Requires user to be authenticated. Shows personal information,
+    API tokens, email confirmation status, and team information.
+    """
+    infos = get_infos()
+    errors = get_errors()
+
+    user = get_current_user()
+
+    if is_teams_mode() and get_current_team() is None:
+        team_url = url_for("teams.private")
+        infos.append(
+            markup(
+                f'In order to participate you must either <a href="{team_url}">join or create a team</a>.'
+            )
+        )
+
+    tokens = UserTokens.query.filter_by(user_id=user.id).all()
+
+    prevent_name_change = get_config("prevent_name_change")
+
+    if can_send_mail() and not user.verified:
+        confirm_url = markup(url_for("auth.confirm", flow="init"))
+        infos.append(
+            markup(
+                "Your email address isn't confirmed!<br>"
+                f'To confirm your email address please <a href="{confirm_url}">click here</a>.'
+            )
+        )
+
+    return render_template(
+        "settings.html",
+        name=user.name,
+        email=user.email,
+        language=user.language,
+        website=user.website,
+        affiliation=user.affiliation,
+        country=user.country,
+        tokens=tokens,
+        prevent_name_change=prevent_name_change,
+        infos=infos,
+        errors=errors,
+    )
+
+
+@views.route("/home")
+def home():
+    """Hero landing page with live platform statistics."""
+    from CTFd.models import Challenges, Rooms, Solves, Users as UsersModel
+
+    stats = {
+        "challenges": Challenges.query.filter_by(state="visible").count(),
+        "rooms":      Rooms.query.count(),
+        "players":    UsersModel.query.filter_by(banned=False, hidden=False).count(),
+        "solves":     Solves.query.count(),
+    }
+    return render_template("index.html", stats=stats)
+
+
+@views.route("/", defaults={"route": "index"})
+@views.route("/<path:route>")
+def static_html(route):
+    """Route users to pages stored in the database.
+
+    For the 'index' route, tries to render the rich hero page (index.html)
+    first; falls back to the CMS page if no hero template is found.
+    """
+    if route == "index":
+        try:
+            from CTFd.models import Challenges, Rooms, Solves, Users as UsersModel
+
+            stats = {
+                "challenges": Challenges.query.filter_by(state="visible").count(),
+                "rooms":      Rooms.query.count(),
+                "players":    UsersModel.query.filter_by(banned=False, hidden=False).count(),
+                "teams":      Teams.query.filter_by(banned=False, hidden=False).count(),
+                "solves":     Solves.query.count(),
+            }
+            return render_template("index.html", stats=stats)
+        except TemplateNotFound:
+            pass
+    page = get_page(route)
+    if page is None:
+        abort(404)
+    else:
+        if page.auth_required and authed() is False:
+            return redirect(url_for("auth.login", next=request.full_path))
+
+        return render_template("page.html", content=page.html, title=page.title)
+
+
+@views.route("/tos")
+def tos():
+    tos_url = get_config("tos_url")
+    tos_text = get_config("tos_text")
+    if tos_url:
+        return redirect(tos_url)
+    elif tos_text:
+        return render_template("page.html", content=build_markdown(tos_text))
+    else:
+        abort(404)
+
+
+@views.route("/privacy")
+def privacy():
+    privacy_url = get_config("privacy_url")
+    privacy_text = get_config("privacy_text")
+    if privacy_url:
+        return redirect(privacy_url)
+    elif privacy_text:
+        return render_template("page.html", content=build_markdown(privacy_text))
+    else:
+        abort(404)
+
+
+@views.route("/files", defaults={"path": ""})
+@views.route("/files/<path:path>")
+def files(path):
+    """
+    Route in charge of dealing with making sure that CTF challenges are only accessible during the competition.
+    :param path:
+    :return:
+    """
+    f = Files.query.filter_by(location=path).first_or_404()
+    if f.type == "challenge":
+        if challenges_visible():
+            if current_user.is_admin() is False:
+                if not ctftime():
+                    if ctf_ended() and view_after_ctf():
+                        pass
+                    else:
+                        abort(403)
+        else:
+            # User cannot view challenges based on challenge visibility
+            # e.g. ctf requires registration but user isn't authed or
+            # ctf requires admin account but user isn't admin
+
+            # Allow downloads if a valid token is provided
+            # For example with wget downloads
+            token = request.args.get("token", "")
+            try:
+                data = unserialize(token, max_age=3600)
+            # The token isn't expired or broken
+            except (BadTimeSignature, SignatureExpired, BadSignature):
+                abort(403)
+
+            # Determine the user and team asking to download
+            user_id = data.get("user_id")
+            team_id = data.get("team_id")
+            file_id = data.get("file_id")
+            user = Users.query.filter_by(id=user_id).first()
+            team = Teams.query.filter_by(id=team_id).first()
+
+            if not ctftime():
+                # It's not CTF time. The only edge case is if the CTF is ended
+                # but we have view_after_ctf enabled
+                if ctf_ended() and view_after_ctf():
+                    pass
+                else:
+                    if user.type == "admin":
+                        # We allow admins to download files by URL before CTF start
+                        pass
+                    else:
+                        # In all other situations we should block challenge files
+                        abort(403)
+
+            # Check user is admin if challenge_visibility is admins only
+            if (
+                get_config(ConfigTypes.CHALLENGE_VISIBILITY) == "admins"
+                and user.type != "admin"
+            ):
+                abort(403)
+
+            # Check that the user exists and isn't banned
+            if user:
+                if user.banned:
+                    abort(403)
+            else:
+                abort(403)
+
+            # Check that the team isn't banned
+            if team:
+                if team.banned:
+                    abort(403)
+            else:
+                pass
+
+            # Check that the token properly refers to the file
+            if file_id != f.id:
+                abort(403)
+
+    elif f.type == "solution":
+        s = Solutions.query.filter_by(id=f.solution_id).first_or_404()
+        if s.state != "visible" or s.challenge.state != "visible":
+            # Admins can see solution files for preview purposes
+            if current_user.is_admin() is True:
+                pass
+            else:
+                abort(404)
+
+    uploader = get_uploader()
+    try:
+        return uploader.download(f.location)
+    except IOError as e:
+        logging.error(f"Failed to download file {f.location}: {e}")
+        abort(404)
+
+
+@views.route("/themes/<theme>/static/<path:path>")
+def themes(theme, path):
+    """
+    General static file handler
+    :param theme:
+    :param path:
+    :return:
+    """
+    for cand_path in (
+        safe_join(app.root_path, "themes", cand_theme, "static", path)
+        # The `theme` value passed in may not be the configured one, e.g. for
+        # admin pages, so we check that first
+        for cand_theme in (theme, *config.ctf_theme_candidates())
+    ):
+        # Handle werkzeug behavior of returning None on malicious paths
+        if cand_path is None:
+            abort(404)
+        if os.path.isfile(cand_path):
+            return send_file(cand_path, max_age=3600)
+    abort(404)
+
+
+@views.route("/themes/<theme>/static/<path:path>")
+def themes_beta(theme, path):
+    """
+    This is a copy of the above themes route used to avoid
+    the current appending of .dev and .min for theme assets.
+
+    In CTFd 4.0 this url_for behavior and this themes_beta
+    route will be removed.
+    """
+    for cand_path in (
+        safe_join(app.root_path, "themes", cand_theme, "static", path)
+        # The `theme` value passed in may not be the configured one, e.g. for
+        # admin pages, so we check that first
+        for cand_theme in (theme, *config.ctf_theme_candidates())
+    ):
+        # Handle werkzeug behavior of returning None on malicious paths
+        if cand_path is None:
+            abort(404)
+        if os.path.isfile(cand_path):
+            return send_file(cand_path, max_age=3600)
+    abort(404)
+
+
+@views.route("/healthcheck")
+def healthcheck():
+    if check_database() is False:
+        return "ERR", 500
+    if check_config() is False:
+        return "ERR", 500
+    return "OK", 200
+
+
+@views.route("/debug")
+def debug():
+    if app.config.get("SAFE_MODE") is True:
+        ip = get_ip()
+        headers = dict(request.headers)
+        # Remove Cookie item
+        headers.pop("Cookie", None)
+        resp = ""
+        resp += f"IP: {ip}\n"
+        for k, v in headers.items():
+            resp += f"{k}: {v}\n"
+        r = make_response(resp)
+        r.mimetype = "text/plain"
+        return r
+    abort(404)
+
+
+@views.route("/robots.txt")
+def robots():
+    text = get_config("robots_txt", "User-agent: *\nDisallow: /admin\n")
+    r = make_response(text, 200)
+    r.mimetype = "text/plain"
+    return r

@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+{% block stylesheets %}
+  {{ super() }}
+  <style>
+    .auth-page {
+      min-height: calc(100vh - 56px - 80px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+    
+    .auth-card {
+      background: rgba(42, 42, 74, 0.6);
+      border: 1px solid rgba(255, 107, 107, 0.1);
+      border-radius: 12px;
+      padding: 2.5rem;
+      max-width: 400px;
+      width: 100%;
+      position: relative;
+    }
+    
+    /* Accent line at bottom - matches jumbotron style */
+    .auth-card::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 120px;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, #ff6b6b, transparent);
+      border-radius: 2px;
+    }
+    
+    .auth-header {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+    
+    .auth-title {
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: #e8e8e8;
+      margin: 0 0 0.3rem;
+    }
+    
+    .auth-title i {
+      color: #ff6b6b;
+      margin-right: 0.5rem;
+    }
+    
+    .auth-subtitle {
+      color: #8a8aa8;
+      font-size: 0.9rem;
+      margin: 0;
+    }
+    
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+    
+    .form-group label {
+      display: block;
+      color: #a0a0b8;
+      font-size: 0.85rem;
+      margin-bottom: 0.4rem;
+      font-weight: 500;
+    }
+    
+    .form-group label i {
+      color: #ff6b6b;
+      margin-right: 0.4rem;
+      width: 16px;
+    }
+    
+    .form-group .form-control {
+      background: rgba(26, 26, 46, 0.6) !important;
+      border: 1px solid rgba(160, 160, 184, 0.15) !important;
+      border-radius: 8px !important;
+      padding: 0.8rem 1rem;
+      height: auto;
+      color: #e8e8e8 !important;
+      font-size: 0.95rem;
+      transition: border-color 0.2s;
+    }
+    
+    .form-group .form-control::placeholder {
+      color: #6a6a8a;
+    }
+    
+    .form-group .form-control:focus {
+      border-color: #ff6b6b !important;
+      box-shadow: none !important;
+      outline: none;
+    }
+    
+    .btn-auth {
+      width: 100%;
+      padding: 0.8rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      background: #ff6b6b;
+      color: white;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-top: 0.5rem;
+    }
+    
+    .btn-auth:hover {
+      background: #ff5252;
+    }
+    
+    .auth-links {
+      margin-top: 1.5rem;
+      text-align: center;
+      font-size: 0.85rem;
+      color: #6a6a8a;
+    }
+    
+    .auth-links a {
+      color: #ff6b6b;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    
+    .auth-links a:hover {
+      color: #4ecdc4;
+    }
+    
+    .auth-divider {
+      display: flex;
+      align-items: center;
+      margin: 1.25rem 0;
+      color: #6a6a8a;
+      font-size: 0.8rem;
+    }
+    
+    .auth-divider::before, .auth-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: rgba(160, 160, 184, 0.15);
+    }
+    
+    .auth-divider span {
+      padding: 0 1rem;
+    }
+    
+    .jumbotron { display: none !important; }
+  </style>
+{% endblock %}
+
+{% block content %}
+  <div class="auth-page">
+    <div class="auth-card">
+      <div class="auth-header">
+        <h1 class="auth-title"><i class="fas fa-sign-in-alt"></i>{% trans %}Login{% endtrans %}</h1>
+        <p class="auth-subtitle">{% trans %}Sign in to continue{% endtrans %}</p>
+      </div>
+      
+      {% include "components/errors.html" %}
+      
+      {% if integrations.mlc() %}
+        <a class="btn btn-secondary w-100 mb-3" href="{{ url_for('auth.oauth_login') }}">
+          <i class="fas fa-shield-alt me-2"></i>Login with MLC
+        </a>
+        <div class="auth-divider"><span>{% trans %}or{% endtrans %}</span></div>
+      {% endif %}
+      
+      {% with form = Forms.auth.LoginForm() %}
+        <form method="post" accept-charset="utf-8" role="form">
+          <div class="form-group">
+            <label><i class="fas fa-user"></i>{{ form.name.label.text }}</label>
+            {{ form.name(class="form-control", value=name, autocomplete="username", placeholder="Username or email") }}
+          </div>
+          
+          <div class="form-group">
+            <label><i class="fas fa-lock"></i>{{ form.password.label.text }}</label>
+            {{ form.password(class="form-control", value=password, autocomplete="current-password", placeholder="Password") }}
+          </div>
+          
+          {{ form.nonce() }}
+          
+          <button type="submit" class="btn-auth">
+            <i class="fas fa-sign-in-alt me-2"></i>{% trans %}Login{% endtrans %}
+          </button>
+        </form>
+      {% endwith %}
+      
+      <div class="auth-links">
+        <a href="{{ url_for('auth.reset_password') }}">{% trans %}Forgot password?{% endtrans %}</a>
+        <span class="mx-2">•</span>
+        <a href="{{ url_for('auth.register') }}">{% trans %}Create account{% endtrans %}</a>
+      </div>
+    </div>
+  </div>
+{% endblock %}
