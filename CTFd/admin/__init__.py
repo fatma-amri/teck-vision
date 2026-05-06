@@ -36,7 +36,7 @@ from CTFd.cache import (
     clear_pages,
     clear_standings,
 )
-from CTFd.constants.setup import DEFAULTS
+from CTFd.constants.config import DEFAULTS
 from CTFd.models import (
     Awards,
     Challenges,
@@ -261,7 +261,7 @@ def reset():
             set_config("setup", False)
             cache.clear()
             logout_user()
-            next_url = url_for("views.setup")
+            next_url = url_for("views.static_html")
 
         db.session.commit()
 

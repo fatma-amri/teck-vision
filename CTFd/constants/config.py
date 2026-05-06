@@ -72,3 +72,13 @@ class _ConfigsWrapper:
 
 
 Configs = _ConfigsWrapper()
+
+DEFAULTS = {
+    "ctf_name": "Teck-Vision",
+    "user_mode": UserModeTypes.USERS,
+    "ctf_theme": "core",
+    "challenge_visibility": ChallengeVisibilityTypes.PRIVATE,
+    "registration_visibility": RegistrationVisibilityTypes.PUBLIC,
+    "score_visibility": ScoreVisibilityTypes.PUBLIC,
+    "account_visibility": AccountVisibilityTypes.PUBLIC,
+}
