@@ -270,9 +270,11 @@
 {{ super() }}
 <script>
 (function () {
-  var ROOM_SLUG = {{ room_slug | tojson }};
-  var csrfToken = (window.init && window.init.csrfNonce) ? window.init.csrfNonce : "";
-  var AWS_API_BASE = "https://5b5s89lx86.execute-api.eu-west-3.amazonaws.com/dev";
+  // Server-side constants
+  var ROOM_SLUG     = {{ room_slug | tojson }};
+  var DEFAULT_DUR   = {{ room.duration | int }};
+  var CSRF_TOKEN    = (window.init && window.init.csrfNonce) ? window.init.csrfNonce : "";
+  var AWS_API_BASE  = "https://5b5s89lx86.execute-api.eu-west-3.amazonaws.com/dev";
 
   var startBtn     = document.getElementById("start-btn");
   var terminateBtn = document.getElementById("terminate-btn");
@@ -380,7 +382,7 @@
     // Sync with local CTFd instance
     fetch("/api/room-instances/start/" + ROOM_SLUG, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "CSRF-Token": csrfToken }
+      headers: { "Content-Type": "application/json", "CSRF-Token": CSRF_TOKEN }
     })
     .then(function (r) { return r.json(); })
     .then(function (data) {
@@ -389,7 +391,7 @@
         var ip = data.ip || data.machine_ip || null;
         setActive(true, ip);
         var rem = data.time_remaining;
-        var dur = data.duration_minutes || {{ room.duration | int }};
+        var dur = data.duration_minutes || DEFAULT_DUR;
         startCountdown(rem || (dur * 60));
       } else {
         if (startBtn) startBtn.disabled = false;
@@ -416,7 +418,7 @@
 
     fetch("/api/room-instances/terminate/" + ROOM_SLUG, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "CSRF-Token": csrfToken }
+      headers: { "Content-Type": "application/json", "CSRF-Token": CSRF_TOKEN }
     }).catch(function () {});
     setActive(false);
   });
@@ -433,7 +435,7 @@
 
   // Restore machine state on page load
   fetch("/api/room-instances/status/" + ROOM_SLUG, {
-    headers: { "CSRF-Token": csrfToken }
+    headers: { "CSRF-Token": CSRF_TOKEN }
   })
   .then(function (r) { return r.json(); })
   .then(function (data) {
@@ -457,9 +459,10 @@
 
       fetch("/api/challenges/" + id + "/attempt", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "CSRF-Token": csrfToken },
+        headers: { "Content-Type": "application/json", "CSRF-Token": CSRF_TOKEN },
         body: JSON.stringify({ flag: flag })
       })
+      .then(function (r) { return r.json(); })
       .then(function (data) {
         var errEl = document.getElementById("err-" + id);
         var okEl  = document.getElementById("ok-"  + id);
