@@ -365,19 +365,12 @@
   startBtn.addEventListener("click", function () {
     startBtn.disabled = true;
     startBtn.textContent = "Starting...";
-<<<<<<< HEAD
-=======
-    ipDisplay.textContent = randomIp();
-    setActive(true);
-    startCountdown({{ room.duration | int }} * 60);
     // Trigger AWS API Gateway / StartChallenge Lambda
     fetch(AWS_API_BASE + "/start-challenge", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ room_slug: ROOM_SLUG, action: "start" })
     }).catch(function(err) { console.error("AWS Start Trigger Failed:", err); });
-
->>>>>>> 48231dc (feat: integrate AWS API Gateway for machine start/stop triggers)
     fetch("/api/room-instances/start/" + ROOM_SLUG, {
       method: "POST",
       headers: { "Content-Type": "application/json", "CSRF-Token": csrfToken }
