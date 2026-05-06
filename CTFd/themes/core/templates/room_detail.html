@@ -173,6 +173,7 @@
           <span id="ip-display">--.--.--.--</span>
         </div>
         <button class="btn thm-btn-grey px-3" id="copy-ip-btn"><i class="far fa-copy mr-2"></i>Copy IP</button>
+        <button class="btn thm-btn-grey px-3" id="extend-btn"><i class="fas fa-history mr-2"></i>Add 1 Hour</button>
         <button class="btn thm-btn-red px-3" id="terminate-btn"><i class="fas fa-power-off mr-2"></i>Terminate Machine</button>
         <span id="copy-feedback" class="tv-copy-feedback" style="display:none;">Copied</span>
       </div>
@@ -283,6 +284,7 @@
   var AWS_API_BASE  = "https://5b5s89lx86.execute-api.eu-west-3.amazonaws.com/dev";
 
   var startBtn     = document.getElementById("start-btn");
+  var extendBtn    = document.getElementById("extend-btn");
   var terminateBtn = document.getElementById("terminate-btn");
   var copyIpBtn    = document.getElementById("copy-ip-btn");
   var activePanel  = document.getElementById("machine-active-panel");
@@ -386,7 +388,7 @@
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ 
         challenge_id: "redis001", 
-        user_id: "user1234" 
+        user_id: "user123" 
       })
     })
     .then(function(res) { return res.json(); })
@@ -440,7 +442,7 @@
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ 
         challenge_id: "redis001", 
-        user_id: "user1234" 
+        user_id: "user123" 
       })
     }).catch(function(err) { console.error("AWS Stop Trigger Failed:", err); });
 
@@ -449,6 +451,48 @@
       headers: { "Content-Type": "application/json", "CSRF-Token": CSRF_TOKEN }
     }).catch(function () {});
     setActive(false);
+  });
+
+  extendBtn.addEventListener("click", function () {
+    extendBtn.disabled = true;
+    extendBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Extending...';
+
+    // Trigger AWS API Gateway / extend-challenge Lambda
+    fetch(AWS_API_BASE + "/extend-challenge", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ 
+        challenge_id: "redis001", 
+        user_id: "user123" 
+      })
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      extendBtn.disabled = false;
+      extendBtn.innerHTML = '<i class="fas fa-history mr-2"></i>Add 1 Hour';
+      
+      // Update local timer state (add 60 mins)
+      fetch("/api/room-instances/extend/" + ROOM_SLUG, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "CSRF-Token": CSRF_TOKEN },
+        body: JSON.stringify({ extension_minutes: 60 })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(syncData) {
+        if (syncData.success) {
+          startCountdown(syncData.time_remaining);
+        } else {
+          // Fallback: manually add 3600s to local countdown
+          remainingSeconds += 3600;
+          timerEl.textContent = fmtTime(remainingSeconds);
+        }
+      });
+    })
+    .catch(function(err) {
+      console.error("Extend Failed:", err);
+      extendBtn.disabled = false;
+      extendBtn.innerHTML = '<i class="fas fa-history mr-2"></i>Add 1 Hour';
+    });
   });
 
   copyIpBtn.addEventListener("click", function () {
