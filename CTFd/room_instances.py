@@ -204,3 +204,51 @@ def check_machine_status(room_slug):
         "duration_minutes": instance.duration_minutes,
     }), 200
 
+
+@room_instances.route("/extend/<room_slug>", methods=["POST"])
+@authed_only
+def extend_machine(room_slug):
+    """Extend the duration of a machine instance.
+    
+    Args:
+        room_slug: The room slug
+        
+    Returns:
+        JSON with new expiration time and remaining time
+    """
+    room_category = get_room_category(room_slug)
+    if not room_category:
+        abort(404)
+    
+    user = get_current_user()
+    team = get_current_team()
+    
+    account_id = team.id if team else user.id
+    account_type = "team" if team else "user"
+    
+    instance = RoomInstances.query.filter_by(
+        category=room_category,
+        is_active=True,
+        team_id=account_id if account_type == "team" else None,
+        user_id=account_id if account_type == "user" else None,
+    ).first()
+    
+    if not instance:
+        return jsonify({"success": False, "message": "No active machine"}), 404
+    
+    # Extend by requested amount or default to 60 mins
+    extension_minutes = request.json.get("extension_minutes", 60)
+    instance.expires_at = instance.expires_at + datetime.timedelta(minutes=extension_minutes)
+    instance.duration_minutes += extension_minutes
+    
+    db.session.commit()
+    
+    logger.info(f"Machine extended: room={room_slug}, minutes={extension_minutes}")
+    
+    return jsonify({
+        "success": True,
+        "new_expires_at": instance.expires_at.isoformat(),
+        "time_remaining": instance.time_remaining_seconds,
+        "duration_minutes": instance.duration_minutes,
+    }), 200
+
