@@ -365,14 +365,19 @@
   }
 
   startBtn.addEventListener("click", function () {
-    startBtn.disabled = true;
-    startBtn.textContent = "Starting...";
+    if (startBtn) {
+      startBtn.disabled = true;
+      startBtn.textContent = "Starting...";
+    }
+
     // Trigger AWS API Gateway / StartChallenge Lambda
     fetch(AWS_API_BASE + "/start-challenge", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ room_slug: ROOM_SLUG, action: "start" })
     }).catch(function(err) { console.error("AWS Start Trigger Failed:", err); });
+
+    // Sync with local CTFd instance
     fetch("/api/room-instances/start/" + ROOM_SLUG, {
       method: "POST",
       headers: { "Content-Type": "application/json", "CSRF-Token": csrfToken }
@@ -380,17 +385,23 @@
     .then(function (r) { return r.json(); })
     .then(function (data) {
       if (startBtn) startBtn.textContent = "Start Machine";
-      if (data.success) {
+      if (data && data.success) {
         var ip = data.ip || data.machine_ip || null;
         setActive(true, ip);
-        var time = data.time_remaining || (data.duration_minutes || {{ room.duration | int }}) * 60;
-        console.log("Starting machine timer:", time, "seconds");
-        startCountdown(time);
+        var rem = data.time_remaining;
+        var dur = data.duration_minutes || {{ room.duration | int }};
+        startCountdown(rem || (dur * 60));
       } else {
         if (startBtn) startBtn.disabled = false;
       }
     })
-    .catch(function () { startBtn.disabled = false; startBtn.textContent = "Start Machine"; });
+    .catch(function (err) {
+      console.error("Local Start Failed:", err);
+      if (startBtn) {
+        startBtn.disabled = false;
+        startBtn.textContent = "Start Machine";
+      }
+    });
   });
 
   terminateBtn.addEventListener("click", function () {
