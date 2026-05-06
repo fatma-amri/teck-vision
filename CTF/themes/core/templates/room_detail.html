@@ -139,7 +139,7 @@
       </div>
       <div>
         <h1 class="room-title">{{ room.name }}</h1>
-        <p class="room-desc">{{ room.description.split('OVA Image:')[0] }}</p>
+        <p class="room-desc">{{ (room.description or '').split('OVA Image:')[0] }}</p>
         <div>
           {% set diff = room.difficulty | lower %}
           {% if diff == 'easy' or diff == 'facile' %}
@@ -183,6 +183,12 @@
       <span>{{ solved_count }}/{{ total_count }} completed ({{ progress_percent }}%)</span>
     </div>
   </div>
+
+  {# Hidden config for JS to avoid IDE syntax errors #}
+  <div id="tv-room-config" 
+       data-slug="{{ room_slug }}" 
+       data-duration="{{ room.duration | int }}" 
+       style="display:none;"></div>
 </section>
 
 <section class="tv-room-main">
@@ -270,8 +276,11 @@
 {{ super() }}
 <script>
 (function () {
-  var ROOM_SLUG = {{ room_slug | tojson }};
-  var csrfToken = (window.init && window.init.csrfNonce) ? window.init.csrfNonce : "";
+  var configEl      = document.getElementById("tv-room-config");
+  var ROOM_SLUG     = configEl ? configEl.getAttribute("data-slug") : "";
+  var DEFAULT_DUR   = configEl ? parseInt(configEl.getAttribute("data-duration") || "0", 10) : 0;
+  var CSRF_TOKEN    = (window.init && window.init.csrfNonce) ? window.init.csrfNonce : "";
+  var AWS_API_BASE  = "https://5b5s89lx86.execute-api.eu-west-3.amazonaws.com/dev";
 
   var startBtn     = document.getElementById("start-btn");
   var terminateBtn = document.getElementById("terminate-btn");
@@ -319,6 +328,8 @@
   }
 
   function setActive(active, ip) {
+    if (!statusDot || !statusText || !startBtn || !activePanel || !ipDisplay) return;
+
     if (active) {
       statusDot.classList.add("active");
       statusText.textContent = "Machine On";
@@ -341,8 +352,8 @@
       startBtn.classList.remove("d-none");
       activePanel.classList.add("d-none");
       ipDisplay.textContent = "--.--.--.--";
-      copyFeedback.style.display = "none";
-      timerEl.textContent = "--:--";
+      if (copyFeedback) copyFeedback.style.display = "none";
+      if (timerEl) timerEl.textContent = "--:--";
     }
   }
 
@@ -362,31 +373,80 @@
   }
 
   startBtn.addEventListener("click", function () {
-    startBtn.disabled = true;
-    startBtn.textContent = "Starting...";
-    fetch("/api/room-instances/start/" + ROOM_SLUG, {
+    if (startBtn) {
+      startBtn.disabled = true;
+      startBtn.textContent = "Starting...";
+    }
+
+    var userId = (window.init && window.init.userId) ? String(window.init.userId) : "0";
+
+    // Trigger AWS API Gateway / StartChallenge Lambda
+    fetch(AWS_API_BASE + "/start-challenge", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "CSRF-Token": csrfToken }
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ 
+        challenge_id: ROOM_SLUG, 
+        user_id: userId 
+      })
     })
-    .then(function (r) { return r.json(); })
-    .then(function (data) {
-      startBtn.textContent = "Start Machine";
-      if (data.success) {
-        var ip = data.ip || data.machine_ip || null;
-        setActive(true, ip);
-        startCountdown((data.time_remaining > 0 ? data.time_remaining : (data.duration_minutes || {{ room.duration | int }}) * 60));
-      } else {
+    .then(function(res) { return res.json(); })
+    .then(function(awsData) {
+      var awsIp = awsData.public_ip || null;
+      
+      // Sync with local CTFd instance
+      fetch("/api/room-instances/start/" + ROOM_SLUG, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "CSRF-Token": CSRF_TOKEN },
+        body: JSON.stringify({ machine_ip: awsIp }) // Send the AWS IP to local state
+      })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (startBtn) startBtn.textContent = "Start Machine";
+        if (data && data.success) {
+          var ip = awsIp || data.ip || data.machine_ip || null;
+          setActive(true, ip);
+          var rem = data.time_remaining;
+          var dur = data.duration_minutes || DEFAULT_DUR;
+          startCountdown(rem || (dur * 60));
+        } else {
+          if (startBtn) startBtn.disabled = false;
+        }
+      })
+      .catch(function (err) {
+        console.error("Local Start Failed:", err);
+        if (startBtn) {
+          startBtn.disabled = false;
+          startBtn.textContent = "Start Machine";
+        }
+      });
+    })
+    .catch(function(err) { 
+      console.error("AWS Start Trigger Failed:", err);
+      if (startBtn) {
         startBtn.disabled = false;
+        startBtn.textContent = "Start Machine";
       }
-    })
-    .catch(function () { startBtn.disabled = false; startBtn.textContent = "Start Machine"; });
+    });
   });
 
   terminateBtn.addEventListener("click", function () {
     if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
+
+    var userId = (window.init && window.init.userId) ? String(window.init.userId) : "0";
+
+    // Trigger AWS API Gateway / stop_challenge Lambda
+    fetch(AWS_API_BASE + "/stop-challenge", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ 
+        challenge_id: ROOM_SLUG, 
+        user_id: userId 
+      })
+    }).catch(function(err) { console.error("AWS Stop Trigger Failed:", err); });
+
     fetch("/api/room-instances/terminate/" + ROOM_SLUG, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "CSRF-Token": csrfToken }
+      headers: { "Content-Type": "application/json", "CSRF-Token": CSRF_TOKEN }
     }).catch(function () {});
     setActive(false);
   });
@@ -403,7 +463,7 @@
 
   // Restore machine state on page load
   fetch("/api/room-instances/status/" + ROOM_SLUG, {
-    headers: { "CSRF-Token": csrfToken }
+    headers: { "CSRF-Token": CSRF_TOKEN }
   })
   .then(function (r) { return r.json(); })
   .then(function (data) {
@@ -427,18 +487,19 @@
 
       fetch("/api/challenges/" + id + "/attempt", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "CSRF-Token": csrfToken },
+        headers: { "Content-Type": "application/json", "CSRF-Token": CSRF_TOKEN },
         body: JSON.stringify({ flag: flag })
       })
       .then(function (r) { return r.json(); })
       .then(function (data) {
+        var errEl = document.getElementById("err-" + id);
+        var okEl  = document.getElementById("ok-"  + id);
+
         if (data.success) {
           var card = document.getElementById("chal-" + id);
-          card.classList.add("solved");
+          if (card) card.classList.add("solved");
           // Replace input area with solved indicator
           var inputRow = input.parentElement;
-          var errEl    = document.getElementById("err-" + id);
-          var okEl     = document.getElementById("ok-"  + id);
           if (inputRow) inputRow.remove();
           if (errEl) errEl.remove();
           if (okEl) { okEl.classList.remove("d-none"); }
@@ -447,13 +508,14 @@
           var solvedCount = document.querySelectorAll(".challenge-card.solved").length;
           var total     = allCards.length;
           var pct       = total ? Math.round(solvedCount / total * 100) : 0;
-          progressBar.style.width = pct + "%";
-          var progLabel = progressBar.querySelector("span");
-          if (progLabel) {
-            progLabel.textContent = solvedCount + "/" + total + " completed (" + pct + "%)";
+          if (progressBar) {
+            progressBar.style.width = pct + "%";
+            var progLabel = progressBar.querySelector("span");
+            if (progLabel) {
+              progLabel.textContent = solvedCount + "/" + total + " completed (" + pct + "%)";
+            }
           }
         } else {
-          var errEl = document.getElementById("err-" + id);
           if (errEl) {
             errEl.textContent = data.message || "Wrong flag, try again";
             errEl.classList.remove("d-none");
