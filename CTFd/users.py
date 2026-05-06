@@ -61,6 +61,7 @@ def private():
         "users/private.html",
         user=user,
         account=user.account,
+        user_score=user.get_score(admin=True),
         infos=infos,
         errors=errors,
     )
@@ -78,5 +79,7 @@ def public(user_id):
         infos.append("Scoreboard has been frozen")
 
     return render_template(
-        "users/public.html", user=user, account=user.account, infos=infos, errors=errors
+        "users/public.html", user=user, account=user.account,
+        user_score=user.get_score(admin=False),
+        infos=infos, errors=errors,
     )

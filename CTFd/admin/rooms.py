@@ -106,7 +106,9 @@ def create_ctf():
             flash("CTF name is required.", "error")
             return render_template("admin/create_ctf.html")
 
-
+        if not ova_location and (not ova_file or not ova_file.filename):
+            flash("Drop Your OVA Image is required.", "error")
+            return render_template("admin/create_ctf.html")
 
         flag_rows = []
         for index, answer in enumerate(answers):
@@ -144,7 +146,7 @@ def create_ctf():
         except (ValueError, TypeError):
             duration = 30
 
-        if not ova_location and ova_file and ova_file.filename:
+        if not ova_location:
             try:
                 ova_location = _upload_ova_file(ova_file, slug)
             except ValueError as e:
@@ -161,7 +163,7 @@ def create_ctf():
             description=room_description,
             difficulty=difficulty,
             duration=duration,
-            target_ip="15.237.60.47",
+            target_ip=None,
             is_active=True,
         )
         db.session.add(room)
@@ -235,7 +237,7 @@ def rooms_new():
             description=description,
             difficulty=difficulty,
             duration=duration,
-            target_ip=target_ip or "15.237.60.47",
+            target_ip=target_ip or None,
             is_active=True,
         )
         db.session.add(room)
@@ -274,7 +276,7 @@ def rooms_edit(room_id):
         room.description = description
         room.difficulty = difficulty
         room.duration = duration
-        room.target_ip = target_ip or "15.237.60.47"
+        room.target_ip = target_ip or None
         room.is_active = is_active
         db.session.commit()
         flash(f"Room '{name}' updated.", "success")

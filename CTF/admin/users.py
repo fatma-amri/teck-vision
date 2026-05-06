@@ -87,8 +87,6 @@ def users_detail(user_id):
     # Get Awards
     awards = user.get_awards(admin=True)
 
-    # Check if the user has an account (team or user)
-    # so that we don't throw an error if they dont
     score = user.get_score(admin=True)
     place = user.get_place(admin=True)
 

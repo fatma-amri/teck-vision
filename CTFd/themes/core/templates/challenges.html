@@ -2,7 +2,6 @@
 
 {% block content %}
   <style>
-    body { background: #f4f7fb !important; }
     .tv-challenges-hero {
       background: linear-gradient(100deg, #111a2d 0%, #17243b 58%, #071026 100%);
       color: #fff;
@@ -15,17 +14,17 @@
     .tv-page-subtitle { color: #cbd5e1; margin: .85rem 0 0; max-width: 760px; font-size: 1rem; }
     .tv-room-section { margin-top: -1.8rem; margin-bottom: 2.5rem; }
     .tv-section-head { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1rem; }
-    .tv-section-title { color:#111827; font-weight:850; margin:0; font-size:1.35rem; }
-    .tv-section-note { color:#64748b; margin:0; font-size:.9rem; }
+    .tv-section-title { color:#f1f5f9; font-weight:850; margin:0; font-size:1.35rem; }
+    .tv-section-note { color:#94a3b8; margin:0; font-size:.9rem; }
     .tv-room-card {
       display:block;
       height:100%;
       color:inherit;
       text-decoration:none;
-      background:#fff;
-      border:1px solid #e5e7eb;
+      background:#111827;
+      border:1px solid rgba(255,255,255,.08);
       border-radius:8px;
-      box-shadow:0 16px 38px rgba(15,23,42,.08);
+      box-shadow:0 16px 38px rgba(0,0,0,.3);
       overflow:hidden;
       transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
     }
@@ -34,10 +33,10 @@
       text-decoration:none;
       transform:translateY(-3px);
       border-color:#9af04d;
-      box-shadow:0 22px 48px rgba(15,23,42,.13);
+      box-shadow:0 22px 48px rgba(0,0,0,.4);
     }
     .tv-room-top {
-      background:linear-gradient(135deg,#111827,#1f2a44);
+      background:linear-gradient(135deg,#0f1421,#1a2035);
       color:#fff;
       padding:1.2rem;
       min-height:130px;
@@ -46,20 +45,20 @@
       justify-content:space-between;
     }
     .tv-room-title { font-weight:850; font-size:1.2rem; margin:0 0 .35rem; color:#fff; }
-    .tv-room-desc { color:#cbd5e1; font-size:.9rem; margin:0; line-height:1.5; }
+    .tv-room-desc { color:#94a3b8; font-size:.9rem; margin:0; line-height:1.5; }
     .tv-diff-pill { border-radius:6px; padding:.28rem .55rem; font-weight:800; font-size:.75rem; border:1px solid rgba(255,255,255,.18); width:max-content; }
     .tv-diff-easy { background:rgba(154,240,77,.18); color:#9af04d; }
     .tv-diff-medium { background:rgba(251,191,36,.16); color:#fbbf24; }
     .tv-diff-hard { background:rgba(248,113,113,.16); color:#f87171; }
     .tv-room-body { padding:1rem 1.2rem 1.2rem; }
     .tv-meta-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:.6rem; margin-bottom:1rem; }
-    .tv-meta-item { background:#f8fafc; border:1px solid #e5e7eb; border-radius:6px; padding:.55rem; text-align:center; min-width:0; }
-    .tv-meta-value { color:#111827; font-weight:850; line-height:1; }
+    .tv-meta-item { background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08); border-radius:6px; padding:.55rem; text-align:center; min-width:0; }
+    .tv-meta-value { color:#f1f5f9; font-weight:850; line-height:1; }
     .tv-meta-label { color:#64748b; font-size:.72rem; margin-top:.25rem; }
-    .tv-room-progress { background:#e5e7eb; border-radius:999px; height:8px; overflow:hidden; }
+    .tv-room-progress { background:rgba(255,255,255,.1); border-radius:999px; height:8px; overflow:hidden; }
     .tv-room-progress span { display:block; height:8px; background:#9af04d; }
-    .tv-enter { display:flex; align-items:center; justify-content:space-between; margin-top:.9rem; color:#111827; font-weight:800; }
-    .tv-board-panel { background:#fff; border:1px solid #e5e7eb; border-radius:8px; box-shadow:0 16px 38px rgba(15,23,42,.07); padding:1.25rem; }
+    .tv-enter { display:flex; align-items:center; justify-content:space-between; margin-top:.9rem; color:#f1f5f9; font-weight:800; }
+    .tv-board-panel { background:#111827; border:1px solid rgba(255,255,255,.08); border-radius:8px; box-shadow:0 16px 38px rgba(0,0,0,.25); padding:1.25rem; }
     .challenge-button {
       box-shadow:0 12px 26px rgba(15,23,42,.07);
       transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;

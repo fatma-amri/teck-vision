@@ -168,7 +168,7 @@
     <div class="tv-action-bar">
       <button class="btn thm-btn-green px-4" id="start-btn"><i class="fas fa-laptop-code mr-2"></i>Start Machine</button>
       <div class="tv-machine-active d-none" id="machine-active-panel">
-        <div class="tv-ip-chip">
+        <div class="tv-ip-chip" id="ip-chip">
           <span class="tv-ip-label">IP</span>
           <span id="ip-display">--.--.--.--</span>
         </div>
@@ -318,12 +318,22 @@
     ].join(".");
   }
 
-  function setActive(active) {
+  function setActive(active, ip) {
     if (active) {
       statusDot.classList.add("active");
       statusText.textContent = "Machine On";
       startBtn.classList.add("d-none");
       activePanel.classList.remove("d-none");
+      var ipChip = document.getElementById("ip-chip");
+      var copyBtn = document.getElementById("copy-ip-btn");
+      if (ip) {
+        ipDisplay.textContent = ip;
+        if (ipChip) ipChip.style.display = "";
+        if (copyBtn) copyBtn.style.display = "";
+      } else {
+        if (ipChip) ipChip.style.display = "none";
+        if (copyBtn) copyBtn.style.display = "none";
+      }
     } else {
       statusDot.classList.remove("active");
       statusText.textContent = "Machine Off";
@@ -354,9 +364,6 @@
   startBtn.addEventListener("click", function () {
     startBtn.disabled = true;
     startBtn.textContent = "Starting...";
-    ipDisplay.textContent = randomIp();
-    setActive(true);
-    startCountdown({{ room.duration | int }} * 60);
     fetch("/api/room-instances/start/" + ROOM_SLUG, {
       method: "POST",
       headers: { "Content-Type": "application/json", "CSRF-Token": csrfToken }
@@ -365,12 +372,14 @@
     .then(function (data) {
       startBtn.textContent = "Start Machine";
       if (data.success) {
-        startCountdown((data.duration_minutes || {{ room.duration | int }}) * 60);
+        var ip = data.ip || data.machine_ip || null;
+        setActive(true, ip);
+        startCountdown((data.time_remaining > 0 ? data.time_remaining : (data.duration_minutes || {{ room.duration | int }}) * 60));
       } else {
         startBtn.disabled = false;
       }
     })
-    .catch(function () { startBtn.textContent = "Start Machine"; });
+    .catch(function () { startBtn.disabled = false; startBtn.textContent = "Start Machine"; });
   });
 
   terminateBtn.addEventListener("click", function () {
@@ -391,6 +400,19 @@
       });
     }
   });
+
+  // Restore machine state on page load
+  fetch("/api/room-instances/status/" + ROOM_SLUG, {
+    headers: { "CSRF-Token": csrfToken }
+  })
+  .then(function (r) { return r.json(); })
+  .then(function (data) {
+    if (data.is_active && data.time_remaining > 0) {
+      setActive(true, data.machine_ip || null);
+      startCountdown(data.time_remaining);
+    }
+  })
+  .catch(function () {});
 
   // Flag submission
   document.querySelectorAll(".submit-btn").forEach(function (btn) {

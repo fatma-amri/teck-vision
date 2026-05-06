@@ -20,7 +20,7 @@
 
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h3>All Rooms ({{ rooms|length }})</h3>
-    <a href="{{ url_for('admin.rooms_new') }}" class="btn btn-success">+ New Room</a>
+    <a href="{{ url_for('admin.create_ctf') }}" class="btn btn-primary">+ Create CTF</a>
   </div>
 
   {% if rooms %}
@@ -78,7 +78,7 @@
     </tbody>
   </table>
   {% else %}
-  <div class="alert alert-info">No rooms yet. <a href="{{ url_for('admin.rooms_new') }}">Create the first one.</a></div>
+  <div class="alert alert-info">No rooms yet. <a href="{{ url_for('admin.create_ctf') }}">Create the first one.</a></div>
   {% endif %}
 </div>
 {% endblock %}

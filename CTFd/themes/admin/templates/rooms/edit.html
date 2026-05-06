@@ -42,7 +42,7 @@
       </div>
       <div class="col-md-3 form-group">
         <label>Target IP</label>
-        <input type="text" name="target_ip" class="form-control" value="{{ room.target_ip }}">
+        <input type="text" name="target_ip" class="form-control" value="{{ room.target_ip or '' }}" placeholder="e.g. 10.10.10.5">
       </div>
       <div class="col-md-3 form-group">
         <label>Active</label>
@@ -59,9 +59,9 @@
 
   <hr>
 
-  <!-- Challenges -->
+  <!-- Room-specific Challenges (RoomChallenge) -->
   <div class="d-flex justify-content-between align-items-center mt-4 mb-3">
-    <h4>Challenges ({{ room.challenges.count() }})</h4>
+    <h4>Room Challenges ({{ room.challenges.count() }})</h4>
     <a href="{{ url_for('admin.room_challenges_new', room_id=room.id) }}" class="btn btn-success btn-sm">+ Add Challenge</a>
   </div>
 
@@ -69,14 +69,7 @@
   {% if challenges %}
   <table class="table table-sm table-bordered">
     <thead>
-      <tr>
-        <th>#</th>
-        <th>Pos</th>
-        <th>Title</th>
-        <th>Difficulty</th>
-        <th>Points</th>
-        <th>Actions</th>
-      </tr>
+      <tr><th>#</th><th>Pos</th><th>Title</th><th>Difficulty</th><th>Points</th><th>Actions</th></tr>
     </thead>
     <tbody>
       {% for c in challenges %}
@@ -98,7 +91,55 @@
     </tbody>
   </table>
   {% else %}
-  <div class="alert alert-info">No challenges yet. <a href="{{ url_for('admin.room_challenges_new', room_id=room.id) }}">Add the first challenge.</a></div>
+  <div class="alert alert-info">No room challenges yet. <a href="{{ url_for('admin.room_challenges_new', room_id=room.id) }}">Add the first one.</a></div>
+  {% endif %}
+
+  <hr>
+
+  <!-- Linked CTFd Challenges -->
+  <div class="d-flex justify-content-between align-items-center mt-4 mb-3">
+    <h4>Linked Challenges ({{ linked_challenges|length }})</h4>
+  </div>
+
+  {% if linked_challenges %}
+  <table class="table table-sm table-bordered">
+    <thead>
+      <tr><th>#</th><th>Name</th><th>Category</th><th>Points</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
+      {% for c in linked_challenges %}
+      <tr>
+        <td>{{ c.id }}</td>
+        <td>{{ c.name }}</td>
+        <td>{{ c.category }}</td>
+        <td>{{ c.value }}</td>
+        <td>
+          <form method="POST" action="{{ url_for('admin.room_unlink_challenge', room_id=room.id, challenge_id=c.id) }}" style="display:inline;" onsubmit="return confirm('Unlink \'{{ c.name }}\' from this room?');">
+            <input type="hidden" name="nonce" value="{{ Session.nonce }}">
+            <button class="btn btn-xs btn-warning">Unlink</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="text-muted">No challenges linked yet.</p>
+  {% endif %}
+
+  <!-- Link a challenge -->
+  {% if available_challenges %}
+  <form method="POST" action="{{ url_for('admin.room_link_challenge', room_id=room.id) }}" class="form-inline mt-2">
+    <input type="hidden" name="nonce" value="{{ Session.nonce }}">
+    <select name="challenge_id" class="form-control mr-2" style="max-width:360px;">
+      {% for c in available_challenges %}
+      <option value="{{ c.id }}">{{ c.name }} ({{ c.category }} — {{ c.value }} pts)</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn btn-outline-primary btn-sm">Link Challenge</button>
+  </form>
+  {% else %}
+  <p class="text-muted small">All existing challenges are already linked to a room.</p>
   {% endif %}
 </div>
 {% endblock %}

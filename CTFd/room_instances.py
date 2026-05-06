@@ -64,13 +64,8 @@ def start_machine(room_slug):
         user_id=account_id if account_type == "user" else None,
     ).first()
     
-    # Resolve target IP: Room model > config fallback
     room_model = Rooms.query.filter_by(slug=room_slug).first()
-    machine_ip = (
-        room_model.target_ip
-        if room_model and room_model.target_ip
-        else current_app.config.get("CHALLENGE_TARGET_IP", "15.237.60.47")
-    )
+    machine_ip = room_model.target_ip if room_model and room_model.target_ip else None
 
     if existing:
         return jsonify({

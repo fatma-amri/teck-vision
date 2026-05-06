@@ -164,7 +164,7 @@ def room_detail(slug):
         for index, row in enumerate(completed_rows)
     ]
 
-    target_ip = room.target_ip or current_app.config.get("CHALLENGE_TARGET_IP", "15.237.60.47")
+    target_ip = room.target_ip or None
 
     return render_template(
         "room_detail.html",
