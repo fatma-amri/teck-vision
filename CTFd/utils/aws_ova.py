@@ -1,0 +1,72 @@
+import os
+import re
+from urllib.parse import urlparse
+
+import boto3
+from boto3.dynamodb.conditions import Attr
+from botocore.exceptions import BotoCoreError, ClientError
+from flask import current_app
+
+from CTFd.utils import get_app_config
+
+
+DEFAULT_OVA_TABLE = "ctf-ova-imports"
+DEFAULT_OVA_REGION = "eu-west-3"
+
+
+def resolve_aws_challenge_id_for_room(room):
+    if room.aws_challenge_id:
+        return room.aws_challenge_id
+
+    s3_location = _extract_ova_location(room.description or "")
+    if not s3_location:
+        return None
+
+    parsed = _parse_s3_location(s3_location)
+    if not parsed:
+        return None
+
+    bucket, key = parsed
+    item = _find_ova_import(bucket=bucket, key=key)
+    if not item:
+        return None
+
+    challenge_id = item.get("challenge_id")
+    if challenge_id:
+        room.aws_challenge_id = challenge_id
+
+    return challenge_id
+
+
+def _extract_ova_location(description):
+    match = re.search(r"OVA Image:\s*(s3://\S+)", description)
+    return match.group(1).strip() if match else None
+
+
+def _parse_s3_location(location):
+    parsed = urlparse(location)
+    if parsed.scheme != "s3" or not parsed.netloc or not parsed.path:
+        return None
+
+    return parsed.netloc, parsed.path.lstrip("/")
+
+
+def _find_ova_import(bucket, key):
+    table_name = _get_config("OVA_IMPORTS_TABLE", DEFAULT_OVA_TABLE)
+    region = _get_config("OVA_S3_REGION", _get_config("AWS_S3_REGION", DEFAULT_OVA_REGION))
+
+    try:
+        table = boto3.resource("dynamodb", region_name=region).Table(table_name)
+        response = table.scan(
+            FilterExpression=Attr("s3_bucket").eq(bucket) & Attr("s3_key").eq(key),
+            Limit=1,
+        )
+        items = response.get("Items", [])
+        return items[0] if items else None
+    except (BotoCoreError, ClientError) as exc:
+        current_app.logger.warning("Could not resolve OVA import for %s/%s: %s", bucket, key, exc)
+        return None
+
+
+def _get_config(name, default=None):
+    return current_app.config.get(name) or get_app_config(name) or os.environ.get(name) or default

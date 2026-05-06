@@ -8,6 +8,7 @@ from sqlalchemy import func
 from CTFd.cache import cache
 from CTFd.constants.config import ChallengeVisibilityTypes, Configs
 from CTFd.models import RoomChallenge, RoomSolve, Rooms, Users, db
+from CTFd.utils.aws_ova import resolve_aws_challenge_id_for_room
 from CTFd.utils.config import is_teams_mode
 from CTFd.utils.decorators import authed_only, require_complete_profile, require_verified_emails
 from CTFd.utils.decorators.visibility import check_challenge_visibility
@@ -96,6 +97,11 @@ def room_detail(slug):
             return redirect(url_for("teams.private", next=request.full_path))
 
     room = Rooms.query.filter_by(slug=slug, is_active=True).first_or_404()
+    needs_machine_link = not room.aws_challenge_id
+    machine_challenge_id = resolve_aws_challenge_id_for_room(room)
+    if needs_machine_link and machine_challenge_id:
+        db.session.commit()
+
     challenges = room.challenges.order_by(RoomChallenge.position.asc()).all()
 
     user = get_current_user() if authed() else None
@@ -177,7 +183,7 @@ def room_detail(slug):
         players_count=players_count,
         completed_users=completed_users,
         challenge_target_ip=target_ip,
-        machine_challenge_id=room.aws_challenge_id,
+        machine_challenge_id=machine_challenge_id,
     )
 
 
