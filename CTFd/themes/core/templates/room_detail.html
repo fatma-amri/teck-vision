@@ -272,7 +272,7 @@
 (function () {
   var ROOM_SLUG = {{ room_slug | tojson }};
   var csrfToken = (window.init && window.init.csrfNonce) ? window.init.csrfNonce : "";
-  var AWS_API_BASE = "https://5b5s89lx86.execute-api.eu-west-3.amazonaws.com";
+  var AWS_API_BASE = "https://5b5s89lx86.execute-api.eu-west-3.amazonaws.com/dev";
 
   var startBtn     = document.getElementById("start-btn");
   var terminateBtn = document.getElementById("terminate-btn");
@@ -379,13 +379,15 @@
     })
     .then(function (r) { return r.json(); })
     .then(function (data) {
-      startBtn.textContent = "Start Machine";
+      if (startBtn) startBtn.textContent = "Start Machine";
       if (data.success) {
         var ip = data.ip || data.machine_ip || null;
         setActive(true, ip);
-        startCountdown((data.time_remaining > 0 ? data.time_remaining : (data.duration_minutes || {{ room.duration | int }}) * 60));
+        var time = data.time_remaining || (data.duration_minutes || {{ room.duration | int }}) * 60;
+        console.log("Starting machine timer:", time, "seconds");
+        startCountdown(time);
       } else {
-        startBtn.disabled = false;
+        if (startBtn) startBtn.disabled = false;
       }
     })
     .catch(function () { startBtn.disabled = false; startBtn.textContent = "Start Machine"; });
@@ -447,15 +449,15 @@
         headers: { "Content-Type": "application/json", "CSRF-Token": csrfToken },
         body: JSON.stringify({ flag: flag })
       })
-      .then(function (r) { return r.json(); })
       .then(function (data) {
+        var errEl = document.getElementById("err-" + id);
+        var okEl  = document.getElementById("ok-"  + id);
+
         if (data.success) {
           var card = document.getElementById("chal-" + id);
-          card.classList.add("solved");
+          if (card) card.classList.add("solved");
           // Replace input area with solved indicator
           var inputRow = input.parentElement;
-          var errEl    = document.getElementById("err-" + id);
-          var okEl     = document.getElementById("ok-"  + id);
           if (inputRow) inputRow.remove();
           if (errEl) errEl.remove();
           if (okEl) { okEl.classList.remove("d-none"); }
@@ -464,10 +466,12 @@
           var solvedCount = document.querySelectorAll(".challenge-card.solved").length;
           var total     = allCards.length;
           var pct       = total ? Math.round(solvedCount / total * 100) : 0;
-          progressBar.style.width = pct + "%";
-          var progLabel = progressBar.querySelector("span");
-          if (progLabel) {
-            progLabel.textContent = solvedCount + "/" + total + " completed (" + pct + "%)";
+          if (progressBar) {
+            progressBar.style.width = pct + "%";
+            var progLabel = progressBar.querySelector("span");
+            if (progLabel) {
+              progLabel.textContent = solvedCount + "/" + total + " completed (" + pct + "%)";
+            }
           }
         } else {
           if (errEl) {
