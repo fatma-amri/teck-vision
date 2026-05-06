@@ -378,33 +378,50 @@
       startBtn.textContent = "Starting...";
     }
 
+    var userId = (window.init && window.init.userId) ? String(window.init.userId) : "0";
+
     // Trigger AWS API Gateway / StartChallenge Lambda
     fetch(AWS_API_BASE + "/start-challenge", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ room_slug: ROOM_SLUG, action: "start" })
-    }).catch(function(err) { console.error("AWS Start Trigger Failed:", err); });
-
-    // Sync with local CTFd instance
-    fetch("/api/room-instances/start/" + ROOM_SLUG, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "CSRF-Token": CSRF_TOKEN }
+      body: JSON.stringify({ 
+        challenge_id: ROOM_SLUG, 
+        user_id: userId 
+      })
     })
-    .then(function (r) { return r.json(); })
-    .then(function (data) {
-      if (startBtn) startBtn.textContent = "Start Machine";
-      if (data && data.success) {
-        var ip = data.ip || data.machine_ip || null;
-        setActive(true, ip);
-        var rem = data.time_remaining;
-        var dur = data.duration_minutes || DEFAULT_DUR;
-        startCountdown(rem || (dur * 60));
-      } else {
-        if (startBtn) startBtn.disabled = false;
-      }
+    .then(function(res) { return res.json(); })
+    .then(function(awsData) {
+      var awsIp = awsData.public_ip || null;
+      
+      // Sync with local CTFd instance
+      fetch("/api/room-instances/start/" + ROOM_SLUG, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "CSRF-Token": CSRF_TOKEN },
+        body: JSON.stringify({ machine_ip: awsIp }) // Send the AWS IP to local state
+      })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (startBtn) startBtn.textContent = "Start Machine";
+        if (data && data.success) {
+          var ip = awsIp || data.ip || data.machine_ip || null;
+          setActive(true, ip);
+          var rem = data.time_remaining;
+          var dur = data.duration_minutes || DEFAULT_DUR;
+          startCountdown(rem || (dur * 60));
+        } else {
+          if (startBtn) startBtn.disabled = false;
+        }
+      })
+      .catch(function (err) {
+        console.error("Local Start Failed:", err);
+        if (startBtn) {
+          startBtn.disabled = false;
+          startBtn.textContent = "Start Machine";
+        }
+      });
     })
-    .catch(function (err) {
-      console.error("Local Start Failed:", err);
+    .catch(function(err) { 
+      console.error("AWS Start Trigger Failed:", err);
       if (startBtn) {
         startBtn.disabled = false;
         startBtn.textContent = "Start Machine";
@@ -415,11 +432,16 @@
   terminateBtn.addEventListener("click", function () {
     if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
 
+    var userId = (window.init && window.init.userId) ? String(window.init.userId) : "0";
+
     // Trigger AWS API Gateway / stop_challenge Lambda
     fetch(AWS_API_BASE + "/stop-challenge", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ room_slug: ROOM_SLUG, action: "stop" })
+      body: JSON.stringify({ 
+        challenge_id: ROOM_SLUG, 
+        user_id: userId 
+      })
     }).catch(function(err) { console.error("AWS Stop Trigger Failed:", err); });
 
     fetch("/api/room-instances/terminate/" + ROOM_SLUG, {
