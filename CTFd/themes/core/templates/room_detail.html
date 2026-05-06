@@ -139,7 +139,7 @@
       </div>
       <div>
         <h1 class="room-title">{{ room.name }}</h1>
-        <p class="room-desc">{{ room.description.split('OVA Image:')[0] }}</p>
+        <p class="room-desc">{{ (room.description or '').split('OVA Image:')[0] }}</p>
         <div>
           {% set diff = room.difficulty | lower %}
           {% if diff == 'easy' or diff == 'facile' %}
@@ -320,6 +320,8 @@
   }
 
   function setActive(active, ip) {
+    if (!statusDot || !statusText || !startBtn || !activePanel || !ipDisplay) return;
+
     if (active) {
       statusDot.classList.add("active");
       statusText.textContent = "Machine On";
@@ -342,8 +344,8 @@
       startBtn.classList.remove("d-none");
       activePanel.classList.add("d-none");
       ipDisplay.textContent = "--.--.--.--";
-      copyFeedback.style.display = "none";
-      timerEl.textContent = "--:--";
+      if (copyFeedback) copyFeedback.style.display = "none";
+      if (timerEl) timerEl.textContent = "--:--";
     }
   }
 
@@ -468,7 +470,6 @@
             progLabel.textContent = solvedCount + "/" + total + " completed (" + pct + "%)";
           }
         } else {
-          var errEl = document.getElementById("err-" + id);
           if (errEl) {
             errEl.textContent = data.message || "Wrong flag, try again";
             errEl.classList.remove("d-none");
