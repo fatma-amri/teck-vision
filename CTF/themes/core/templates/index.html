@@ -4,288 +4,490 @@
 {{ super() }}
 <style>
   :root {
-    --cyan: #00d4ff;
-    --violet: #7b2ff7;
-    --green: #00ff88;
-    --bg-dark: #0a0e1a;
-    --card-bg: #111827;
-    --text: #e2e8f0;
+    --tv-bg: #07111f;
+    --tv-panel: #0d1b2e;
+    --tv-panel-2: #10233a;
+    --tv-border: rgba(148, 163, 184, 0.18);
+    --tv-text: #edf5ff;
+    --tv-muted: #9fb0c6;
+    --tv-cyan: #22d3ee;
+    --tv-green: #7ddc3f;
+    --tv-red: #ff5f57;
+    --tv-amber: #f2b84b;
   }
 
-  body { background: var(--bg-dark) !important; color: var(--text); }
+  body {
+    background: var(--tv-bg) !important;
+    color: var(--tv-text);
+  }
 
-  /* ── Hero ── */
   .tv-hero {
     position: relative;
-    min-height: 100vh;
+    min-height: calc(100vh - 138px);
     display: flex;
     align-items: center;
-    justify-content: center;
-    text-align: center;
     overflow: hidden;
-    padding-top: 56px;
+    border-bottom: 1px solid var(--tv-border);
   }
 
   #matrix-canvas {
     position: absolute;
     inset: 0;
-    opacity: .12;
+    width: 100%;
+    height: 100%;
+    opacity: 0.12;
     pointer-events: none;
   }
 
-  .tv-hero-content { position: relative; z-index: 2; padding: 0 1rem; }
+  .tv-hero::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 75% 25%, rgba(34, 211, 238, 0.12), transparent 34%),
+      linear-gradient(90deg, rgba(7, 17, 31, 0.96), rgba(7, 17, 31, 0.68));
+    pointer-events: none;
+  }
 
-  .tv-badge {
-    display: inline-block;
-    background: rgba(0,212,255,.1);
-    border: 1px solid rgba(0,212,255,.3);
-    border-radius: 20px;
-    color: var(--cyan);
-    font-size: .8rem;
-    letter-spacing: .12em;
-    padding: .35rem .9rem;
-    margin-bottom: 1.5rem;
+  .tv-hero-inner {
+    position: relative;
+    z-index: 1;
+    width: min(1120px, calc(100% - 40px));
+    margin: 0 auto;
+    padding: 72px 0;
+  }
+
+  .tv-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--tv-cyan);
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
+    margin-bottom: 1.15rem;
+  }
+
+  .tv-kicker::before {
+    content: "";
+    width: 9px;
+    height: 9px;
+    border-radius: 999px;
+    background: var(--tv-green);
+    box-shadow: 0 0 18px rgba(125, 220, 63, 0.7);
   }
 
   .tv-hero-title {
-    font-size: clamp(2.2rem, 6vw, 4.5rem);
+    max-width: 760px;
+    margin: 0 0 1.1rem;
+    font-size: clamp(2.4rem, 6vw, 5.1rem);
     font-weight: 900;
-    line-height: 1.1;
-    letter-spacing: -.02em;
-    margin-bottom: 1.5rem;
+    line-height: 1.02;
+    letter-spacing: 0;
+  }
+
+  .tv-accent {
+    color: var(--tv-cyan);
+  }
+
+  .tv-hero-copy {
+    max-width: 620px;
+    color: var(--tv-muted);
+    font-size: 1.08rem;
+    line-height: 1.65;
+    margin-bottom: 2rem;
+  }
+
+  .tv-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    margin-bottom: 2.4rem;
+  }
+
+  .tv-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    min-height: 46px;
+    padding: 0.72rem 1.15rem;
+    border-radius: 8px;
+    font-weight: 800;
+    text-decoration: none;
+    transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+  }
+
+  .tv-btn:hover {
+    transform: translateY(-2px);
+    text-decoration: none;
+  }
+
+  .tv-btn-primary {
+    color: #07111f;
+    background: var(--tv-green);
+    border: 1px solid var(--tv-green);
+  }
+
+  .tv-btn-primary:hover {
+    color: #07111f;
+    background: #8df04a;
+  }
+
+  .tv-btn-secondary {
+    color: var(--tv-text);
+    background: rgba(16, 35, 58, 0.78);
+    border: 1px solid var(--tv-border);
+  }
+
+  .tv-btn-secondary:hover {
+    color: var(--tv-text);
+    border-color: rgba(34, 211, 238, 0.55);
+  }
+
+  .tv-status-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    color: #c9d5e6;
+    font-size: 0.86rem;
+  }
+
+  .tv-status-row span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.42rem 0.65rem;
+    border: 1px solid var(--tv-border);
+    border-radius: 8px;
+    background: rgba(13, 27, 46, 0.62);
+  }
+
+  .tv-stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    width: min(1120px, calc(100% - 40px));
+    margin: -42px auto 0;
+    position: relative;
+    z-index: 2;
+    border: 1px solid var(--tv-border);
+    border-radius: 8px;
+    overflow: hidden;
+    background: rgba(13, 27, 46, 0.96);
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.24);
+  }
+
+  .tv-stat {
+    padding: 1.25rem 1rem;
+    border-right: 1px solid var(--tv-border);
+  }
+
+  .tv-stat:last-child {
+    border-right: 0;
+  }
+
+  .tv-stat-number {
+    color: var(--tv-cyan);
+    font-size: 1.9rem;
+    font-weight: 900;
+    line-height: 1;
+  }
+
+  .tv-stat-label {
+    color: var(--tv-muted);
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    margin-top: 0.45rem;
     text-transform: uppercase;
   }
 
-  .tv-word-hack   { color: var(--cyan); }
-  .tv-word-learn  { color: var(--violet); }
-  .tv-word-conquer{ background: linear-gradient(135deg, var(--green), #00bfff);
-                    -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-
-  .tv-hero-sub {
-    color: #94a3b8;
-    font-size: 1.15rem;
-    max-width: 520px;
-    margin: 0 auto 2.5rem;
-    line-height: 1.6;
+  .tv-section {
+    width: min(1120px, calc(100% - 40px));
+    margin: 0 auto;
+    padding: 76px 0 0;
   }
 
-  .tv-cta-group { display: flex; gap: .9rem; justify-content: center; flex-wrap: wrap; margin-bottom: 3.5rem; }
-
-  .tv-btn-primary {
-    background: linear-gradient(135deg, var(--cyan), var(--violet));
-    border: none;
-    border-radius: 8px;
-    color: #fff;
-    font-weight: 700;
-    padding: .75rem 2rem;
-    text-decoration: none;
-    transition: opacity .2s, transform .2s;
-    font-size: .97rem;
+  .tv-section-head {
+    max-width: 650px;
+    margin-bottom: 1.8rem;
   }
-  .tv-btn-primary:hover { opacity: .88; transform: translateY(-2px); color: #fff; text-decoration: none; }
 
-  .tv-btn-outline {
-    background: transparent;
-    border: 2px solid rgba(123,47,247,.5);
-    border-radius: 8px;
-    color: var(--violet);
-    font-weight: 700;
-    padding: .75rem 2rem;
-    text-decoration: none;
-    transition: background .2s, color .2s, transform .2s;
-    font-size: .97rem;
+  .tv-section-title {
+    color: var(--tv-text);
+    font-size: 1.75rem;
+    font-weight: 900;
+    margin-bottom: 0.45rem;
   }
-  .tv-btn-outline:hover { background: rgba(123,47,247,.15); color: #c084fc; transform: translateY(-2px); text-decoration: none; }
 
-  /* ── Stats bar ── */
-  .tv-stats {
-    display: flex;
-    gap: 2.5rem;
-    justify-content: center;
-    flex-wrap: wrap;
-    padding: 2rem 1rem;
-    background: rgba(17,24,39,.6);
-    border-top: 1px solid rgba(255,255,255,.05);
-    border-bottom: 1px solid rgba(255,255,255,.05);
+  .tv-section-copy {
+    color: var(--tv-muted);
+    line-height: 1.65;
   }
-  .tv-stat { text-align: center; }
-  .tv-stat-number { font-size: 2rem; font-weight: 800; color: var(--cyan); line-height: 1; }
-  .tv-stat-label  { color: #64748b; font-size: .82rem; margin-top: .25rem; text-transform: uppercase; letter-spacing: .08em; }
 
-  /* ── Feature cards ── */
-  .tv-section { padding: 5rem 0; }
-  .tv-section-title { font-size: 1.8rem; font-weight: 800; color: #f1f5f9; margin-bottom: .6rem; }
-  .tv-section-sub   { color: #64748b; margin-bottom: 3rem; font-size: 1rem; }
+  .tv-card-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+  }
 
   .tv-card {
-    background: var(--card-bg);
-    border: 1px solid rgba(255,255,255,.06);
-    border-radius: 14px;
-    padding: 1.75rem;
-    height: 100%;
-    transition: border-color .25s, transform .25s;
+    min-height: 190px;
+    padding: 1.2rem;
+    border: 1px solid var(--tv-border);
+    border-radius: 8px;
+    background: var(--tv-panel);
+    transition: transform 0.18s ease, border-color 0.18s ease;
   }
-  .tv-card:hover { border-color: rgba(0,212,255,.3); transform: translateY(-4px); }
-  .tv-card-icon { font-size: 2rem; margin-bottom: 1rem; }
-  .tv-card-title { color: #f1f5f9; font-weight: 700; font-size: 1.05rem; margin-bottom: .5rem; }
-  .tv-card-text  { color: #64748b; font-size: .9rem; line-height: 1.6; }
 
-  /* ── Category pills ── */
-  .tv-category-grid { display: flex; flex-wrap: wrap; gap: .75rem; justify-content: center; }
+  .tv-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(34, 211, 238, 0.45);
+  }
+
+  .tv-card-icon {
+    color: var(--tv-green);
+    font-size: 1.35rem;
+    margin-bottom: 0.95rem;
+  }
+
+  .tv-card-title {
+    color: var(--tv-text);
+    font-size: 1rem;
+    font-weight: 850;
+    margin-bottom: 0.45rem;
+  }
+
+  .tv-card-text {
+    color: var(--tv-muted);
+    font-size: 0.9rem;
+    line-height: 1.55;
+  }
+
+  .tv-category-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.7rem;
+  }
+
   .tv-cat {
-    padding: .55rem 1.25rem;
-    border-radius: 30px;
-    font-size: .88rem;
-    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--tv-text);
+    padding: 0.58rem 0.85rem;
+    border: 1px solid var(--tv-border);
+    border-radius: 8px;
+    background: var(--tv-panel);
+    font-weight: 800;
     text-decoration: none;
-    transition: opacity .2s, transform .2s;
-    display: inline-block;
   }
-  .tv-cat:hover { opacity: .8; transform: translateY(-2px); text-decoration: none; }
-  .tv-cat-web      { background: rgba(0,212,255,.15); color: var(--cyan);   border: 1px solid rgba(0,212,255,.3); }
-  .tv-cat-crypto   { background: rgba(123,47,247,.15); color: #c084fc;       border: 1px solid rgba(123,47,247,.3); }
-  .tv-cat-reverse  { background: rgba(0,255,136,.12); color: var(--green);   border: 1px solid rgba(0,255,136,.3); }
-  .tv-cat-pwn      { background: rgba(239,68,68,.12);  color: #f87171;       border: 1px solid rgba(239,68,68,.3); }
-  .tv-cat-forensics{ background: rgba(251,191,36,.12); color: #fbbf24;       border: 1px solid rgba(251,191,36,.3); }
-  .tv-cat-misc     { background: rgba(148,163,184,.1); color: #94a3b8;       border: 1px solid rgba(148,163,184,.3); }
 
-  /* ── Footer bar ── */
-  footer.footer { background: rgba(10,14,26,.8); border-top: 1px solid rgba(255,255,255,.05); }
+  .tv-cat:hover {
+    color: var(--tv-cyan);
+    border-color: rgba(34, 211, 238, 0.45);
+    text-decoration: none;
+  }
 
-  /* Typed cursor blink */
-  .tv-cursor { animation: blink 1s step-end infinite; }
-  @keyframes blink { 50% { opacity: 0; } }
+  .tv-final {
+    margin-top: 76px;
+    padding: 52px 0;
+    border-top: 1px solid var(--tv-border);
+    background: var(--tv-panel-2);
+  }
+
+  .tv-final-inner {
+    width: min(1120px, calc(100% - 40px));
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+  }
+
+  .tv-final h2 {
+    color: var(--tv-text);
+    font-size: 1.7rem;
+    font-weight: 900;
+    margin-bottom: 0.35rem;
+  }
+
+  .tv-final p {
+    color: var(--tv-muted);
+    margin: 0;
+  }
+
+  footer.footer {
+    background: #07111f;
+    border-top: 1px solid var(--tv-border);
+  }
+
+  @media (max-width: 900px) {
+    .tv-stats,
+    .tv-card-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .tv-stat:nth-child(2) {
+      border-right: 0;
+    }
+
+    .tv-stat:nth-child(-n + 2) {
+      border-bottom: 1px solid var(--tv-border);
+    }
+
+    .tv-final-inner {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .tv-hero-inner,
+    .tv-section,
+    .tv-stats,
+    .tv-final-inner {
+      width: min(100% - 28px, 1120px);
+    }
+
+    .tv-hero {
+      min-height: auto;
+    }
+
+    .tv-hero-inner {
+      padding: 56px 0 82px;
+    }
+
+    .tv-stats,
+    .tv-card-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .tv-stat,
+    .tv-stat:nth-child(2) {
+      border-right: 0;
+      border-bottom: 1px solid var(--tv-border);
+    }
+
+    .tv-stat:last-child {
+      border-bottom: 0;
+    }
+
+    .tv-btn {
+      width: 100%;
+    }
+  }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- ══════════ HERO ══════════ -->
 <section class="tv-hero">
-  <canvas id="matrix-canvas"></canvas>
-  <div class="tv-hero-content">
-    <div class="tv-badge">&#x26A1; DevSecOps CTF Platform</div>
-
-    <h1 class="tv-hero-title">
-      <span class="tv-word-hack">HACKER</span><span style="color:#475569;">.</span>
-      <span class="tv-word-learn">LEARN</span><span style="color:#475569;">.</span>
-      <span class="tv-word-conquer">CONQUER</span>
-    </h1>
-
-    <p class="tv-hero-sub">
-      Sharpen your skills with real-world security challenges.
-      From web exploits to reverse engineering — master them all.
+  <canvas id="matrix-canvas" aria-hidden="true"></canvas>
+  <div class="tv-hero-inner">
+    <div class="tv-kicker">DevSecOps CTF platform</div>
+    <h1 class="tv-hero-title">Train in real attack labs with <span class="tv-accent">Teck-Vision</span>.</h1>
+    <p class="tv-hero-copy">
+      Launch rooms, solve challenges, track progress, and compete with a cleaner workflow built for practical security training.
     </p>
-
-    <div class="tv-cta-group">
-      <a href="{{ url_for('challenges.listing') }}" class="tv-btn-primary">
-        &#127922; Start Hacking
+    <div class="tv-actions">
+      <a href="{{ url_for('rooms.rooms_listing') }}" class="tv-btn tv-btn-primary">
+        <i class="fas fa-terminal" aria-hidden="true"></i>
+        Browse Rooms
       </a>
-      <a href="{{ url_for('rooms.rooms_listing') }}" class="tv-btn-outline">
-        &#127306; Browse Rooms
+      <a href="{{ url_for('challenges.listing') }}" class="tv-btn tv-btn-secondary">
+        <i class="fas fa-flag" aria-hidden="true"></i>
+        View Challenges
       </a>
     </div>
-
-    <!-- Live stats -->
-    <div class="d-flex gap-4 justify-content-center flex-wrap" style="font-size:.82rem;color:#475569;">
-      <span>&#128994; Platform Online</span>
-      <span>&#128274; TLS Secured</span>
-      <span>&#9203; 24/7 Available</span>
+    <div class="tv-status-row">
+      <span><i class="fas fa-circle" aria-hidden="true"></i> Platform online</span>
+      <span><i class="fas fa-server" aria-hidden="true"></i> On-demand machines</span>
+      <span><i class="fas fa-chart-line" aria-hidden="true"></i> Live scoring</span>
     </div>
   </div>
 </section>
 
-<!-- ══════════ STATS BAR ══════════ -->
 <div class="tv-stats">
   <div class="tv-stat">
-    <div class="tv-stat-number" id="stat-challenges">{{ stats.challenges }}</div>
+    <div class="tv-stat-number" id="stat-challenges">{{ stats.challenges|default(0) }}</div>
     <div class="tv-stat-label">Challenges</div>
   </div>
   <div class="tv-stat">
-    <div class="tv-stat-number" id="stat-rooms">{{ stats.rooms }}</div>
+    <div class="tv-stat-number" id="stat-rooms">{{ stats.rooms|default(0) }}</div>
     <div class="tv-stat-label">Rooms</div>
   </div>
   <div class="tv-stat">
-    <div class="tv-stat-number" id="stat-players">{{ stats.players }}</div>
+    <div class="tv-stat-number" id="stat-players">{{ stats.players|default(0) }}</div>
     <div class="tv-stat-label">Players</div>
   </div>
   <div class="tv-stat">
-    <div class="tv-stat-number" id="stat-solves">{{ stats.solves }}</div>
-    <div class="tv-stat-label">Total Solves</div>
+    <div class="tv-stat-number" id="stat-solves">{{ stats.solves|default(0) }}</div>
+    <div class="tv-stat-label">Solves</div>
   </div>
 </div>
 
-<!-- ══════════ FEATURES ══════════ -->
 <section class="tv-section">
-  <div class="container">
-    <div class="text-center">
-      <h2 class="tv-section-title">Why Teck-Vision?</h2>
-      <p class="tv-section-sub">A full-featured platform built for learning by doing.</p>
+  <div class="tv-section-head">
+    <h2 class="tv-section-title">Built for focused practice</h2>
+    <p class="tv-section-copy">A simple path from room selection to machine launch, challenge solve, and scoreboard progress.</p>
+  </div>
+  <div class="tv-card-grid">
+    <div class="tv-card">
+      <div class="tv-card-icon"><i class="fas fa-laptop-code" aria-hidden="true"></i></div>
+      <div class="tv-card-title">Guided Rooms</div>
+      <div class="tv-card-text">Start a lab machine, follow the tasks, and keep the target IP visible while you work.</div>
     </div>
-    <div class="row g-4">
-      <div class="col-sm-6 col-lg-3">
-        <div class="tv-card">
-          <div class="tv-card-icon">&#127981;</div>
-          <div class="tv-card-title">Guided Rooms</div>
-          <div class="tv-card-text">Launch isolated VMs, complete guided tasks, and submit flags in real time.</div>
-        </div>
-      </div>
-      <div class="col-sm-6 col-lg-3">
-        <div class="tv-card">
-          <div class="tv-card-icon">&#9874;&#65039;</div>
-          <div class="tv-card-title">Dynamic Scoring</div>
-          <div class="tv-card-text">Points decrease as more players solve a challenge — first blood is worth more.</div>
-        </div>
-      </div>
-      <div class="col-sm-6 col-lg-3">
-        <div class="tv-card">
-          <div class="tv-card-icon">&#128101;</div>
-          <div class="tv-card-title">Team Mode</div>
-          <div class="tv-card-text">Compete solo or form teams. Collaborate, share strategies, and climb the leaderboard.</div>
-        </div>
-      </div>
-      <div class="col-sm-6 col-lg-3">
-        <div class="tv-card">
-          <div class="tv-card-icon">&#128202;</div>
-          <div class="tv-card-title">Live Scoreboard</div>
-          <div class="tv-card-text">Real-time rankings with score progression graphs powered by Chart.js.</div>
-        </div>
-      </div>
+    <div class="tv-card">
+      <div class="tv-card-icon"><i class="fas fa-shield-alt" aria-hidden="true"></i></div>
+      <div class="tv-card-title">Realistic Targets</div>
+      <div class="tv-card-text">Practice web, crypto, reverse engineering, forensics, and infrastructure scenarios.</div>
+    </div>
+    <div class="tv-card">
+      <div class="tv-card-icon"><i class="fas fa-users" aria-hidden="true"></i></div>
+      <div class="tv-card-title">Team Ready</div>
+      <div class="tv-card-text">Compete solo or as a team with clean rankings and progress tracking.</div>
+    </div>
+    <div class="tv-card">
+      <div class="tv-card-icon"><i class="fas fa-chart-bar" aria-hidden="true"></i></div>
+      <div class="tv-card-title">Admin Visibility</div>
+      <div class="tv-card-text">Monitor uploads, machine status, and challenge activity from one administration area.</div>
     </div>
   </div>
 </section>
 
-<!-- ══════════ CATEGORIES ══════════ -->
-<section class="tv-section" style="padding-top:0;">
-  <div class="container text-center">
-    <h2 class="tv-section-title">Challenge Categories</h2>
-    <p class="tv-section-sub">Pick your battlefield.</p>
-    <div class="tv-category-grid">
-      <a href="{{ url_for('challenges.listing') }}" class="tv-cat tv-cat-web">&#127760; Web</a>
-      <a href="{{ url_for('challenges.listing') }}" class="tv-cat tv-cat-crypto">&#128272; Cryptography</a>
-      <a href="{{ url_for('challenges.listing') }}" class="tv-cat tv-cat-reverse">&#128295; Reverse Engineering</a>
-      <a href="{{ url_for('challenges.listing') }}" class="tv-cat tv-cat-pwn">&#128163; Binary Exploitation</a>
-      <a href="{{ url_for('challenges.listing') }}" class="tv-cat tv-cat-forensics">&#128269; Forensics</a>
-      <a href="{{ url_for('challenges.listing') }}" class="tv-cat tv-cat-misc">&#127381; Misc</a>
-    </div>
+<section class="tv-section">
+  <div class="tv-section-head">
+    <h2 class="tv-section-title">Challenge categories</h2>
+    <p class="tv-section-copy">Pick a track and start sharpening the exact skill you want to improve.</p>
+  </div>
+  <div class="tv-category-grid">
+    <a href="{{ url_for('challenges.listing') }}" class="tv-cat"><i class="fas fa-globe" aria-hidden="true"></i> Web</a>
+    <a href="{{ url_for('challenges.listing') }}" class="tv-cat"><i class="fas fa-key" aria-hidden="true"></i> Cryptography</a>
+    <a href="{{ url_for('challenges.listing') }}" class="tv-cat"><i class="fas fa-cogs" aria-hidden="true"></i> Reverse Engineering</a>
+    <a href="{{ url_for('challenges.listing') }}" class="tv-cat"><i class="fas fa-bolt" aria-hidden="true"></i> Binary Exploitation</a>
+    <a href="{{ url_for('challenges.listing') }}" class="tv-cat"><i class="fas fa-search" aria-hidden="true"></i> Forensics</a>
+    <a href="{{ url_for('challenges.listing') }}" class="tv-cat"><i class="fas fa-puzzle-piece" aria-hidden="true"></i> Misc</a>
   </div>
 </section>
 
-<!-- ══════════ CTA BOTTOM ══════════ -->
-<section class="tv-section" style="padding-top:0;">
-  <div class="container text-center">
-    <div style="background:var(--card-bg);border:1px solid rgba(0,212,255,.15);border-radius:16px;padding:3rem 2rem;max-width:640px;margin:auto;">
-      <h2 style="color:#f1f5f9;font-weight:800;font-size:1.8rem;margin-bottom:.6rem;">Ready to start?</h2>
-      <p style="color:#64748b;margin-bottom:2rem;">Create a free account and join the competition.</p>
-      {% if not authed() %}
-        <a href="{{ url_for('auth.register') }}" class="tv-btn-primary" style="margin-right:.75rem;">
-          &#128100; Register Now
-        </a>
-        <a href="{{ url_for('auth.login') }}" class="tv-btn-outline">Login</a>
-      {% else %}
-        <a href="{{ url_for('challenges.listing') }}" class="tv-btn-primary">Go to Challenges &#8594;</a>
-      {% endif %}
+<section class="tv-final">
+  <div class="tv-final-inner">
+    <div>
+      <h2>Ready to start?</h2>
+      <p>Enter a room, launch the machine, and submit your first flag.</p>
     </div>
+    {% if not authed() %}
+      <a href="{{ url_for('auth.register') }}" class="tv-btn tv-btn-primary">
+        <i class="fas fa-user-plus" aria-hidden="true"></i>
+        Register
+      </a>
+    {% else %}
+      <a href="{{ url_for('rooms.rooms_listing') }}" class="tv-btn tv-btn-primary">
+        <i class="fas fa-arrow-right" aria-hidden="true"></i>
+        Open Rooms
+      </a>
+    {% endif %}
   </div>
 </section>
 {% endblock %}
@@ -294,59 +496,76 @@
 {{ super() }}
 <script>
 (function () {
-  /* ── Matrix rain canvas ── */
   var canvas = document.getElementById("matrix-canvas");
-  var ctx    = canvas.getContext("2d");
-  var chars  = "01アイウエオカキクケコサシスセソタチツテトナニヌネノ</>{}[]";
-  var cols, drops;
+  if (!canvas || !canvas.getContext) {
+    return;
+  }
+
+  var ctx = canvas.getContext("2d");
+  if (!ctx) {
+    return;
+  }
+
+  var chars = "010101{}[]<>/\\$#ctfroot";
+  var cols = 0;
+  var drops = [];
+  var step = 18;
 
   function resize() {
-    canvas.width  = window.innerWidth;
-    canvas.height = window.innerHeight;
-    cols  = Math.floor(canvas.width / 18);
-    drops = Array.from({length: cols}, function () { return Math.random() * -50 | 0; });
+    canvas.width = canvas.offsetWidth || window.innerWidth;
+    canvas.height = canvas.offsetHeight || window.innerHeight;
+    cols = Math.max(1, Math.floor(canvas.width / step));
+    drops = Array.from({ length: cols }, function () {
+      return Math.floor(Math.random() * -40);
+    });
   }
 
   function draw() {
-    ctx.fillStyle = "rgba(10,14,26,.08)";
+    ctx.fillStyle = "rgba(7, 17, 31, 0.08)";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "#00d4ff";
+    ctx.fillStyle = "#22d3ee";
     ctx.font = "13px monospace";
+
     for (var i = 0; i < drops.length; i++) {
-      var ch = chars[Math.random() * chars.length | 0];
-      ctx.fillText(ch, i * 18, drops[i] * 18);
-      if (drops[i] * 18 > canvas.height && Math.random() > .975) drops[i] = 0;
+      var ch = chars[(Math.random() * chars.length) | 0];
+      ctx.fillText(ch, i * step, drops[i] * step);
+      if (drops[i] * step > canvas.height && Math.random() > 0.975) {
+        drops[i] = 0;
+      }
       drops[i]++;
     }
   }
 
-  resize();
-  window.addEventListener("resize", resize);
-  setInterval(draw, 55);
-
-  /* ── Count-up animation for stats ── */
   function animateCount(el, target) {
-    var start = 0;
-    var step  = Math.ceil(target / 60);
-    var timer = setInterval(function () {
-      start = Math.min(start + step, target);
-      el.textContent = start;
-      if (start >= target) clearInterval(timer);
+    var current = 0;
+    var increment = Math.max(1, Math.ceil(target / 50));
+    var timer = window.setInterval(function () {
+      current = Math.min(current + increment, target);
+      el.textContent = current;
+      if (current >= target) {
+        window.clearInterval(timer);
+      }
     }, 20);
   }
 
-  var observed = false;
+  resize();
+  window.addEventListener("resize", resize);
+  window.setInterval(draw, 60);
+
   var statsSection = document.querySelector(".tv-stats");
+  var observed = false;
   if (statsSection && "IntersectionObserver" in window) {
     new IntersectionObserver(function (entries) {
       if (entries[0].isIntersecting && !observed) {
         observed = true;
-        ["stat-challenges","stat-rooms","stat-players","stat-solves"].forEach(function (id) {
+        ["stat-challenges", "stat-rooms", "stat-players", "stat-solves"].forEach(function (id) {
           var el = document.getElementById(id);
-          if (el) animateCount(el, parseInt(el.textContent) || 0);
+          if (el) {
+            animateCount(el, parseInt(el.textContent, 10) || 0);
+          }
         });
       }
-    }, {threshold: .3}).observe(statsSection);
+    }, { threshold: 0.25 }).observe(statsSection);
   }
 })();
 </script>

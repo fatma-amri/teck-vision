@@ -12,7 +12,7 @@ from CTFd.utils.scores import get_standings
 class ScoresDistribution(Resource):
     @admins_only
     def get(self):
-        challenge_count = Challenges.query.count() or 1
+        challenge_count = db.session.query(db.func.count(Challenges.id)).scalar() or 1
         total_points = (
             Challenges.query.with_entities(db.func.sum(Challenges.value).label("sum"))
             .filter_by(state="visible")

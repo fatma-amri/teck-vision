@@ -14,8 +14,8 @@ def statistics():
 
     Model = get_model()
 
-    teams_registered = Teams.query.count()
-    users_registered = Users.query.count()
+    teams_registered = db.session.query(db.func.count(Teams.id)).scalar() or 0
+    users_registered = db.session.query(db.func.count(Users.id)).scalar() or 0
 
     wrong_count = (
         Fails.query.join(Model, Fails.account_id == Model.id)
@@ -29,7 +29,7 @@ def statistics():
         .count()
     )
 
-    challenge_count = Challenges.query.count()
+    challenge_count = db.session.query(db.func.count(Challenges.id)).scalar() or 0
 
     total_points = (
         Challenges.query.with_entities(db.func.sum(Challenges.value).label("sum"))

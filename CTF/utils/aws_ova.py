@@ -12,6 +12,7 @@ from CTFd.utils import get_app_config
 
 DEFAULT_OVA_TABLE = "ctf-ova-imports"
 DEFAULT_OVA_REGION = "eu-west-3"
+DEFAULT_SESSION_TABLE = "CTFChallenges"
 
 
 def resolve_aws_challenge_id_for_room(room):
@@ -36,6 +37,25 @@ def resolve_aws_challenge_id_for_room(room):
         room.aws_challenge_id = challenge_id
 
     return challenge_id
+
+
+def get_running_aws_session(challenge_id, user_id):
+    if not challenge_id or not user_id:
+        return None
+
+    table_name = _get_config("AWS_SESSION_TABLE", _get_config("SESSION_TABLE_NAME", DEFAULT_SESSION_TABLE))
+    region = _get_config("OVA_S3_REGION", _get_config("AWS_S3_REGION", DEFAULT_OVA_REGION))
+
+    try:
+        table = boto3.resource("dynamodb", region_name=region).Table(table_name)
+        response = table.get_item(Key={"ChallengeID": str(challenge_id), "UserID": str(user_id)})
+        item = response.get("Item")
+        if item and item.get("Status") == "RUNNING":
+            return item
+    except (BotoCoreError, ClientError) as exc:
+        current_app.logger.warning("Could not read AWS session for %s/%s: %s", challenge_id, user_id, exc)
+
+    return None
 
 
 def _extract_ova_location(description):

@@ -47,7 +47,8 @@ def update_check(force=False):
                 "python_version_raw": sys.hexversion,
                 "python_version": python_version(),
                 "db_driver": db.session.bind.dialect.name,
-                "challenge_count": Challenges.query.count(),
+                "challenge_count": db.session.query(db.func.count(Challenges.id)).scalar()
+                or 0,
                 "user_mode": get_config("user_mode"),
                 "user_count": Users.query.count(),
                 "team_count": Teams.query.count(),

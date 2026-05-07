@@ -16,8 +16,18 @@ depends_on = None
 
 
 def upgrade():
-    op.add_column("rooms", sa.Column("aws_challenge_id", sa.String(length=64), nullable=True))
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    rooms_cols = [c["name"] for c in inspector.get_columns("rooms")]
+    if "aws_challenge_id" not in rooms_cols:
+        op.add_column(
+            "rooms", sa.Column("aws_challenge_id", sa.String(length=64), nullable=True)
+        )
 
 
 def downgrade():
-    op.drop_column("rooms", "aws_challenge_id")
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    rooms_cols = [c["name"] for c in inspector.get_columns("rooms")]
+    if "aws_challenge_id" in rooms_cols:
+        op.drop_column("rooms", "aws_challenge_id")

@@ -378,3 +378,76 @@ a:hover { color: #5eead4; }
   .tv-filter-bar { gap: .35rem; }
   .tv-filter-btn { font-size: .75rem; padding: .3rem .7rem; }
 }
+
+/* Professional challenge and room polish */
+.tv-board-panel { border-color: rgba(255,255,255,.09) !important; }
+.tv-room-card,
+.challenge-button { border-radius: 8px !important; }
+.challenge-button { min-height: 118px; }
+.challenge-inner {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+  justify-content: center;
+  min-height: 74px;
+}
+.challenge-inner p {
+  line-height: 1.28;
+  margin: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.challenge-inner span {
+  background: rgba(0,212,255,.1);
+  border: 1px solid rgba(0,212,255,.18);
+  border-radius: 6px;
+  padding: .16rem .48rem;
+}
+.modal-content .nav-tabs {
+  border-bottom-color: rgba(255,255,255,.08);
+  gap: .25rem;
+}
+.modal-content .nav-tabs .nav-link {
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: #94a3b8;
+  font-weight: 700;
+}
+.modal-content .nav-tabs .nav-link.active,
+.modal-content .nav-tabs .nav-link:hover {
+  background: transparent;
+  border-bottom-color: var(--tv-cyan);
+  color: var(--tv-text);
+}
+.challenge-name {
+  color: #f8fafc;
+  font-size: clamp(1.55rem, 3vw, 2.1rem);
+  font-weight: 850;
+  letter-spacing: 0;
+}
+.challenge-value {
+  color: var(--tv-cyan);
+  font-size: 1.15rem;
+  font-weight: 850;
+}
+.challenge-desc {
+  color: #cbd5e1;
+  display: block;
+  line-height: 1.65;
+  margin: 1.25rem 0;
+}
+.challenge-tag {
+  border: 1px solid rgba(0,212,255,.2);
+  border-radius: 6px;
+  font-weight: 700;
+}
+.challenge-files .btn-file,
+.challenge-submit {
+  border-radius: 7px !important;
+  font-weight: 800 !important;
+}
+.submit-row {
+  align-items: stretch;
+  margin-top: 1rem;
+}

@@ -63,6 +63,23 @@ from CTFd.utils.user import authed, get_current_team, get_current_user, get_ip, 
 views = Blueprint("views", __name__)
 
 
+def _landing_stats():
+    from CTFd.models import Challenges, Rooms, Solves, Users as UsersModel
+
+    return {
+        "challenges": db.session.query(db.func.count(Challenges.id))
+        .filter(Challenges.state == "visible")
+        .scalar()
+        or 0,
+        "rooms": db.session.query(db.func.count(Rooms.id)).scalar() or 0,
+        "players": db.session.query(db.func.count(UsersModel.id))
+        .filter(UsersModel.banned == False, UsersModel.hidden == False)
+        .scalar()
+        or 0,
+        "solves": db.session.query(db.func.count(Solves.id)).scalar() or 0,
+    }
+
+
 
 @views.route("/notifications", methods=["GET"])
 def notifications():
@@ -126,15 +143,7 @@ def settings():
 @views.route("/home")
 def home():
     """Hero landing page with live platform statistics."""
-    from CTFd.models import Challenges, Rooms, Solves, Users as UsersModel
-
-    stats = {
-        "challenges": Challenges.query.filter_by(state="visible").count(),
-        "rooms":      Rooms.query.count(),
-        "players":    UsersModel.query.filter_by(banned=False, hidden=False).count(),
-        "solves":     Solves.query.count(),
-    }
-    return render_template("index.html", stats=stats)
+    return render_template("index.html", stats=_landing_stats())
 
 
 @views.route("/", defaults={"route": "index"})
@@ -147,15 +156,7 @@ def static_html(route):
     """
     if route == "index":
         try:
-            from CTFd.models import Challenges, Rooms, Solves, Users as UsersModel
-
-            stats = {
-                "challenges": Challenges.query.filter_by(state="visible").count(),
-                "rooms":      Rooms.query.count(),
-                "players":    UsersModel.query.filter_by(banned=False, hidden=False).count(),
-                "solves":     Solves.query.count(),
-            }
-            return render_template("index.html", stats=stats)
+            return render_template("index.html", stats=_landing_stats())
         except TemplateNotFound:
             pass
     page = get_page(route)

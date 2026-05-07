@@ -4,10 +4,10 @@
 <style>
   body { background: #f4f7fb !important; color: #111827; }
   .tv-room-hero {
-    background: linear-gradient(100deg, #121a2b 0%, #162238 54%, #071026 100%);
+    background: linear-gradient(100deg, #101827 0%, #142035 54%, #071026 100%);
     border-bottom: 1px solid rgba(255,255,255,.08);
     color: #fff;
-    padding: 2.4rem 0 0;
+    padding: 2.2rem 0 0;
     position: relative;
     overflow: hidden;
   }
@@ -24,14 +24,14 @@
   .tv-breadcrumb { color: #8fa0b8; font-size: .82rem; margin-bottom: 1.4rem; }
   .tv-hero-grid { display: grid; grid-template-columns: 86px minmax(0, 1fr) auto; gap: 1.25rem; align-items: center; }
   .tv-room-cover {
-    width: 86px;
-    height: 86px;
+    width: 78px;
+    height: 78px;
     border-radius: 8px;
     background: linear-gradient(135deg, #1dd75f, #00d4ff);
     display: grid;
     place-items: center;
     color: #071026;
-    font-size: 2.1rem;
+    font-size: 1.95rem;
     box-shadow: 0 18px 42px rgba(0,0,0,.24);
   }
   .room-title { font-size: clamp(2rem, 4vw, 3.25rem); font-weight: 800; letter-spacing: 0; line-height: 1.05; color: #fff; margin: 0; }
@@ -52,20 +52,28 @@
   .thm-badge-easy { background: rgba(29,215,95,.16); color: #9af04d; border-color: rgba(154,240,77,.35); }
   .thm-badge-medium { background: rgba(251,191,36,.14); color: #fbbf24; border-color: rgba(251,191,36,.35); }
   .thm-badge-hard { background: rgba(248,113,113,.14); color: #f87171; border-color: rgba(248,113,113,.35); }
-  .tv-status-panel { min-width: 184px; text-align: right; color: #cbd5e1; }
+  .tv-status-panel {
+    min-width: 184px;
+    text-align: right;
+    color: #cbd5e1;
+    padding: .8rem .9rem;
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 8px;
+    background: rgba(7,16,38,.35);
+  }
   .status-dot { display:inline-block; width:10px; height:10px; border-radius:50%; background:#64748b; margin-right:6px; vertical-align:middle; }
   .status-dot.active { background:#9af04d; animation: pulse 1.4s infinite; }
   @keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(154,240,77,.6)} 70%{box-shadow:0 0 0 12px rgba(154,240,77,0)} 100%{box-shadow:0 0 0 0 rgba(154,240,77,0)} }
   .timer-text { font-family: Consolas, monospace; color: #94a3b8; margin-top: .25rem; }
-  .tv-action-bar { display: flex; flex-wrap: wrap; gap: .7rem; padding: 2rem 0 2.2rem; }
+  .tv-action-bar { display: flex; flex-wrap: wrap; gap: .7rem; padding: 1.7rem 0 2rem; }
   .tv-machine-active {
     display: inline-flex;
     flex-wrap: wrap;
     align-items: center;
     gap: .65rem;
-    padding: .55rem;
+    padding: .5rem;
     border: 1px solid rgba(154,240,77,.28);
-    background: rgba(7,16,38,.55);
+    background: rgba(7,16,38,.62);
     border-radius: 8px;
     box-shadow: inset 0 0 0 1px rgba(255,255,255,.04);
   }
@@ -90,10 +98,10 @@
   .thm-btn-red:hover { background:#ef4444; color:#fff; }
   .thm-btn-grey { background:transparent; border:1px solid rgba(203,213,225,.22); color:#cbd5e1; font-weight:700; }
   .thm-btn-grey:hover { background:rgba(255,255,255,.08); color:#fff; }
-  .tv-progress-strip { height: 16px; background: rgba(154,240,77,.18); position: relative; z-index: 2; }
-  .thm-progress-bar { background: #9af04d; height: 16px; transition: width .9s ease; display: flex; align-items: center; justify-content: center; color: #12200b; font-size: .72rem; font-weight: 800; min-width: 0; white-space: nowrap; }
+  .tv-progress-strip { height: 14px; background: rgba(154,240,77,.16); position: relative; z-index: 2; }
+  .thm-progress-bar { background: linear-gradient(90deg, #9af04d, #55e6c1); height: 14px; transition: width .9s ease; display: flex; align-items: center; justify-content: center; color: #12200b; font-size: .7rem; font-weight: 850; min-width: 0; white-space: nowrap; }
   .tv-room-main { max-width: 1180px; margin: 0 auto; padding: 2rem 1.25rem 3.5rem; }
-  .tv-content-panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 18px 45px rgba(15,23,42,.08); overflow: hidden; }
+  .tv-content-panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 20px 48px rgba(15,23,42,.09); overflow: hidden; }
   .tv-tabs { display:flex; gap: 2rem; border-bottom: 1px solid #e5e7eb; padding: 0 1.75rem; }
   .tv-tab { padding: 1.3rem 0 1rem; color: #64748b; font-weight: 700; border:0; border-bottom: 3px solid transparent; background:transparent; cursor:pointer; }
   .tv-tab.active { color: #111827; border-bottom-color: #9af04d; }
@@ -108,14 +116,17 @@
   .tv-rank { font-weight:850; color:#16a34a; }
   .tv-empty-score { border:1px dashed #cbd5e1; border-radius:8px; padding:1.5rem; color:#64748b; text-align:center; background:#fff; }
   .ip-block { background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; color:#0f172a; font-family:Consolas, monospace; }
-  .challenge-card { border-bottom: 1px solid #e5e7eb; padding: 1.5rem 1.75rem; transition: background .2s; }
+  .challenge-card { border-bottom: 1px solid #e5e7eb; padding: 1.45rem 1.75rem; transition: background .2s, border-color .2s; position: relative; }
+  .challenge-card::before { content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:transparent; transition:background .2s; }
   .challenge-card:last-child { border-bottom: 0; }
   .challenge-card:hover { background: #f8fafc; }
-  .challenge-card.solved { background: #f2fbe9; }
+  .challenge-card:hover::before { background:#9af04d; }
+  .challenge-card.solved { background: #f6fce9; }
+  .challenge-card.solved::before { background:#16a34a; }
   .chal-title { color:#111827; font-size:1.05rem; font-weight:800; }
-  .chal-desc { color:#64748b; font-size:.94rem; margin-top:.35rem; }
+  .chal-desc { color:#64748b; font-size:.94rem; line-height:1.55; margin-top:.35rem; }
   .thm-badge-pts { background:#eef6ff; color:#2563eb; border:1px solid #bfdbfe; }
-  .thm-input { background:#fff; border:1px solid #d1d5db; color:#111827; border-radius:6px; }
+  .thm-input { background:#fff !important; border:1px solid #d1d5db !important; color:#111827 !important; border-radius:6px !important; }
   .thm-input:focus { border-color:#9af04d; box-shadow:0 0 0 3px rgba(154,240,77,.24); }
   .solved-tag { color:#166534; font-weight:800; }
   .wrong-msg { color:#dc2626; font-size:.86rem; margin-top:.35rem; }
@@ -126,6 +137,7 @@
     .tv-action-bar .btn { width: 100%; }
     .tv-machine-active { width: 100%; }
     .tv-ip-chip { width: 100%; justify-content: space-between; }
+    .tv-tabs { gap: 1.2rem; padding: 0 1.2rem; }
     .challenge-card { padding: 1.2rem; }
   }
 </style>
@@ -283,6 +295,7 @@
   var AWS_CHALLENGE_ID = configEl ? configEl.getAttribute("data-aws-challenge-id") : "";
   var DEFAULT_DUR   = configEl ? parseInt(configEl.getAttribute("data-duration") || "0", 10) : 0;
   var CSRF_TOKEN    = (window.init && window.init.csrfNonce) ? window.init.csrfNonce : "";
+  var USER_ID       = (window.init && window.init.userId) ? String(window.init.userId) : "0";
   var AWS_API_BASE  = "https://5b5s89lx86.execute-api.eu-west-3.amazonaws.com/dev";
 
   var startBtn     = document.getElementById("start-btn");
@@ -322,15 +335,6 @@
 
   function pad(n) { return String(n).padStart(2, "0"); }
   function fmtTime(s) { return pad(Math.floor(s / 60)) + ":" + pad(s % 60); }
-  function randomIp() {
-    return [
-      10,
-      Math.floor(Math.random() * 256),
-      Math.floor(Math.random() * 256),
-      Math.floor(Math.random() * 254) + 1
-    ].join(".");
-  }
-
   function setActive(active, ip) {
     if (!statusDot || !statusText || !startBtn || !activePanel || !ipDisplay) return;
 
@@ -388,15 +392,13 @@
       startBtn.textContent = "Starting...";
     }
 
-    var userId = (window.init && window.init.userId) ? String(window.init.userId) : "0";
-
     // Trigger AWS API Gateway / StartChallenge Lambda
     fetch(AWS_API_BASE + "/start-challenge", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ 
         challenge_id: AWS_CHALLENGE_ID,
-        user_id: userId
+        user_id: USER_ID
       })
     })
     .then(function(res) {
@@ -447,15 +449,13 @@
   terminateBtn.addEventListener("click", function () {
     if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
 
-    var userId = (window.init && window.init.userId) ? String(window.init.userId) : "0";
-
     // Trigger AWS API Gateway / stop_challenge Lambda
     fetch(AWS_API_BASE + "/stop-challenge", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ 
         challenge_id: AWS_CHALLENGE_ID,
-        user_id: userId
+        user_id: USER_ID
       })
     }).catch(function(err) { console.error("AWS Stop Trigger Failed:", err); });
 
@@ -476,7 +476,7 @@
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ 
         challenge_id: AWS_CHALLENGE_ID,
-        user_id: userId
+        user_id: USER_ID
       })
     })
     .then(function(res) { return res.json(); })

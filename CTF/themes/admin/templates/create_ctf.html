@@ -58,6 +58,9 @@
             <span id="ova-file-name" class="text-muted mt-2">or click to choose a .ova file</span>
           </label>
           <input id="ova-image-input" type="file" name="ova_image" class="d-none" accept=".ova" required>
+          <div id="ova-upload-progress" class="progress mt-3 d-none" style="height: 18px;">
+            <div id="ova-upload-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+          </div>
           <small id="ova-upload-status" class="form-text text-muted"></small>
         </div>
       </div>
@@ -114,19 +117,39 @@ document.addEventListener("DOMContentLoaded", function () {
   const dropZone = document.getElementById("ova-drop-zone");
   const fileName = document.getElementById("ova-file-name");
   const uploadStatus = document.getElementById("ova-upload-status");
+  const uploadProgress = document.getElementById("ova-upload-progress");
+  const uploadProgressBar = document.getElementById("ova-upload-progress-bar");
   const submitButton = document.getElementById("create-ctf-submit");
   const flagsList = document.getElementById("flags-list");
   const addFlag = document.getElementById("add-flag");
+
+  function setProgress(percent, animated) {
+    const safePercent = Math.max(0, Math.min(100, percent));
+    uploadProgress.classList.remove("d-none");
+    uploadProgressBar.style.width = safePercent + "%";
+    uploadProgressBar.setAttribute("aria-valuenow", safePercent);
+    uploadProgressBar.textContent = safePercent + "%";
+    uploadProgressBar.classList.toggle("progress-bar-animated", animated);
+  }
+
+  function resetUploadState() {
+    submitButton.disabled = false;
+    submitButton.textContent = "Create CTF";
+    uploadProgressBar.className = "progress-bar progress-bar-striped progress-bar-animated";
+  }
 
   function showSelectedOva(file) {
     if (!file.name.toLowerCase().endsWith(".ova")) {
       uploadStatus.textContent = "Only .ova files are allowed.";
       uploadStatus.className = "form-text text-danger";
+      uploadProgress.classList.add("d-none");
       return;
     }
 
     uploadStatus.textContent = "Ready to upload when you create the CTF.";
     uploadStatus.className = "form-text text-success";
+    setProgress(0, false);
+    uploadProgress.classList.add("d-none");
   }
 
   function setFile(files) {
@@ -145,12 +168,68 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
-  input.form.addEventListener("submit", function () {
+  input.form.addEventListener("submit", function (event) {
+    if (!input.form.checkValidity()) {
+      return;
+    }
+
     if (input.files.length) {
-      uploadStatus.textContent = "Uploading OVA to S3. Keep this page open.";
+      event.preventDefault();
+
+      if (!input.files[0].name.toLowerCase().endsWith(".ova")) {
+        uploadStatus.textContent = "Only .ova files are allowed.";
+        uploadStatus.className = "form-text text-danger";
+        return;
+      }
+
+      const request = new XMLHttpRequest();
+      const formData = new FormData(input.form);
+
+      setProgress(0, true);
+      uploadStatus.textContent = "Uploading OVA. Keep this page open.";
       uploadStatus.className = "form-text text-primary";
       submitButton.disabled = true;
       submitButton.textContent = "Uploading...";
+
+      request.upload.addEventListener("progress", function (progressEvent) {
+        if (!progressEvent.lengthComputable) {
+          uploadStatus.textContent = "Uploading OVA. Keep this page open.";
+          return;
+        }
+
+        const percent = Math.round((progressEvent.loaded / progressEvent.total) * 100);
+        setProgress(percent, percent < 100);
+
+        if (percent >= 100) {
+          uploadStatus.textContent = "Upload received. Saving OVA to S3...";
+          submitButton.textContent = "Saving...";
+        }
+      });
+
+      request.addEventListener("load", function () {
+        if (request.status >= 200 && request.status < 400) {
+          setProgress(100, false);
+          uploadStatus.textContent = "Upload complete. Opening the created CTF...";
+          window.location.href = request.responseURL || input.form.action;
+          return;
+        }
+
+        uploadProgressBar.classList.add("bg-danger");
+        uploadStatus.textContent = "Upload failed. Please check the file and try again.";
+        uploadStatus.className = "form-text text-danger";
+        resetUploadState();
+      });
+
+      request.addEventListener("error", function () {
+        uploadProgressBar.classList.add("bg-danger");
+        uploadStatus.textContent = "Network error while uploading. Please try again.";
+        uploadStatus.className = "form-text text-danger";
+        resetUploadState();
+      });
+
+      request.open("POST", input.form.action);
+      request.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+      request.send(formData);
     }
   });
 
