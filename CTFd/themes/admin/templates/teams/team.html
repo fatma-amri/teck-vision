@@ -186,14 +186,6 @@
 			</h3>
 		{% endif %}
 
-		{% if team.bracket_id %}
-			<h2>
-				<span class="badge badge-secondary">
-					{{ team.bracket.name }}
-				</span>
-			</h2>
-		{% endif %}
-
 		{% for field in team.get_fields(admin=true) %}
 			<h3 class="d-block">
 				{{ field.name }}: {{ field.value }}
@@ -277,9 +269,6 @@
 						<td class="text-center" data-href="{{ url_for('admin.users_detail', user_id=member.id) }}">
 							{% if team.captain_id == member.id %}
 								<span class="badge badge-primary">Captain</span>
-							{% endif %}
-							{% if member.bracket_id %}
-								<span class="badge badge-secondary">{{ member.bracket.name }}</span>
 							{% endif %}
 						</td>
 						<td class="text-left" data-href="{{ url_for('admin.users_detail', user_id=member.id) }}">

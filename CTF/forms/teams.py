@@ -4,35 +4,9 @@ from wtforms.validators import InputRequired
 
 from CTFd.forms import BaseForm
 from CTFd.forms.fields import SubmitField
-from CTFd.models import Brackets, TeamFieldEntries, TeamFields
+from CTFd.models import TeamFieldEntries, TeamFields
 from CTFd.utils.countries import SELECT_COUNTRIES_LIST
 from CTFd.utils.user import get_current_team
-
-
-def build_team_bracket_field(form_cls, value=None):
-    field = getattr(form_cls, "bracket_id", None)  # noqa B009
-    if field:
-        field.field_type = "select"
-        field.process_data(value)
-        return [field]
-    else:
-        return []
-
-
-def attach_team_bracket_field(form_cls):
-    brackets = Brackets.query.filter_by(type="teams").all()
-    if brackets:
-        choices = [("", "")] + [
-            (bracket.id, f"{bracket.name} - {bracket.description}")
-            for bracket in brackets
-        ]
-        select_field = SelectField(
-            "Bracket",
-            description="Competition bracket for your team",
-            choices=choices,
-            validators=[InputRequired()],
-        )
-        setattr(form_cls, "bracket_id", select_field)  # noqa B010
 
 
 def build_custom_team_fields(
@@ -241,12 +215,9 @@ def TeamCreateForm(*args, **kwargs):
 
         @property
         def extra(self):
-            return build_custom_team_fields(
-                self, include_entries=False
-            ) + build_team_bracket_field(self)
+            return build_custom_team_fields(self, include_entries=False)
 
     attach_custom_team_fields(_TeamCreateForm)
-    attach_team_bracket_field(_TeamCreateForm)
 
     return _TeamCreateForm(*args, **kwargs)
 
@@ -262,7 +233,7 @@ def TeamEditForm(*args, **kwargs):
                 include_entries=True,
                 fields_kwargs=None,
                 field_entries_kwargs={"team_id": self.obj.id},
-            ) + build_team_bracket_field(self, value=self.obj.bracket_id)
+            )
 
         def __init__(self, *args, **kwargs):
             """
@@ -274,7 +245,6 @@ def TeamEditForm(*args, **kwargs):
                 self.obj = obj
 
     attach_custom_team_fields(_TeamEditForm)
-    attach_team_bracket_field(_TeamEditForm)
 
     return _TeamEditForm(*args, **kwargs)
 

@@ -11,7 +11,6 @@ UserAttrsFields = [
     "website",
     "affiliation",
     "country",
-    "bracket_id",
     "hidden",
     "banned",
     "verified",

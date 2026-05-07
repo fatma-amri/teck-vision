@@ -10,7 +10,6 @@ TeamAttrsFields = [
     "website",
     "affiliation",
     "country",
-    "bracket_id",
     "hidden",
     "banned",
     "captain_id",

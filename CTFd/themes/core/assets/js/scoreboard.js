@@ -12,10 +12,9 @@ const scoreboardUpdateInterval = window.scoreboardUpdateInterval || 300000;
 Alpine.data("ScoreboardDetail", () => ({
   data: {},
   show: true,
-  activeBracket: null,
 
   async update() {
-    this.data = await CTFd.pages.scoreboard.getScoreboardDetail(10, this.activeBracket);
+    this.data = await CTFd.pages.scoreboard.getScoreboardDetail(10);
 
     let optionMerge = window.scoreboardChartOptions;
     let option = getOption(CTFd.config.userMode, this.data, optionMerge);
@@ -35,19 +34,12 @@ Alpine.data("ScoreboardDetail", () => ({
 
 Alpine.data("ScoreboardList", () => ({
   standings: [],
-  brackets: [],
-  activeBracket: null,
 
   async update() {
-    this.brackets = await CTFd.pages.scoreboard.getBrackets(CTFd.config.userMode);
     this.standings = await CTFd.pages.scoreboard.getScoreboard();
   },
 
   async init() {
-    this.$watch("activeBracket", value => {
-      this.$dispatch("bracket-change", value);
-    });
-
     this.update();
 
     setInterval(() => {

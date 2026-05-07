@@ -203,52 +203,6 @@
                     </div>
                   </div>
                 </div>
-
-                <div class="col-md-3">
-                  <div class="card p-2 shadow-sm filter-col">
-                    <h6>Filter Brackets</h6>
-                    <input
-                      type="text"
-                      class="form-control form-control-sm mb-2"
-                      v-model="bracketSearch"
-                      placeholder="Search brackets..."
-                    />
-                    <div class="filter-list">
-                      <div
-                        v-for="bracket in filteredBracketList"
-                        :key="bracket.id"
-                        class="px-2 py-1"
-                      >
-                        <div class="form-check">
-                          <input
-                            class="form-check-input"
-                            type="checkbox"
-                            :value="bracket.id"
-                            v-model="selectedBracketIds"
-                            :id="'bracket-' + bracket.id"
-                          />
-                          <label
-                            class="form-check-label small"
-                            :for="'bracket-' + bracket.id"
-                          >
-                            {{ bracket.name }}
-                          </label>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="mt-1">
-                      <small>
-                        <a href="#" @click.prevent="selectAllBrackets"
-                          >Select All</a
-                        >
-                        /
-                        <a href="#" @click.prevent="deselectAllBrackets"
-                          >None</a
-                        >
-                      </small>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
@@ -320,9 +274,6 @@
               <a :href="user.url" class="text-decoration-none">{{
                 user.name
               }}</a>
-              <span class="badge bg-secondary ml-1 text-white">{{
-                user.bracket_name
-              }}</span>
             </td>
             <td class="font-weight-bold sticky-cell sticky-col-score">
               {{ user.score }}
@@ -350,17 +301,14 @@ export default {
     return {
       users: [],
       challenges: [],
-      brackets: [],
       loading: true,
       error: null,
       userSearch: "",
       challengeSearch: "",
       categorySearch: "",
-      bracketSearch: "",
       selectedUserIds: [],
       selectedChallengeIds: [],
       selectedCategories: [],
-      selectedBracketIds: [],
       challengeSort: "position",
       userMode: "",
     };
@@ -390,12 +338,6 @@ export default {
     selectedCategories() {
       this.persistSettings();
     },
-    bracketSearch() {
-      this.persistSettings();
-    },
-    selectedBracketIds() {
-      this.persistSettings();
-    },
   },
   computed: {
     filteredUserList() {
@@ -413,11 +355,6 @@ export default {
     uniqueCategories() {
       return [...new Set(this.challenges.map((c) => c.category))].sort();
     },
-    filteredBracketList() {
-      if (!this.bracketSearch) return this.brackets;
-      const lower = this.bracketSearch.toLowerCase();
-      return this.brackets.filter((b) => b.name.toLowerCase().includes(lower));
-    },
     filteredCategoryList() {
       if (!this.categorySearch) return this.uniqueCategories;
       const lower = this.categorySearch.toLowerCase();
@@ -427,13 +364,7 @@ export default {
     },
     displayUsers() {
       return this.users
-        .filter(
-          (u) =>
-            this.selectedUserIds.includes(u.id) &&
-            this.selectedBracketIds.includes(
-              u.bracket_id !== null ? u.bracket_id : "no_bracket",
-            ),
-        )
+        .filter((u) => this.selectedUserIds.includes(u.id))
         .sort((a, b) => a.place - b.place);
     },
     displayChallenges() {
@@ -481,17 +412,6 @@ export default {
           if (result.success) {
             this.users = result.data.scoreboard;
             this.challenges = result.data.challenges;
-            this.brackets = result.data.brackets;
-            // Add a "No Bracket" entry if any users have no bracket assigned
-            const hasNoBracketUsers = this.users.some(
-              (u) => u.bracket_id === null,
-            );
-            if (hasNoBracketUsers) {
-              this.brackets.unshift({
-                id: "no_bracket",
-                name: "(No Bracket)",
-              });
-            }
             this.restoreSettings();
           } else {
             this.error = "Failed to load progression data";
@@ -509,12 +429,10 @@ export default {
       this.userSearch = "";
       this.challengeSearch = "";
       this.categorySearch = "";
-      this.bracketSearch = "";
       this.challengeSort = "position";
       this.selectAllUsers();
       this.selectAllChallenges();
       this.selectAllCategories();
-      this.selectAllBrackets();
     },
     restoreSettings() {
       const savedSettings = localStorage.getItem(
@@ -534,8 +452,6 @@ export default {
             settings.selectedChallengeIds || this.challenges.map((c) => c.id);
           this.selectedCategories =
             settings.selectedCategories || this.uniqueCategories;
-          this.selectedBracketIds =
-            settings.selectedBracketIds || this.brackets.map((b) => b.id);
         } catch (e) {
           console.error("Failed to load scoreboard matrix settings", e);
           this.resetFilters();
@@ -544,7 +460,6 @@ export default {
         this.selectAllUsers();
         this.selectAllChallenges();
         this.selectAllCategories();
-        this.selectAllBrackets();
       }
     },
     persistSettings() {
@@ -556,8 +471,6 @@ export default {
         selectedUserIds: this.selectedUserIds,
         selectedChallengeIds: this.selectedChallengeIds,
         selectedCategories: this.selectedCategories,
-        bracketSearch: this.bracketSearch,
-        selectedBracketIds: this.selectedBracketIds,
       };
       localStorage.setItem(
         "ctfd-scoreboard-matrix-settings",
@@ -581,12 +494,6 @@ export default {
     },
     deselectAllCategories() {
       this.selectedCategories = [];
-    },
-    selectAllBrackets() {
-      this.selectedBracketIds = this.brackets.map((b) => b.id);
-    },
-    deselectAllBrackets() {
-      this.selectedBracketIds = [];
     },
     getCellStyle(user, challenge) {
       const isSolved = user.solves.includes(challenge.id);

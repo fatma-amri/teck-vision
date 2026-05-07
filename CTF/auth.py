@@ -271,7 +271,6 @@ def register():
         affiliation = request.form.get("affiliation")
         country = request.form.get("country")
         registration_code = str(request.form.get("registration_code", ""))
-        bracket_id = None
 
         name_len = len(name) == 0
         names = (
@@ -372,7 +371,6 @@ def register():
                     name=name,
                     email=email_address,
                     password=password,
-                    bracket_id=bracket_id,
                 )
 
                 if website:

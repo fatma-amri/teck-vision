@@ -67,10 +67,6 @@ def dump_scoreboard_csv():
                 "member id",
                 "member email",
                 "member score",
-                "team bracket id",
-                "team bracket name",
-                "member bracket id",
-                "member bracket name",
             ]
             + user_field_names
             + team_field_names
@@ -96,10 +92,6 @@ def dump_scoreboard_csv():
                     "",
                     "",
                     "",
-                    team.bracket_id,
-                    team.bracket.name if team.bracket else "",
-                    "",
-                    "",
                 ]
                 + user_field_values
                 + team_field_values
@@ -123,10 +115,6 @@ def dump_scoreboard_csv():
                         member.id,
                         member.email,
                         member.score,
-                        "",
-                        "",
-                        member.bracket_id,
-                        member.bracket.name if member.bracket else "",
                     ]
                     + user_field_values
                     + team_field_values
@@ -139,8 +127,6 @@ def dump_scoreboard_csv():
             "user id",
             "user email",
             "score",
-            "user bracket id",
-            "user bracket name",
         ] + user_field_names
         writer.writerow(header)
 
@@ -158,8 +144,6 @@ def dump_scoreboard_csv():
                 user.id,
                 user.email,
                 standing.score,
-                user.bracket_id,
-                user.bracket.name if user.bracket else "",
             ] + user_field_values
             writer.writerow(user_row)
 

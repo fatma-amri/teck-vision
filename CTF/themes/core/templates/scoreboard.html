@@ -31,8 +31,7 @@
     {% include "components/errors.html" %}
 
     <!-- ── Score progression graph ── -->
-    <div class="tv-graph-card" id="score-graph" x-data="ScoreboardDetail" x-ref="scoregraph"
-         @bracket-change.window="activeBracket=$event.detail; update();">
+    <div class="tv-graph-card" id="score-graph" x-data="ScoreboardDetail" x-ref="scoregraph">
       <div class="tv-graph-title">&#128200; Score Progression</div>
       <div class="text-center" x-show="!loaded">
         <i class="fas fa-circle-notch fa-spin fa-2x fa-fw spinner"></i>
@@ -42,21 +41,6 @@
 
     <!-- ── Standings table ── -->
     <div id="scoreboard" x-data="ScoreboardList">
-
-      <!-- Bracket filter tabs -->
-      <template x-if="brackets.length && standings.length">
-        <nav class="tv-tabs mb-3">
-          <button :class="{'tv-tab': true, 'active': !activeBracket}" @click="activeBracket=null">
-            {% trans %}All{% endtrans %}
-          </button>
-          <template x-for="bracket in brackets">
-            <button :class="{'tv-tab': true, 'active': activeBracket == bracket.id}"
-                    x-text="bracket.name"
-                    @click="activeBracket=bracket.id">
-            </button>
-          </template>
-        </nav>
-      </template>
 
       <!-- Table -->
       <div class="col-md-12" x-show="standings.length">
@@ -70,14 +54,11 @@
             </tr>
           </thead>
           <tbody>
-            <template x-for="(standing, index) in standings.filter(i => activeBracket ? i.bracket_id==activeBracket : true)">
+            <template x-for="(standing, index) in standings">
               <tr :class="{ 'tv-rank-1': index===0, 'tv-rank-2': index===1, 'tv-rank-3': index===2 }">
                 <th scope="row" class="text-center" x-text="index + 1"></th>
                 <td class="text-start ps-3">
                   <a :href="standing.account_url" x-text="standing.name"></a>
-                  <template x-if="standing.bracket_name">
-                    <span class="badge bg-secondary ms-2" x-text="standing.bracket_name"></span>
-                  </template>
                 </td>
                 <td><strong x-text="standing.score" style="color:#00d4ff;"></strong></td>
                 <td class="d-none d-md-table-cell" x-text="standing.solves || '—'"></td>

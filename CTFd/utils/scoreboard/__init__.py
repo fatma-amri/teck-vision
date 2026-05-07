@@ -9,10 +9,10 @@ from CTFd.utils.scores import get_standings
 
 
 @cache.memoize(timeout=60)
-def get_scoreboard_detail(count, bracket_id=None):
+def get_scoreboard_detail(count):
     response = {}
 
-    standings = get_standings(count=count, bracket_id=bracket_id)
+    standings = get_standings(count=count)
 
     team_ids = [team.account_id for team in standings]
 
@@ -64,8 +64,6 @@ def get_scoreboard_detail(count, bracket_id=None):
             "account_url": generate_account_url(account_id=x.account_id),
             "name": x.name,
             "score": int(x.score),
-            "bracket_id": x.bracket_id,
-            "bracket_name": x.bracket_name,
             "solves": solves_mapper.get(x.account_id, []),
         }
 

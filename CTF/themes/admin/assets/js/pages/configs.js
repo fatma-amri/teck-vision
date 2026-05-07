@@ -14,7 +14,6 @@ import CodeMirror from "codemirror";
 import "codemirror/mode/htmlmixed/htmlmixed.js";
 import Vue from "vue";
 import FieldList from "../components/configs/fields/FieldList.vue";
-import BracketList from "../components/configs/brackets/BracketList.vue";
 
 dayjs.extend(advancedFormat);
 dayjs.extend(utc);
@@ -556,8 +555,4 @@ $(() => {
     },
   }).$mount(teamVueContainer);
 
-  const bracketList = Vue.extend(BracketList);
-  let bracketListContainer = document.createElement("div");
-  document.querySelector("#brackets-list").appendChild(bracketListContainer);
-  new bracketList({}).$mount(bracketListContainer);
 });

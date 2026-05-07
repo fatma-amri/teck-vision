@@ -228,7 +228,6 @@ def new():
         website = request.form.get("website")
         affiliation = request.form.get("affiliation")
         country = request.form.get("country")
-        bracket_id = None
 
         user = get_current_user()
 
@@ -288,7 +287,6 @@ def new():
             password=passphrase,
             captain_id=user.id,
             hidden=False,
-            bracket_id=bracket_id,
         )
 
         if website:

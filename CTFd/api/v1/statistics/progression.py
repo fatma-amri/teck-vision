@@ -2,7 +2,7 @@ from flask import url_for
 from flask_restx import Resource
 
 from CTFd.api.v1.statistics import statistics_namespace
-from CTFd.models import Brackets, Challenges, Fails, Solves, Teams, Tracking, Users, db
+from CTFd.models import Challenges, Fails, Solves, Teams, Tracking, Users, db
 from CTFd.utils.config import get_config
 from CTFd.utils.decorators import admins_only
 from CTFd.utils.modes import get_model
@@ -149,8 +149,8 @@ class ProgressionMatrix(Resource):
                 "score": int(user.score),
                 "place": idx,
                 "url": account_url,
-                "bracket_id": user.bracket_id,
-                "bracket_name": user.bracket_name,
+                "bracket_id": None,
+                "bracket_name": "",
                 "solves": list(
                     account_solves.get(user.account_id, {}).get("solved_challenges", [])
                 ),
@@ -181,17 +181,6 @@ class ProgressionMatrix(Resource):
                 }
             )
 
-        # Build brackets data
-        brackets_data = [
-            {
-                "id": bracket.id,
-                "name": bracket.name,
-                "description": bracket.description,
-                "type": bracket.type,
-            }
-            for bracket in Brackets.query.all()
-        ]
-
         db.session.close()
 
         return {
@@ -199,6 +188,6 @@ class ProgressionMatrix(Resource):
             "data": {
                 "scoreboard": scoreboard_data,
                 "challenges": challenges_data,
-                "brackets": brackets_data,
+                "brackets": [],
             },
         }
