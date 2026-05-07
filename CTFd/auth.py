@@ -35,6 +35,16 @@ from CTFd.utils.validators import ValidationError
 auth = Blueprint("auth", __name__)
 
 
+def _post_login_redirect_url():
+    """Choose a safe landing page after login based on visibility settings."""
+    if (
+        get_config("challenge_visibility") == "admins"
+        and not current_user.is_admin()
+    ):
+        return url_for("views.static_html")
+    return url_for("challenges.listing")
+
+
 @auth.route("/confirm", methods=["POST", "GET"])
 @auth.route("/confirm/<data>", methods=["POST", "GET"])
 @ratelimit(method="POST", limit=10, interval=60)
@@ -254,15 +264,18 @@ def register():
     if current_user.authed():
         return redirect(url_for("challenges.listing"))
 
-    num_users_limit = int(get_config("num_users", default=0))
-    num_users = Users.query.filter_by(banned=False, hidden=False).count()
-    if num_users_limit and num_users >= num_users_limit:
-        abort(
-            403,
-            description=f"Reached the maximum number of users ({num_users_limit}).",
-        )
-
     if request.method == "POST":
+        num_users_limit = int(get_config("num_users", default=0))
+        num_users = Users.query.filter_by(banned=False, hidden=False).count()
+        if num_users_limit and num_users >= num_users_limit:
+            errors.append(
+                _l(
+                    "Registration is currently full. Reached the maximum number of users (%(limit)s).",
+                    limit=num_users_limit,
+                )
+            )
+            return render_template("register.html", errors=errors), 200
+
         name = request.form.get("name", "").strip()
         email_address = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "").strip()
@@ -453,7 +466,7 @@ def login():
                 admin = generate_preset_admin()
                 if admin:
                     login_user(user=admin)
-                    return redirect(url_for("challenges.listing"))
+                    return redirect(_post_login_redirect_url())
                 else:
                     errors.append(
                         "Preset admin user could not be created. Please contact an administrator"
@@ -486,7 +499,7 @@ def login():
                     request.args.get("next")
                 ):
                     return redirect(request.args.get("next"))
-                return redirect(url_for("challenges.listing"))
+                return redirect(_post_login_redirect_url())
 
             else:
                 log(
