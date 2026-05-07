@@ -7,10 +7,8 @@ from CTFd.forms.fields import SubmitField
 from CTFd.forms.users import (
     attach_custom_user_fields,
     attach_registration_code_field,
-    attach_user_bracket_field,
     build_custom_user_fields,
     build_registration_code_field,
-    build_user_bracket_field,
 )
 from CTFd.utils import get_config
 from CTFd.utils.passwords import get_password_policy_min_length
@@ -51,12 +49,10 @@ def RegistrationForm(*args, **kwargs):
                     self, include_entries=False, blacklisted_items=()
                 )
                 + build_registration_code_field(self)
-                + build_user_bracket_field(self)
             )
 
     attach_custom_user_fields(_RegistrationForm)
     attach_registration_code_field(_RegistrationForm)
-    attach_user_bracket_field(_RegistrationForm)
 
     return _RegistrationForm(*args, **kwargs)
 

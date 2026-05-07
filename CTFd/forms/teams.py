@@ -113,10 +113,9 @@ def TeamRegisterForm(*args, **kwargs):
         def extra(self):
             return build_custom_team_fields(
                 self, include_entries=False, blacklisted_items=()
-            ) + build_team_bracket_field(self)
+            )
 
     attach_custom_team_fields(_TeamRegisterForm)
-    attach_team_bracket_field(_TeamRegisterForm)
     return _TeamRegisterForm(*args, **kwargs)
 
 
