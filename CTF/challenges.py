@@ -2,7 +2,6 @@ from flask import Blueprint, redirect, render_template, request, url_for
 from flask_babel import lazy_gettext as _l
 
 from CTFd.constants.config import ChallengeVisibilityTypes, Configs
-from CTFd.models import RoomSolve, Rooms
 from CTFd.utils.config import is_teams_mode
 from CTFd.utils.dates import ctf_ended, ctf_paused, ctf_started
 from CTFd.utils.decorators import (
@@ -12,7 +11,7 @@ from CTFd.utils.decorators import (
 )
 from CTFd.utils.decorators.visibility import check_challenge_visibility
 from CTFd.utils.helpers import get_errors, get_infos
-from CTFd.utils.user import authed, get_current_team, get_current_user
+from CTFd.utils.user import authed, get_current_team
 
 challenges = Blueprint("challenges", __name__)
 
@@ -47,31 +46,4 @@ def listing():
     if ctf_ended() is True:
         infos.append(_l("%(ctf_name)s has ended", ctf_name=Configs.ctf_name))
 
-    user = get_current_user() if authed() else None
-    ctf_rooms = []
-    rooms = Rooms.query.filter_by(is_active=True).order_by(Rooms.id.asc()).all()
-    for room in rooms:
-        room_challenges = room.challenges.all()
-        challenge_ids = [challenge.id for challenge in room_challenges]
-        solved_count = 0
-        if user and challenge_ids:
-            solved_count = RoomSolve.query.filter(
-                RoomSolve.user_id == user.id,
-                RoomSolve.challenge_id.in_(challenge_ids),
-            ).count()
-
-        ctf_rooms.append(
-            {
-                "name": room.name,
-                "slug": room.slug,
-                "description": room.description,
-                "difficulty": room.difficulty,
-                "duration": room.duration,
-                "total_challenges": len(room_challenges),
-                "solved_count": solved_count,
-            }
-        )
-
-    return render_template(
-        "challenges.html", infos=infos, errors=errors, ctf_rooms=ctf_rooms
-    )
+    return render_template("challenges.html", infos=infos, errors=errors)

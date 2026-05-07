@@ -74,7 +74,7 @@
     <div class="tv-challenges-wrap">
       <div class="tv-kicker">Learning Arena</div>
       <h1 class="tv-page-title">{% trans %}Challenges{% endtrans %}</h1>
-      <p class="tv-page-subtitle">Choose a CTF room, launch the environment, and work through flags with clear progress tracking.</p>
+      <p class="tv-page-subtitle">Browse challenges by category and track your solve progress.</p>
     </div>
   </div>
 
@@ -84,59 +84,6 @@
         {% include "components/errors.html" %}
       </div>
     </div>
-
-    {% if ctf_rooms %}
-      <div class="tv-room-section">
-        <div class="tv-section-head">
-          <div>
-            <h2 class="tv-section-title">CTF Rooms</h2>
-            <p class="tv-section-note">Guided machines and flag-based labs created by administrators.</p>
-          </div>
-          <a href="{{ url_for('rooms.rooms_listing') }}" class="btn btn-outline-secondary btn-sm">View all rooms</a>
-        </div>
-
-        <div class="row">
-          {% for room in ctf_rooms %}
-            {% set pct = (room.solved_count / room.total_challenges * 100)|round(0, 'floor') if room.total_challenges else 0 %}
-            {% set diff = room.difficulty | lower %}
-            <div class="col-md-6 col-xl-4 my-3">
-              <a href="{{ url_for('rooms.room_detail', slug=room.slug) }}" class="tv-room-card">
-                <div class="tv-room-top">
-                  <span class="tv-diff-pill {% if diff == 'easy' %}tv-diff-easy{% elif diff == 'medium' %}tv-diff-medium{% elif diff == 'hard' %}tv-diff-hard{% endif %}">{{ room.difficulty }}</span>
-                  <div>
-                    <h3 class="tv-room-title">{{ room.name }}</h3>
-                    {% if room.description %}
-                      <p class="tv-room-desc">{{ room.description.split('OVA Image:')[0] }}</p>
-                    {% endif %}
-                  </div>
-                </div>
-                <div class="tv-room-body">
-                  <div class="tv-meta-grid">
-                    <div class="tv-meta-item">
-                      <div class="tv-meta-value">{{ room.total_challenges }}</div>
-                      <div class="tv-meta-label">Flags</div>
-                    </div>
-                    <div class="tv-meta-item">
-                      <div class="tv-meta-value">{{ room.solved_count }}/{{ room.total_challenges }}</div>
-                      <div class="tv-meta-label">Solved</div>
-                    </div>
-                    <div class="tv-meta-item">
-                      <div class="tv-meta-value">{{ room.duration }}</div>
-                      <div class="tv-meta-label">Minutes</div>
-                    </div>
-                  </div>
-                  <div class="tv-room-progress"><span style="width: {{ pct }}%;"></span></div>
-                  <div class="tv-enter">
-                    <span>Enter room</span>
-                    <i class="fas fa-arrow-right"></i>
-                  </div>
-                </div>
-              </a>
-            </div>
-          {% endfor %}
-        </div>
-      </div>
-    {% endif %}
 
     <div class="tv-board-panel"
       x-data="ChallengeBoard"
