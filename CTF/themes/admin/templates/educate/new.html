@@ -1,0 +1,61 @@
+﻿{% extends "admin/base.html" %}
+
+{% block content %}
+<div class="jumbotron">
+  <div class="container">
+    <h1>New Educate Room</h1>
+  </div>
+</div>
+
+<div class="container">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }}">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <form method="POST" action="{{ url_for('admin.educate_new') }}">
+    <input type="hidden" name="nonce" value="{{ Session.nonce }}">
+
+    <div class="form-group">
+      <label>Name <span class="text-danger">*</span></label>
+      <input type="text" name="name" class="form-control" required placeholder="e.g. LazyAdmin">
+      <small class="form-text text-muted">Slug will be auto-generated (e.g. "lazy-admin").</small>
+    </div>
+
+    <div class="form-group">
+      <label>Description</label>
+      <textarea name="description" class="form-control" rows="3" placeholder="Short room descriptionâ€¦"></textarea>
+    </div>
+
+    <div class="row">
+      <div class="col-md-4 form-group">
+        <label>Difficulty</label>
+        <select name="difficulty" class="form-control">
+          <option value="Easy">Easy</option>
+          <option value="Medium">Medium</option>
+          <option value="Hard">Hard</option>
+        </select>
+      </div>
+      <div class="col-md-4 form-group">
+        <label>Duration (minutes)</label>
+        <input type="number" name="duration" class="form-control" value="30" min="5" max="480">
+      </div>
+      <div class="col-md-4 form-group">
+        <label>Target IP</label>
+        <input type="text" name="target_ip" class="form-control" placeholder="15.237.60.47">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>AWS Challenge ID</label>
+      <input type="text" name="aws_challenge_id" class="form-control" placeholder="redis0002">
+      <small class="form-text text-muted">Use the ID created by the OVA importer for this room's AMI.</small>
+    </div>
+
+    <button type="submit" class="btn btn-success">Create Educate Room</button>
+    <a href="{{ url_for('admin.educate_listing') }}" class="btn btn-secondary ml-2">Cancel</a>
+  </form>
+</div>
+{% endblock %}
+

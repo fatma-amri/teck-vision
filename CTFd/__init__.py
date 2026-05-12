@@ -324,6 +324,7 @@ def create_app(config="CTFd.config.Config"):
         from CTFd.challenges import challenges
         from CTFd.challenges_api import challenges_api
         from CTFd.errors import render_error
+        from CTFd.educate import educate
         from CTFd.events import events
         from CTFd.health import health
         from CTFd.room_instances import room_instances
@@ -346,6 +347,7 @@ def create_app(config="CTFd.config.Config"):
         app.register_blueprint(health)
         app.register_blueprint(room_instances)
         app.register_blueprint(rooms)
+        app.register_blueprint(educate)
         app.register_blueprint(challenges_api)
 
         app.register_blueprint(admin)

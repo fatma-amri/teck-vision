@@ -1,278 +1,226 @@
 {% extends "base.html" %}
 
-{% block stylesheets %}
-{{ super() }}
+{% block content %}
 <style>
-  .tv-room {
-    background: linear-gradient(180deg, rgba(13, 16, 24, 0.95), rgba(8, 10, 16, 0.95));
-    border: 1px solid var(--tv-line);
-    border-radius: 6px;
+  body { background: #0a0e1a !important; color: #e2e8f0; }
+  .rooms-page {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 3rem 1.25rem 4rem;
+  }
+  .rooms-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1.5rem;
+    margin-bottom: 1.75rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+  }
+  .rooms-kicker {
+    color: #9af04d;
+    font-size: .76rem;
+    font-weight: 800;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    margin-bottom: .45rem;
+  }
+  .rooms-title {
+    color: #fff;
+    font-size: clamp(2rem, 4vw, 3.1rem);
+    font-weight: 850;
+    line-height: 1.05;
+    margin: 0;
+  }
+  .rooms-subtitle {
+    color: #94a3b8;
+    max-width: 680px;
+    margin: .75rem 0 0;
+  }
+  .rooms-count {
+    border: 1px solid rgba(255,255,255,.09);
+    background: rgba(17,24,39,.72);
+    border-radius: 8px;
+    color: #cbd5e1;
+    font-size: .86rem;
+    font-weight: 700;
+    padding: .65rem .85rem;
+    white-space: nowrap;
+  }
+  .rooms-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+  }
+  .room-link {
     color: inherit;
+    display: block;
+    height: 100%;
+    text-decoration: none;
+  }
+  .room-link:hover { color: inherit; text-decoration: none; }
+  .room-card {
     display: flex;
     flex-direction: column;
+    min-height: 250px;
     height: 100%;
-    min-height: 280px;
+    background: linear-gradient(180deg, rgba(17,24,39,.98), rgba(15,20,33,.98));
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 8px;
+    box-shadow: 0 18px 42px rgba(0,0,0,.22);
     overflow: hidden;
-    position: relative;
-    text-decoration: none;
-    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
   }
-
-  .tv-room::before {
-    content: "";
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, var(--tv-neon), var(--tv-magenta));
-    transform: scaleX(0.18);
-    transform-origin: left;
-    transition: transform 0.4s ease;
-  }
-
-  .tv-room:hover {
-    border-color: var(--tv-line-strong);
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(0, 240, 255, 0.12);
-    color: inherit;
-    text-decoration: none;
+  .room-card:hover {
     transform: translateY(-3px);
+    border-color: rgba(154,240,77,.7);
+    box-shadow: 0 24px 54px rgba(0,0,0,.34);
   }
-
-  .tv-room:hover::before {
-    transform: scaleX(1);
-  }
-
-  .tv-room-head {
-    display: flex;
-    align-items: center;
-    gap: 0.45rem;
-    padding: 0.7rem 1rem;
-    background: rgba(0, 0, 0, 0.45);
-    border-bottom: 1px solid var(--tv-line);
-    font-family: var(--tv-mono);
-    font-size: 0.7rem;
-    color: var(--tv-muted);
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-  }
-
-  .tv-room-dot { width: 9px; height: 9px; border-radius: 999px; margin-right: 0.15rem; }
-  .tv-room-dot.r { background: #ff5f56; }
-  .tv-room-dot.y { background: #ffbd2e; }
-  .tv-room-dot.g { background: #27c93f; }
-
-  .tv-room-id {
-    margin-left: 0.6rem;
-    color: var(--tv-text);
-    font-family: var(--tv-mono);
-  }
-
-  .tv-room-tag {
-    margin-left: auto;
-    color: var(--tv-magenta);
-  }
-
-  .tv-room-body {
+  .room-card-top {
     padding: 1.25rem 1.25rem 1rem;
-    flex: 1;
+    border-bottom: 1px solid rgba(255,255,255,.06);
   }
-
-  .tv-room-icon {
-    align-items: center;
-    background: rgba(0, 240, 255, 0.06);
-    border: 1px solid var(--tv-line-strong);
-    border-radius: 6px;
-    color: var(--tv-neon);
-    display: inline-flex;
-    font-size: 1.1rem;
-    height: 42px;
-    justify-content: center;
+  .room-card-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, #9af04d, #00d4ff);
+    color: #071026;
     margin-bottom: 1rem;
-    width: 42px;
   }
-
-  .tv-room:hover .tv-room-icon {
-    background: rgba(255, 46, 136, 0.08);
-    color: var(--tv-magenta);
+  .room-card-title {
+    color: #fff;
+    font-size: 1.15rem;
+    font-weight: 850;
+    margin: 0 0 .45rem;
   }
-
-  .tv-room-title {
-    color: var(--tv-text);
-    font-family: var(--tv-mono);
-    font-size: 1.05rem;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-    margin: 0 0 0.5rem;
-    text-transform: uppercase;
-  }
-
-  .tv-room-desc {
-    color: var(--tv-muted);
-    font-family: var(--tv-mono);
-    font-size: 0.86rem;
+  .room-card-desc {
+    color: #94a3b8;
+    font-size: .9rem;
     line-height: 1.55;
     margin: 0;
   }
-
-  .tv-room-foot {
+  .room-card-body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    justify-content: space-between;
     padding: 1rem 1.25rem 1.25rem;
-    border-top: 1px solid var(--tv-line);
   }
-
-  .tv-room-meta-grid {
+  .room-meta {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.5rem;
+    gap: .55rem;
     margin-bottom: 1rem;
   }
-
-  .tv-room-meta-item {
-    background: rgba(0, 0, 0, 0.35);
-    border: 1px solid var(--tv-line);
-    border-radius: 4px;
-    padding: 0.55rem 0.4rem;
+  .room-meta-item {
+    background: rgba(255,255,255,.045);
+    border: 1px solid rgba(255,255,255,.07);
+    border-radius: 7px;
+    padding: .55rem .45rem;
     text-align: center;
   }
-
-  .tv-room-meta-value {
-    color: var(--tv-neon);
-    font-family: var(--tv-mono);
-    font-size: 1rem;
-    font-weight: 700;
-    line-height: 1;
-  }
-
-  .tv-room-meta-label {
-    color: var(--tv-muted);
-    font-family: var(--tv-mono);
-    font-size: 0.66rem;
-    letter-spacing: 0.12em;
-    margin-top: 0.4rem;
-    text-transform: uppercase;
-  }
-
-  .tv-room-row {
+  .room-meta-value { color: #f8fafc; font-size: .98rem; font-weight: 850; line-height: 1; }
+  .room-meta-label { color: #64748b; font-size: .72rem; margin-top: .25rem; }
+  .room-footer {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 0.75rem;
+    gap: .75rem;
   }
-
-  .tv-diff {
-    border: 1px solid var(--tv-line-strong);
-    border-radius: 999px;
-    color: var(--tv-text);
-    font-family: var(--tv-mono);
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    padding: 0.28rem 0.7rem;
-    text-transform: uppercase;
+  .meta-pill {
+    border: 1px solid rgba(255,255,255,.12);
+    background: rgba(255,255,255,.06);
+    border-radius: 6px;
+    color: #cbd5e1;
+    display: inline-flex;
+    font-size: .78rem;
+    font-weight: 800;
+    padding: .34rem .58rem;
   }
-
-  .tv-diff-easy {
-    background: rgba(182, 255, 60, 0.12);
-    border-color: rgba(182, 255, 60, 0.4);
-    color: var(--tv-lime);
+  .thm-badge-easy { background: rgba(154,240,77,.14); color: #9af04d; border-color: rgba(154,240,77,.32); }
+  .thm-badge-medium { background: rgba(251,191,36,.14); color: #fbbf24; border-color: rgba(251,191,36,.32); }
+  .thm-badge-hard { background: rgba(248,113,113,.14); color: #f87171; border-color: rgba(248,113,113,.32); }
+  .room-enter {
+    color: #e2e8f0;
+    font-size: .86rem;
+    font-weight: 850;
   }
-
-  .tv-diff-medium {
-    background: rgba(255, 184, 0, 0.12);
-    border-color: rgba(255, 184, 0, 0.4);
-    color: var(--tv-amber);
+  .rooms-empty {
+    background: rgba(17,24,39,.78);
+    border: 1px dashed rgba(148,163,184,.35);
+    border-radius: 8px;
+    color: #94a3b8;
+    padding: 2rem;
+    text-align: center;
   }
-
-  .tv-diff-hard {
-    background: rgba(255, 56, 96, 0.12);
-    border-color: rgba(255, 56, 96, 0.4);
-    color: var(--tv-danger);
+  @media (max-width: 992px) {
+    .rooms-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
-
-  .tv-room-enter {
-    color: var(--tv-text);
-    font-family: var(--tv-mono);
-    font-size: 0.76rem;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    transition: color 0.18s, transform 0.18s;
+  @media (max-width: 640px) {
+    .rooms-header { align-items: flex-start; flex-direction: column; }
+    .rooms-grid { grid-template-columns: 1fr; }
+    .rooms-count { white-space: normal; }
   }
-
-  .tv-room:hover .tv-room-enter {
-    color: var(--tv-neon);
-  }
-
-  .tv-room-enter i { margin-left: 0.45rem; }
 </style>
-{% endblock %}
 
-{% block content %}
-<section class="tv-page">
-  <header class="tv-page-head">
+<main class="rooms-page">
+  <header class="rooms-header">
     <div>
-      <div class="tv-page-kicker">cyber range · practice labs</div>
-      <h1 class="tv-page-title">Rooms <span class="grad">·&nbsp;isolated targets</span></h1>
-      <p class="tv-page-subtitle">Boot a guided machine, follow the brief, and capture every flag inside. All targets are disposable.</p>
+      <div class="rooms-kicker">{{ section_kicker or 'Practice Labs' }}</div>
+      <h1 class="rooms-title">{{ section_title or 'Rooms' }}</h1>
+      <p class="rooms-subtitle">{{ section_subtitle or 'Choose a guided machine, launch the environment, and work through the flags at your own pace.' }}</p>
     </div>
-    <div class="tv-page-meta">
-      <span class="dot"></span>
-      <span>rooms · <b>{{ rooms|length if rooms else 0 }}</b> available</span>
-    </div>
+    <div class="rooms-count">{{ rooms|length if rooms else 0 }} available</div>
   </header>
 
   {% if rooms %}
-    <div class="tv-grid">
+    <div class="rooms-grid">
       {% for room in rooms %}
-        <a class="tv-room" href="{{ url_for('rooms.room_detail', slug=room.slug) }}">
-          <div class="tv-room-head">
-            <span class="tv-room-dot r"></span>
-            <span class="tv-room-dot y"></span>
-            <span class="tv-room-dot g"></span>
-            <span class="tv-room-id">room/{{ room.slug }}</span>
-            <span class="tv-room-tag">// {{ '0' ~ loop.index if loop.index < 10 else loop.index }}</span>
-          </div>
-          <div class="tv-room-body">
-            <span class="tv-room-icon"><i class="fas fa-terminal" aria-hidden="true"></i></span>
-            <h2 class="tv-room-title">{{ room.name }}</h2>
-            <p class="tv-room-desc">{{ (room.description or '').split('OVA Image:')[0] | truncate(140) }}</p>
-          </div>
-          <div class="tv-room-foot">
-            <div class="tv-room-meta-grid">
-              <div class="tv-room-meta-item">
-                <div class="tv-room-meta-value">{{ room.duration }}</div>
-                <div class="tv-room-meta-label">minutes</div>
+        <a class="room-link" href="{{ url_for(room_detail_endpoint or 'rooms.room_detail', slug=room.slug) }}">
+          <article class="room-card">
+            <div class="room-card-top">
+              <div class="room-card-icon"><i class="fas fa-terminal"></i></div>
+              <h2 class="room-card-title">{{ room.name }}</h2>
+              <p class="room-card-desc">{{ (room.description or '').split('OVA Image:')[0] }}</p>
+            </div>
+            <div class="room-card-body">
+              <div class="room-meta">
+                <div class="room-meta-item">
+                  <div class="room-meta-value">{{ room.duration }}</div>
+                  <div class="room-meta-label">Minutes</div>
+                </div>
+                <div class="room-meta-item">
+                  <div class="room-meta-value">{{ room.total_challenges }}</div>
+                  <div class="room-meta-label">Tasks</div>
+                </div>
+                <div class="room-meta-item">
+                  <div class="room-meta-value">{{ room.players_count }}</div>
+                  <div class="room-meta-label">Players</div>
+                </div>
               </div>
-              <div class="tv-room-meta-item">
-                <div class="tv-room-meta-value">{{ room.total_challenges }}</div>
-                <div class="tv-room-meta-label">tasks</div>
-              </div>
-              <div class="tv-room-meta-item">
-                <div class="tv-room-meta-value">{{ room.players_count }}</div>
-                <div class="tv-room-meta-label">players</div>
+              <div class="room-footer">
+                {% set diff = room.difficulty | lower %}
+                {% if diff == 'easy' %}
+                  <span class="thm-badge-easy meta-pill">Easy</span>
+                {% elif diff == 'medium' %}
+                  <span class="thm-badge-medium meta-pill">Medium</span>
+                {% elif diff == 'hard' %}
+                  <span class="thm-badge-hard meta-pill">Hard</span>
+                {% else %}
+                  <span class="meta-pill">{{ room.difficulty }}</span>
+                {% endif %}
+                <span class="room-enter">Enter <i class="fas fa-arrow-right ml-1"></i></span>
               </div>
             </div>
-            <div class="tv-room-row">
-              {% set diff = room.difficulty | lower %}
-              {% if diff == 'easy' %}
-                <span class="tv-diff tv-diff-easy">easy</span>
-              {% elif diff == 'medium' %}
-                <span class="tv-diff tv-diff-medium">medium</span>
-              {% elif diff == 'hard' %}
-                <span class="tv-diff tv-diff-hard">hard</span>
-              {% else %}
-                <span class="tv-diff">{{ room.difficulty }}</span>
-              {% endif %}
-              <span class="tv-room-enter">enter <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
-            </div>
-          </div>
+          </article>
         </a>
       {% endfor %}
     </div>
   {% else %}
-    <div class="tv-empty">
-      <i class="fas fa-server" aria-hidden="true"></i>
-      <h5>No rooms online</h5>
-      <p>The range is quiet — check back soon when more targets are deployed.</p>
-    </div>
+    <div class="rooms-empty">No rooms available yet.</div>
   {% endif %}
-</section>
+</main>
 {% endblock %}

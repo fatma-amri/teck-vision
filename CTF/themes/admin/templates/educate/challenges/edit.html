@@ -1,0 +1,64 @@
+﻿{% extends "admin/base.html" %}
+
+{% block content %}
+<div class="jumbotron">
+  <div class="container">
+    <h1>Edit Challenge: {{ challenge.title }}</h1>
+  </div>
+</div>
+
+<div class="container">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }}">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <form method="POST" action="{{ url_for('admin.educate_challenges_edit', room_id=room.id, cid=challenge.id) }}">
+    <input type="hidden" name="nonce" value="{{ Session.nonce }}">
+
+    <div class="form-group">
+      <label>Title <span class="text-danger">*</span></label>
+      <input type="text" name="title" class="form-control" required value="{{ challenge.title }}">
+    </div>
+
+    <div class="form-group">
+      <label>Description</label>
+      <textarea name="description" class="form-control" rows="2">{{ challenge.description }}</textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Question</label>
+      <textarea name="question" class="form-control" rows="2">{{ challenge.question }}</textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Correct Answer <span class="text-danger">*</span></label>
+      <input type="text" name="answer" class="form-control" required value="{{ challenge.answer }}">
+    </div>
+
+    <div class="row">
+      <div class="col-md-3 form-group">
+        <label>Points</label>
+        <input type="number" name="points" class="form-control" value="{{ challenge.points }}" min="1">
+      </div>
+      <div class="col-md-3 form-group">
+        <label>Difficulty</label>
+        <select name="difficulty" class="form-control">
+          {% for d in ['Easy', 'Medium', 'Hard'] %}
+            <option value="{{ d }}" {% if challenge.difficulty == d %}selected{% endif %}>{{ d }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3 form-group">
+        <label>Position</label>
+        <input type="number" name="position" class="form-control" value="{{ challenge.position }}" min="0">
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save Changes</button>
+    <a href="{{ url_for('admin.educate_edit', room_id=room.id) }}" class="btn btn-secondary ml-2">Back to Room</a>
+  </form>
+</div>
+{% endblock %}
+

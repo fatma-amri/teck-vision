@@ -169,9 +169,9 @@
 <main class="rooms-page">
   <header class="rooms-header">
     <div>
-      <div class="rooms-kicker">Practice Labs</div>
-      <h1 class="rooms-title">Rooms</h1>
-      <p class="rooms-subtitle">Choose a guided machine, launch the environment, and work through the flags at your own pace.</p>
+      <div class="rooms-kicker">{{ section_kicker or 'Practice Labs' }}</div>
+      <h1 class="rooms-title">{{ section_title or 'Rooms' }}</h1>
+      <p class="rooms-subtitle">{{ section_subtitle or 'Choose a guided machine, launch the environment, and work through the flags at your own pace.' }}</p>
     </div>
     <div class="rooms-count">{{ rooms|length if rooms else 0 }} available</div>
   </header>
@@ -179,7 +179,7 @@
   {% if rooms %}
     <div class="rooms-grid">
       {% for room in rooms %}
-        <a class="room-link" href="{{ url_for('rooms.room_detail', slug=room.slug) }}">
+        <a class="room-link" href="{{ url_for(room_detail_endpoint or 'rooms.room_detail', slug=room.slug) }}">
           <article class="room-card">
             <div class="room-card-top">
               <div class="room-card-icon"><i class="fas fa-terminal"></i></div>
