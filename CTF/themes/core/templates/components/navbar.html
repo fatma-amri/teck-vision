@@ -64,10 +64,15 @@
 
         <li class="nav-item">
           <a class="nav-link" href="{{ url_for('rooms.rooms_listing') }}">
-            &#127306; {% trans %}Rooms{% endtrans %}
+            <i class="fas fa-server pe-1" aria-hidden="true"></i>
+            {% trans %}Rooms{% endtrans %}
           </a>
+        </li>
+
+        <li class="nav-item">
           <a class="nav-link" href="{{ url_for('educate.educate_listing') }}">
-            &#127891; {% trans %}Educate{% endtrans %}
+            <i class="fas fa-graduation-cap pe-1" aria-hidden="true"></i>
+            {% trans %}Educate{% endtrans %}
           </a>
         </li>
       </ul>

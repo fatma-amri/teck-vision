@@ -166,7 +166,11 @@ Alpine.data("Challenge", () => ({
   },
 
   async nextChallenge() {
-    let modal = Modal.getOrCreateInstance("[x-ref='challengeWindow']");
+    let el = document.getElementById("challenge-window");
+    if (!el) {
+      return;
+    }
+    let modal = Modal.getOrCreateInstance(el);
 
     // TODO: Get rid of this private attribute access
     // See https://github.com/twbs/bootstrap/issues/31266
@@ -343,7 +347,11 @@ Alpine.data("ChallengeBoard", () => ({
 
       // nextTick is required here because we're working in a callback
       Alpine.nextTick(() => {
-        let modal = Modal.getOrCreateInstance("[x-ref='challengeWindow']");
+        let el = document.getElementById("challenge-window");
+        if (!el) {
+          return;
+        }
+        let modal = Modal.getOrCreateInstance(el);
         // TODO: Get rid of this private attribute access
         // See https://github.com/twbs/bootstrap/issues/31266
         modal._element.addEventListener(

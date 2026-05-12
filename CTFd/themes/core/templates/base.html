@@ -10,7 +10,7 @@
 
   {% block stylesheets %}
     {{ Assets.css("assets/scss/main.scss") }}
-    <link rel="stylesheet" href="/themes/core/static/css/teck-vision.css">
+    <link rel="stylesheet" href="/themes/core/static/css/teck-vision.css?v=tv-shell-10">
   {% endblock %}
 
   {{ Plugins.styles }}
@@ -49,6 +49,9 @@
   {% block content %}
   {% endblock %}
 </main>
+
+{# Modals here (not inside <main>) so z-index stacks above the fixed navbar — see tv-challenge-modal / tv-team-modal #}
+{% block modals %}{% endblock %}
 
 {% include "components/snackbar.html" %}
 

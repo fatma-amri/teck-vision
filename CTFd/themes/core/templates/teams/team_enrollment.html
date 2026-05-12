@@ -1,44 +1,45 @@
 {% extends "base.html" %}
 
 {% block content %}
-  <div class="jumbotron">
-    <div class="container">
-      <h1>{% trans %}Team{% endtrans %}</h1>
+<section class="tv-page">
+  <header class="tv-page-head">
+    <div>
+      <div class="tv-page-kicker tv-kicker-lime">{% trans %}Unit setup{% endtrans %}</div>
+      <h1 class="tv-page-title">
+        {% trans %}Team{% endtrans %} <span class="grad">{% trans %}· enlist{% endtrans %}</span>
+      </h1>
+      <p class="tv-page-subtitle">
+        {% trans %}Create a new squad or join an existing one with the passphrase your captain shared.{% endtrans %}
+      </p>
     </div>
-  </div>
-  <div class="container">
-    <div class="row">
-      <div class="col-md-6 offset-md-3 text-center">
-        <p class="h2">{% trans %}Welcome to{% endtrans %} {{ Configs.ctf_name }}!</p>
-        <p>
-          {% trans %}In order to participate you must either join or create a team.{% endtrans %}
-        </p>
-      </div>
+    <div class="tv-page-meta">
+      <span class="dot"></span>      
+        <span>{% trans %}status{% endtrans %} · <b>{% trans %}required{% endtrans %}</b></span>
     </div>
+  </header>
 
-    {% if integrations.mlc() %}
-      <div class="row">
-        <div class="col-md-6 offset-md-3 text-center">
+  <div class="tv-team-enroll-panel">
+      <p class="mb-0" style="color: var(--tv-muted); font-family: var(--tv-mono); font-size: 0.92rem; line-height: 1.65;">
+        {% trans %}Welcome to{% endtrans %} <strong style="color: var(--tv-text);">{{ Configs.ctf_name }}</strong>.
+        {% trans %}You need a team to operate with your crew on the range.{% endtrans %}
+      </p>
+
+      {% if integrations.mlc() %}
+        <div class="tv-team-enroll-cta">
           <a class="btn btn-primary w-100" href="{{ url_for('auth.oauth_login') }}">{% trans %}Play with Official Team{% endtrans %}</a>
+          <a class="btn btn-outline-primary w-100" href="{{ url_for('teams.join') }}">{% trans %}Join Unofficial Team{% endtrans %}</a>
+          <a class="btn btn-outline-primary w-100" href="{{ url_for('teams.new') }}">{% trans %}Create Unofficial Team{% endtrans %}</a>
         </div>
-      </div>
-      <div class="row">
-        <div class="mt-3 col-md-3 offset-md-3 text-center">
-          <a class="btn btn-outline-info w-100" href="{{ url_for('teams.join') }}">{% trans %}Join Unofficial Team{% endtrans %}</a>
+      {% else %}
+        <div class="tv-team-enroll-cta">
+          <a class="btn btn-primary w-100" href="{{ url_for('teams.join') }}">
+            <i class="fas fa-sign-in-alt me-2" aria-hidden="true"></i>{% trans %}Join team{% endtrans %}
+          </a>
+          <a class="btn btn-primary w-100" href="{{ url_for('teams.new') }}">
+            <i class="fas fa-plus me-2" aria-hidden="true"></i>{% trans %}Create team{% endtrans %}
+          </a>
         </div>
-        <div class="mt-3 col-md-3 text-center">
-          <a class="btn btn-outline-info w-100" href="{{ url_for('teams.new') }}">{% trans %}Create Unofficial Team{% endtrans %}</a>
-        </div>
-      </div>
-    {% else %}
-      <div class="row">
-        <div class="mt-3 col-sm-4 col-md-3 offset-sm-2 offset-md-3 text-center">
-          <a class="btn btn-primary w-100" href="{{ url_for('teams.join') }}">{% trans %}Join Team{% endtrans %}</a>
-        </div>
-        <div class="mt-3 col-sm-4 col-md-3 text-center">
-          <a class="btn btn-primary w-100" href="{{ url_for('teams.new') }}">{% trans %}Create Team{% endtrans %}</a>
-        </div>
-      </div>
-    {% endif %}
+      {% endif %}
   </div>
+</section>
 {% endblock %}

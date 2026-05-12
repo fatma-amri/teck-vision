@@ -33,11 +33,21 @@
         {% endfor %}
 
         {% if Configs.account_visibility != 'admins' %}
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('users.listing') }}">
-              {% trans %}Users{% endtrans %}
-            </a>
-          </li>
+          {% if Configs.user_mode == 'users' %}
+            {% if is_admin() %}
+              <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('users.listing') }}">
+                  {% trans %}Users{% endtrans %}
+                </a>
+              </li>
+            {% endif %}
+          {% else %}
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('users.listing') }}">
+                {% trans %}Users{% endtrans %}
+              </a>
+            </li>
+          {% endif %}
 
           {% if Configs.user_mode == 'teams' %}
             <li class="nav-item">
@@ -67,35 +77,17 @@
             <i class="fas fa-server tv-nav-icon" aria-hidden="true"></i>
             {% trans %}Rooms{% endtrans %}
           </a>
+        </li>
+
+        <li class="nav-item">
           <a class="nav-link" href="{{ url_for('educate.educate_listing') }}">
-            &#127891; {% trans %}Educate{% endtrans %}
+            <i class="fas fa-graduation-cap tv-nav-icon" aria-hidden="true"></i>
+            {% trans %}Educate{% endtrans %}
           </a>
         </li>
-      </ul>
 
-      <hr class="tv-navbar-divider d-md-none">
-
-      <ul class="navbar-nav tv-nav-actions ms-md-auto">
         {% if authed() %}
-
-          {% if is_admin() %}
-            <li class="nav-item">
-              <a class="nav-link" href="{{ url_for('admin.view') }}">
-                <i class="fas fa-wrench tv-nav-icon" aria-hidden="true"></i>
-                {% trans %}Admin{% endtrans %}
-              </a>
-            </li>
-          {% endif %}
-
-          <li class="nav-item">
-            <a class="nav-link tv-nav-notify" href="{{ url_for('views.notifications') }}">
-              <i class="fas fa-bell tv-nav-icon" aria-hidden="true"></i>
-              <span x-data x-show="$store.unread_count > 0" x-text="$store.unread_count" class="badge rounded-pill bg-danger badge-notification tv-nav-badge"></span>
-              {% trans %}Notifications{% endtrans %}
-            </a>
-          </li>
-
-          {% if Configs.user_mode == "teams" %}
+          {% if Configs.user_mode == "teams" or Configs.user_mode == "users" %}
             <li class="nav-item">
               <a class="nav-link" href="{{ url_for('teams.private') }}">
                 <i class="fas fa-users tv-nav-icon" aria-hidden="true"></i>
@@ -103,71 +95,136 @@
               </a>
             </li>
           {% endif %}
-
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('users.private') }}">
-              <i class="fas fa-user-circle tv-nav-icon" aria-hidden="true"></i>
-              {% trans %}Profile{% endtrans %}
-            </a>
-          </li>
-
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('views.settings') }}">
-              <i class="fas fa-cog tv-nav-icon" aria-hidden="true"></i>
-              {% trans %}Settings{% endtrans %}
-            </a>
-          </li>
-
-          <li class="nav-item">
-            <a class="nav-link tv-nav-logout" href="{{ url_for('auth.logout') }}">
-              <i class="fas fa-sign-out-alt tv-nav-icon" aria-hidden="true"></i>
-              {% trans %}Logout{% endtrans %}
-            </a>
-          </li>
-        {% else %}
-
-          {% if registration_visible() %}
+          {% if User.team_id %}
             <li class="nav-item">
-              <a class="nav-link" href="{{ url_for('auth.register') }}">
-                <i class="fas fa-user-plus tv-nav-icon" aria-hidden="true"></i>
-                {% trans %}Register{% endtrans %}
+              <a class="nav-link" href="{{ url_for('users.team_roster') }}">
+                <i class="fas fa-user-friends tv-nav-icon" aria-hidden="true"></i>
+                {% trans %}Teammates{% endtrans %}
               </a>
             </li>
           {% endif %}
-
-          <li class="nav-item">
-            <a class="nav-link tv-nav-login" href="{{ url_for('auth.login') }}">
-              <i class="fas fa-sign-in-alt tv-nav-icon" aria-hidden="true"></i>
-              {% trans %}Login{% endtrans %}
-            </a>
-          </li>
         {% endif %}
+      </ul>
 
+      <hr class="tv-navbar-divider d-md-none">
+
+      <ul class="navbar-nav tv-nav-actions ms-md-auto" x-data="LanguageForm">
         <li class="nav-item dropdown">
-          <button class="nav-link dropdown-toggle tv-nav-dropdown" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-            <i class="fas fa-language tv-nav-icon" aria-hidden="true"></i>
-            <span class="d-md-none">{% trans %}Language{% endtrans %}</span>
-            <span class="d-none d-md-inline">{% trans %}Lang{% endtrans %}</span>
+          <button
+              type="button"
+              class="nav-link dropdown-toggle tv-nav-ops-trigger d-inline-flex align-items-center gap-1"
+              data-bs-toggle="dropdown"
+              data-bs-display="static"
+              aria-expanded="false"
+              aria-label="{% trans %}Operator menu{% endtrans %}"
+          >
+            <i class="fas fa-terminal tv-nav-icon" aria-hidden="true"></i>
+            <span class="d-none d-sm-inline">{% trans %}Console{% endtrans %}</span>
           </button>
-          <form x-data="LanguageForm">
-            <ul class="dropdown-menu dropdown-menu-end tv-navbar-dropdown">
-              {% set curr_lang = get_locale() %}
-              {%- for lang in Languages.names.items() %}
-              <li>
-                  <span class="dropdown-item {{ 'active' if (curr_lang == lang[0]) }}" @click="set" value="{{ lang[0] }}">
-                    {{ lang[1] }}
-                  </span>
-              </li>
-              {%- endfor %}
-            </ul>
-          </form>
-        </li>
+          <ul class="dropdown-menu dropdown-menu-end tv-navbar-dropdown tv-ops-dropdown">
+            {% if authed() %}
 
-        <li class="nav-item">
-          <button class="nav-link theme-switch tv-nav-theme" type="button">
-            <i class="fas fa-sun tv-nav-icon" aria-hidden="true"></i>
-            <span class="d-md-none">{% trans %}Theme{% endtrans %}</span>
-          </button>
+              {% if is_admin() %}
+                <li>
+                  <a class="dropdown-item" href="{{ url_for('admin.view') }}">
+                    <i class="fas fa-wrench fa-fw me-2" aria-hidden="true"></i>{% trans %}Admin{% endtrans %}
+                  </a>
+                </li>
+              {% endif %}
+
+              <li>
+                <a class="dropdown-item tv-nav-notify-item" href="{{ url_for('views.notifications') }}">
+                  <span class="d-flex align-items-center w-100">
+                    <span><i class="fas fa-bell fa-fw me-2" aria-hidden="true"></i>{% trans %}Notifications{% endtrans %}</span>
+                    <span
+                        x-data
+                        x-show="$store.unread_count > 0"
+                        x-text="$store.unread_count"
+                        class="badge rounded-pill bg-danger ms-auto"
+                    ></span>
+                  </span>
+                </a>
+              </li>
+
+              <li>
+                <a class="dropdown-item" href="{{ url_for('users.private') }}">
+                  <i class="fas fa-user-circle fa-fw me-2" aria-hidden="true"></i>{% trans %}Profile{% endtrans %}
+                </a>
+              </li>
+
+              <li>
+                <a class="dropdown-item" href="{{ url_for('views.settings') }}">
+                  <i class="fas fa-cog fa-fw me-2" aria-hidden="true"></i>{% trans %}Settings{% endtrans %}
+                </a>
+              </li>
+
+              <li><hr class="dropdown-divider"></li>
+
+              <li>
+                <a class="dropdown-item tv-nav-logout" href="{{ url_for('auth.logout') }}">
+                  <i class="fas fa-sign-out-alt fa-fw me-2" aria-hidden="true"></i>{% trans %}Logout{% endtrans %}
+                </a>
+              </li>
+            {% else %}
+
+              {% if registration_visible() %}
+                <li>
+                  <a class="dropdown-item" href="{{ url_for('auth.register') }}">
+                    <i class="fas fa-user-plus fa-fw me-2" aria-hidden="true"></i>{% trans %}Register{% endtrans %}
+                  </a>
+                </li>
+              {% endif %}
+
+              <li>
+                <a class="dropdown-item tv-nav-login" href="{{ url_for('auth.login') }}">
+                  <i class="fas fa-sign-in-alt fa-fw me-2" aria-hidden="true"></i>{% trans %}Login{% endtrans %}
+                </a>
+              </li>
+            {% endif %}
+
+            <li><hr class="dropdown-divider"></li>
+            {% set curr_lang = get_locale() %}
+            {% set curr_lang_label = Languages.names[curr_lang] if curr_lang in Languages.names else curr_lang %}
+            <li class="px-0">
+              <button
+                  type="button"
+                  class="dropdown-item tv-console-lang-toggle d-flex align-items-center justify-content-between w-100 collapsed"
+                  data-bs-toggle="collapse"
+                  data-bs-target="#tvConsoleLangList"
+                  aria-expanded="false"
+                  aria-controls="tvConsoleLangList"
+                  onclick="event.stopPropagation();"
+              >
+                <span class="d-flex align-items-center text-start">
+                  <i class="fas fa-language fa-fw me-2 tv-nav-icon" aria-hidden="true"></i>
+                  <span>{% trans %}Language{% endtrans %} · <strong>{{ curr_lang_label }}</strong></span>
+                </span>
+                <i class="fas fa-chevron-down small tv-console-lang-chevron ms-2" aria-hidden="true"></i>
+              </button>
+              <div class="collapse tv-console-lang-list" id="tvConsoleLangList">
+                {%- for lang in Languages.names.items() %}
+                <span
+                    class="dropdown-item tv-console-lang-item {{ 'active' if (curr_lang == lang[0]) }}"
+                    role="button"
+                    tabindex="0"
+                    @click="set($event)"
+                    @keydown.enter.prevent="set($event)"
+                    value="{{ lang[0] }}"
+                >
+                  {{ lang[1] }}
+                </span>
+                {%- endfor %}
+              </div>
+            </li>
+
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <button type="button" class="dropdown-item theme-switch d-flex align-items-center">
+                <i class="fas fa-sun fa-fw me-2 tv-nav-icon" aria-hidden="true"></i>
+                {% trans %}Theme{% endtrans %}
+              </button>
+            </li>
+          </ul>
         </li>
       </ul>
     </div>

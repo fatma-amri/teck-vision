@@ -3,6 +3,7 @@
 import logging
 
 from flask import Blueprint, abort, current_app, redirect, render_template, request, url_for
+from flask_babel import gettext as _
 from sqlalchemy import func
 
 from CTFd.cache import cache
@@ -77,7 +78,11 @@ def rooms_listing():
             "solved_count": solved_count,
         })
 
-    return render_template("rooms.html", rooms=room_list)
+    return render_template(
+        "rooms.html",
+        rooms=room_list,
+        section_grad=_("labs"),
+    )
 
 
 # ── Room detail ───────────────────────────────────────────────────────────────

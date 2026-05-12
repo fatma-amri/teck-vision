@@ -1,41 +1,49 @@
 {% extends "base.html" %}
 
 {% block content %}
-  <div class="jumbotron">
-    <div class="container">
-      <h1>{% trans %}Create Team{% endtrans %}</h1>
+<section class="tv-page">
+  <header class="tv-page-head">
+    <div>
+      <div class="tv-page-kicker tv-kicker-lime">{% trans %}Unit setup{% endtrans %}</div>
+      <h1 class="tv-page-title">
+        {% trans %}Create team{% endtrans %} <span class="grad">{% trans %}· founding{% endtrans %}</span>
+      </h1>
+      <p class="tv-page-subtitle">
+        {% trans %}Name your unit and set a passphrase. Share both with teammates so they can join.{% endtrans %}
+      </p>
     </div>
+  </header>
+
+  <div class="tv-panel" style="max-width: 640px; margin: 0 auto;">
+    {% include "components/errors.html" %}
+
+    {% with form = Forms.teams.TeamRegisterForm() %}
+      {% from "macros/forms.html" import render_extra_fields %}
+      <form method="POST">
+        <div class="mb-3">
+          <b>{{ form.name.label(class="form-label") }}</b>
+          {{ form.name(class="form-control") }}
+        </div>
+        <div class="mb-3">
+          <b>{{ form.password.label(class="form-label") }}</b>
+          {{ form.password(class="form-control") }}
+        </div>
+
+        {{ render_extra_fields(form.extra) }}
+
+        <p class="text-muted small" style="font-family: var(--tv-mono); line-height: 1.55;">
+          {% trans %}After creating your team, share the team name and password with your teammates so they can join.{% endtrans %}
+        </p>
+
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-3">
+          <a href="{{ url_for('teams.private') }}" class="small" style="font-family: var(--tv-mono); color: var(--tv-muted);">
+            {% trans %}← Back{% endtrans %}
+          </a>
+          {{ form.submit(class="btn btn-primary px-4") }}
+        </div>
+        {{ form.nonce() }}
+      </form>
+    {% endwith %}
   </div>
-  <div class="container">
-    <div class="row">
-      <div class="col-md-6 offset-md-3">
-        {% include "components/errors.html" %}
-
-        {% with form = Forms.teams.TeamRegisterForm() %}
-          {% from "macros/forms.html" import render_extra_fields %}
-          <form method="POST">
-            <div class="mb-3">
-              <b>{{ form.name.label(class="form-label") }}</b>
-              {{ form.name(class="form-control") }}
-            </div>
-            <div class="mb-3">
-              <b>{{ form.password.label(class="form-label") }}</b>
-              {{ form.password(class="form-control") }}
-            </div>
-
-            {{ render_extra_fields(form.extra) }}
-
-            <div class="row ">
-              <div class="col-md-12">
-                <p>After creating your team, share the team name and password with your teammates so they can join your
-                  team.</p>
-                {{ form.submit(class="btn btn-success float-end px-4") }}
-              </div>
-            </div>
-            {{ form.nonce() }}
-          </form>
-        {% endwith %}
-      </div>
-    </div>
-  </div>
+</section>
 {% endblock %}
