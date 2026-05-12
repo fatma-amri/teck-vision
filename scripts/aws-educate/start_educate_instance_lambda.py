@@ -8,6 +8,7 @@ from botocore.exceptions import ClientError
 
 
 ec2 = boto3.client("ec2")
+dynamodb = boto3.resource("dynamodb")
 
 DEFAULT_AMI_ID = os.environ.get("AMI_ID", "").strip()
 SUBNET_ID = os.environ["PRIVATE_SUBNET_ID"]
@@ -30,14 +31,24 @@ fi
 # Start CloudWatch Agent with default config
 /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c default
 """
+SESSION_TABLE_NAME = os.environ.get("SESSION_TABLE_NAME", "EducateChallenges")
+SESSION_SECONDS = int(os.environ.get("SESSION_SECONDS", "3600"))
+
+session_table = dynamodb.Table(SESSION_TABLE_NAME)
 
 
 def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     try:
         body = _parse_body(event)
-        user_id = str(body.get("user_id", "anonymous")).strip() or "anonymous"
-        room_id = str(body.get("room_id", "educate-room")).strip() or "educate-room"
+        user_id = _get_user_id(event, body)
+        challenge_id = str(body.get("challenge_id") or body.get("room_id") or "").strip()
         ami_id = str(body.get("ami_id", DEFAULT_AMI_ID)).strip()
+
+        if not challenge_id:
+            return _response(400, {"success": False, "error": "Missing challenge_id"})
+
+        if not user_id:
+            return _response(401, {"success": False, "error": "Missing authenticated user_id"})
 
         if not ami_id:
             return _response(
@@ -48,6 +59,23 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 },
             )
 
+        existing = session_table.get_item(
+            Key={"ChallengeID": challenge_id, "UserID": user_id}
+        ).get("Item")
+        if existing and existing.get("Status") == "RUNNING":
+            return _response(
+                200,
+                {
+                    "success": True,
+                    "message": "Instance already running for this user",
+                    "instance_id": existing.get("InstanceID"),
+                    "private_ip": existing.get("PrivateIP"),
+                    "expires_at": int(existing.get("ExpiresAt", 0)),
+                },
+            )
+
+        now = int(time.time())
+        expires_at = now + SESSION_SECONDS
         params: Dict[str, Any] = {
             "ImageId": ami_id,
             "InstanceType": INSTANCE_TYPE,
@@ -59,10 +87,11 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 {
                     "ResourceType": "instance",
                     "Tags": [
-                        {"Key": "Name", "Value": f"educate-{room_id}-{user_id}"},
+                        {"Key": "Name", "Value": f"educate-{challenge_id}-{user_id}"},
                         {"Key": "Section", "Value": "educate"},
-                        {"Key": "RoomId", "Value": room_id},
+                        {"Key": "ChallengeID", "Value": challenge_id},
                         {"Key": "UserId", "Value": user_id},
+                        {"Key": "ExpiresAt", "Value": str(expires_at)},
                     ],
                 }
             ],
@@ -102,15 +131,30 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 break
             time.sleep(3)
 
+        session_table.put_item(
+            Item={
+                "ChallengeID": challenge_id,
+                "UserID": user_id,
+                "InstanceID": instance_id,
+                "PrivateIP": private_ip or "",
+                "Status": "RUNNING" if state == "running" else state.upper(),
+                "StartedAt": now,
+                "ExpiresAt": expires_at,
+                "AmiID": ami_id,
+            }
+        )
+
         return _response(
             200,
             {
                 "success": True,
+                "challenge_id": challenge_id,
                 "instance_id": instance_id,
                 "state": state,
                 "private_ip": private_ip,
                 "ami_id": ami_id,
                 "subnet_id": SUBNET_ID,
+                "expires_at": expires_at,
             },
         )
     except ClientError as exc:
@@ -128,6 +172,23 @@ def _parse_body(event: Dict[str, Any]) -> Dict[str, Any]:
     if isinstance(body, str) and body.strip():
         return json.loads(body)
     return {}
+
+
+def _get_user_id(event: Dict[str, Any], body: Dict[str, Any]) -> str:
+    jwt_claims = (
+        event.get("requestContext", {})
+        .get("authorizer", {})
+        .get("jwt", {})
+        .get("claims", {})
+    )
+    lambda_claims = event.get("requestContext", {}).get("authorizer", {}).get("claims", {})
+    return str(
+        jwt_claims.get("sub")
+        or lambda_claims.get("sub")
+        or lambda_claims.get("user_id")
+        or body.get("user_id")
+        or ""
+    ).strip()
 
 
 def _response(status: int, payload: Dict[str, Any]) -> Dict[str, Any]:
