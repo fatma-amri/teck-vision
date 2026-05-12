@@ -1,61 +1,496 @@
 {% extends "base.html" %}
 
-{% block content %}
-  <div class="jumbotron">
-    <div class="container">
-      <h1>
-        {% trans %}Confirm{% endtrans %}
-      </h1>
-    </div>
-  </div>
+{% block stylesheets %}
+  {{ super() }}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --tv-void: #05060a;
+      --tv-line: rgba(0, 240, 255, 0.14);
+      --tv-line-strong: rgba(0, 240, 255, 0.32);
+      --tv-neon: #00f0ff;
+      --tv-magenta: #ff2e88;
+      --tv-lime: #b6ff3c;
+      --tv-amber: #ffb800;
+      --tv-text: #e6f1ff;
+      --tv-muted: #7d8aa6;
+      --tv-mono: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+      --tv-display: "Space Grotesk", "JetBrains Mono", ui-sans-serif, system-ui;
+    }
 
-  <div class="container">
-    <div class="row">
-      <div class="col-md-10 col-lg-8 col-xl-6 offset-md-1 offset-lg-2 offset-xl-3">
+    .auth-shell {
+      position: relative;
+      min-height: calc(100vh - 56px - 60px);
+      display: grid;
+      grid-template-columns: 1.05fr 1fr;
+      overflow: hidden;
+    }
+
+    .auth-brand {
+      position: relative;
+      background:
+        radial-gradient(1100px 600px at 25% 30%, rgba(0, 240, 255, 0.16), transparent 55%),
+        radial-gradient(900px 500px at 75% 80%, rgba(182, 255, 60, 0.14), transparent 55%),
+        var(--tv-void);
+      border-right: 1px solid var(--tv-line);
+      overflow: hidden;
+      padding: 4rem 3.5rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    #auth-canvas { position: absolute; inset: 0; z-index: 0; opacity: 0.85; }
+
+    .auth-brand::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0, 240, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 240, 255, 0.05) 1px, transparent 1px);
+      background-size: 64px 64px;
+      mask-image: linear-gradient(180deg, transparent, #000 25%, #000 75%, transparent);
+      -webkit-mask-image: linear-gradient(180deg, transparent, #000 25%, #000 75%, transparent);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .auth-brand-inner { position: relative; z-index: 2; }
+
+    .auth-brand-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55rem;
+      color: var(--tv-neon);
+      font-family: var(--tv-mono);
+      font-size: 0.74rem;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      text-shadow: 0 0 12px rgba(0, 240, 255, 0.4);
+      margin-bottom: 1.3rem;
+    }
+
+    .auth-brand-tag::before {
+      content: "";
+      width: 28px;
+      height: 1px;
+      background: linear-gradient(90deg, var(--tv-neon), transparent);
+    }
+
+    .auth-brand-tag .blink { animation: tv-blink 1s steps(2) infinite; color: var(--tv-magenta); }
+    @keyframes tv-blink { 50% { opacity: 0; } }
+
+    .auth-brand-title {
+      color: var(--tv-text);
+      font-family: var(--tv-display);
+      font-size: clamp(2.4rem, 4.4vw, 3.7rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 0.98;
+      margin: 0 0 1.4rem;
+    }
+
+    .auth-brand-title .grad {
+      background: linear-gradient(90deg, var(--tv-neon), var(--tv-lime));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .auth-brand-copy {
+      color: #c5d1e6;
+      font-family: var(--tv-mono);
+      font-size: 1rem;
+      line-height: 1.7;
+      max-width: 460px;
+      margin: 0 0 2rem;
+    }
+
+    .auth-brand-copy .hl {
+      color: var(--tv-lime);
+      background: rgba(182, 255, 60, 0.08);
+      padding: 0 0.3rem;
+      border-radius: 3px;
+    }
+
+    .auth-steps {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      counter-reset: step;
+      display: grid;
+      gap: 0.85rem;
+    }
+
+    .auth-steps li {
+      position: relative;
+      padding: 1rem 1.1rem 1rem 3.4rem;
+      background: rgba(13, 16, 24, 0.7);
+      border: 1px solid var(--tv-line);
+      border-radius: 6px;
+      backdrop-filter: blur(6px);
+      color: #c5d1e6;
+      font-family: var(--tv-mono);
+      font-size: 0.85rem;
+      line-height: 1.55;
+      counter-increment: step;
+    }
+
+    .auth-steps li::before {
+      content: "0" counter(step);
+      position: absolute;
+      left: 0.9rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--tv-neon);
+      font-weight: 800;
+      font-family: var(--tv-mono);
+      font-size: 0.95rem;
+    }
+
+    .auth-steps li strong {
+      color: var(--tv-text);
+      display: block;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.15rem;
+    }
+
+    .auth-brand-footer {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      color: var(--tv-muted);
+      font-family: var(--tv-mono);
+      font-size: 0.74rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      margin-top: 2.5rem;
+    }
+
+    .auth-brand-footer .pulse {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--tv-lime);
+      box-shadow: 0 0 12px var(--tv-lime);
+      animation: tv-pulse 1.6s infinite;
+    }
+
+    @keyframes tv-pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.7); }
+    }
+
+    .auth-stage {
+      position: relative;
+      background: var(--tv-void);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3.5rem 2rem;
+      overflow: hidden;
+    }
+
+    .auth-stage::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(0deg, rgba(255,255,255,0.02) 0, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 3px);
+      pointer-events: none;
+    }
+
+    .auth-card {
+      position: relative;
+      width: 100%;
+      max-width: 460px;
+      background: linear-gradient(180deg, rgba(13,16,24,0.95), rgba(8,10,16,0.95));
+      border: 1px solid var(--tv-line-strong);
+      border-radius: 6px;
+      overflow: hidden;
+      box-shadow: 0 30px 70px rgba(0,0,0,0.6);
+    }
+
+    .auth-card::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--tv-neon), var(--tv-lime), transparent);
+    }
+
+    .auth-term-head {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.75rem 1.1rem;
+      background: rgba(0,0,0,0.45);
+      border-bottom: 1px solid var(--tv-line);
+      font-family: var(--tv-mono);
+      font-size: 0.72rem;
+      color: var(--tv-muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .auth-dot { width: 10px; height: 10px; border-radius: 999px; margin-right: 0.15rem; }
+    .auth-dot.r { background: #ff5f56; }
+    .auth-dot.y { background: #ffbd2e; }
+    .auth-dot.g { background: #27c93f; }
+
+    .auth-term-title { margin-left: 0.8rem; color: var(--tv-text); }
+    .auth-term-tag { margin-left: auto; color: var(--tv-lime); }
+
+    .auth-body { padding: 1.8rem 1.8rem 1.5rem; text-align: left; }
+
+    .auth-prelude {
+      font-family: var(--tv-mono);
+      font-size: 0.84rem;
+      line-height: 1.7;
+      color: var(--tv-muted);
+      margin-bottom: 1.2rem;
+    }
+
+    .auth-prelude span.p { color: var(--tv-magenta); }
+    .auth-prelude span.c { color: var(--tv-neon); }
+    .auth-prelude span.o { color: #c5d1e6; }
+    .auth-prelude span.ok { color: var(--tv-lime); }
+
+    .confirm-callout {
+      padding: 1.05rem 1.15rem;
+      border: 1px solid var(--tv-line);
+      border-left: 3px solid var(--tv-neon);
+      background: rgba(0, 240, 255, 0.05);
+      border-radius: 4px;
+      color: #c5d1e6;
+      font-family: var(--tv-mono);
+      font-size: 0.86rem;
+      line-height: 1.6;
+      margin-bottom: 1rem;
+    }
+
+    .confirm-callout strong { color: var(--tv-text); text-transform: uppercase; letter-spacing: 0.04em; }
+
+    .confirm-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      margin-top: 1.2rem;
+    }
+
+    .confirm-actions .btn-resend,
+    .confirm-actions .btn-change {
+      width: 100%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.85rem 1rem;
+      border-radius: 4px;
+      font-family: var(--tv-mono);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      text-decoration: none;
+      cursor: pointer;
+      border: 0;
+      transition: transform 0.2s, box-shadow 0.2s, background-position 0.4s;
+    }
+
+    .confirm-actions .btn-resend {
+      color: #05060a !important;
+      background: linear-gradient(90deg, var(--tv-neon), var(--tv-lime));
+      background-size: 200% 100%;
+    }
+
+    .confirm-actions .btn-resend:hover {
+      background-position: 100% 0;
+      transform: translateY(-1px);
+      box-shadow: 0 12px 26px rgba(0, 240, 255, 0.25), 0 0 22px rgba(182, 255, 60, 0.25);
+    }
+
+    .confirm-actions .btn-change {
+      background: transparent;
+      border: 1px solid var(--tv-line-strong);
+      color: var(--tv-text);
+    }
+
+    .confirm-actions .btn-change:hover {
+      background: rgba(255, 46, 136, 0.06);
+      border-color: var(--tv-magenta);
+      color: var(--tv-magenta);
+      text-decoration: none;
+    }
+
+    .auth-body .alert {
+      border-radius: 4px !important;
+      font-family: var(--tv-mono);
+      font-size: 0.82rem;
+      margin-bottom: 1rem;
+    }
+
+    .jumbotron { display: none !important; }
+    main[role="main"] > .container { padding: 0; max-width: 100%; }
+
+    @media (max-width: 960px) {
+      .auth-shell { grid-template-columns: 1fr; }
+      .auth-brand { padding: 3rem 1.8rem 2.5rem; border-right: 0; border-bottom: 1px solid var(--tv-line); }
+      .auth-stage { padding: 2.5rem 1.4rem; }
+      .confirm-actions { grid-template-columns: 1fr; }
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+<section class="auth-shell">
+  <aside class="auth-brand">
+    <canvas id="auth-canvas" aria-hidden="true"></canvas>
+    <div class="auth-brand-inner">
+      <div class="auth-brand-tag">
+        <span>// verifying · mailbox handshake</span>
+        <span class="blink">_</span>
+      </div>
+      <h1 class="auth-brand-title">
+        One handshake left.<br>
+        <span class="grad">Confirm your inbox.</span>
+      </h1>
+      <p class="auth-brand-copy">
+        We've dispatched a signed token to your <span class="hl">comms address</span>.
+        Click the link inside and your operator profile activates instantly.
+      </p>
+
+      <ol class="auth-steps">
+        <li><strong>Check your inbox</strong>Look for a mail from Teck-Vision.</li>
+        <li><strong>Click the link</strong>The token is single-use and time-limited.</li>
+        <li><strong>You're in</strong>Session unlocks every room and challenge.</li>
+      </ol>
+    </div>
+
+    <div class="auth-brand-footer">
+      <span class="pulse"></span>
+      <span>Mail relay · TLS · awaiting confirmation</span>
+    </div>
+  </aside>
+
+  <div class="auth-stage">
+    <div class="auth-card">
+      <div class="auth-term-head">
+        <span class="auth-dot r"></span>
+        <span class="auth-dot y"></span>
+        <span class="auth-dot g"></span>
+        <span class="auth-term-title">auth/confirm.sh</span>
+        <span class="auth-term-tag">// verify</span>
+      </div>
+      <div class="auth-body">
+        <div class="auth-prelude" aria-hidden="true">
+          <div><span class="p">root@tv:~$</span> <span class="c">mail --send verify-token</span></div>
+          <div><span class="ok">[ok]</span> <span class="o">Token dispatched. Awaiting confirmation…</span></div>
+        </div>
+
         {% include "components/errors.html" %}
 
         {% if request.args.get('flow') == "init" %}
-          <h5 class="text-center">
-            {% trans %}To send a confirmation email to your email address, please click the button below.{% endtrans %}
-          </h5>
-          <br>
-          <h5 class="text-center">
-            {% trans %}Please click the link in that email to confirm your account.{% endtrans %}
-          </h5>
-          <h5 class="text-center">
-            {% trans %}If the email doesn’t arrive, check your spam folder or contact an administrator to manually verify your account.{% endtrans %}
-          </h5>
-        {% else%}
-          <h5 class="text-center">
-            {% trans %}We've sent a confirmation email to your email address.{% endtrans %}
-          </h5>
-          <br>
-          <h5 class="text-center">
-            {% trans %}Please click the link in that email to confirm your account.{% endtrans %}
-          </h5>
-          <h5 class="text-center">
-            {% trans %}If the email doesn’t arrive, check your spam folder or contact an administrator to manually verify your account.{% endtrans %}
-          </h5>
+          <div class="confirm-callout">
+            <strong>To activate your operator profile,</strong> tap the button below to send a confirmation
+            email. Open the link inside — that's the final handshake.
+          </div>
+        {% else %}
+          <div class="confirm-callout">
+            <strong>Token sent.</strong> Check your inbox (and spam) for a confirmation email
+            from Teck-Vision. Click the link to verify and unlock the range.
+          </div>
         {% endif %}
 
-        <hr>
+        <p style="color:var(--tv-muted);font-family:var(--tv-mono);font-size:0.8rem;line-height:1.6;margin:0 0 0.9rem;">
+          Didn't receive it? Resend below or update your email address — it's quick.
+        </p>
 
         {% with form = Forms.auth.ConfirmForm() %}
           <form method="POST" action="{{ url_for('auth.confirm') }}">
-            <div class="row">
-              <div class="mb-3 col-md-6">
-                {{ form.submit(class="btn btn-primary w-100 p-2") }}
-              </div>
-              <div class="mb-3 col-md-6">
-                <a href="{{ url_for('views.settings') }}" class="btn btn-secondary w-100 p-2">
-                  {% trans %}Change Email Address{% endtrans %}
-                </a>
-              </div>
-              {{ form.nonce() }}
+            <div class="confirm-actions">
+              {{ form.submit(class="btn-resend") }}
+              <a href="{{ url_for('views.settings') }}" class="btn-change">
+                <i class="fas fa-pen" aria-hidden="true"></i>
+                {% trans %}Change Email{% endtrans %}
+              </a>
             </div>
+            {{ form.nonce() }}
           </form>
         {% endwith %}
       </div>
     </div>
   </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+(function () {
+  var canvas = document.getElementById("auth-canvas");
+  if (!canvas || !canvas.getContext) return;
+  var ctx = canvas.getContext("2d");
+  var w = 0, h = 0, dpr = Math.max(1, window.devicePixelRatio || 1);
+  var nodes = [];
+  function resize() {
+    var r = canvas.getBoundingClientRect();
+    w = r.width; h = r.height;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    nodes = [];
+    var count = Math.min(60, Math.floor((w * h) / 24000));
+    for (var i = 0; i < count; i++) {
+      nodes.push({
+        x: Math.random() * w,
+        y: Math.random() * h,
+        vx: (Math.random() - 0.5) * 0.22,
+        vy: (Math.random() - 0.5) * 0.22,
+        r: Math.random() * 1.3 + 0.5,
+        c: Math.random() > 0.55 ? "#00f0ff" : "#b6ff3c"
+      });
+    }
+  }
+  function frame() {
+    ctx.clearRect(0, 0, w, h);
+    for (var i = 0; i < nodes.length; i++) {
+      var n = nodes[i];
+      n.x += n.vx; n.y += n.vy;
+      if (n.x < 0 || n.x > w) n.vx *= -1;
+      if (n.y < 0 || n.y > h) n.vy *= -1;
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+      ctx.fillStyle = n.c;
+      ctx.globalAlpha = 0.75;
+      ctx.fill();
+      for (var j = i + 1; j < nodes.length; j++) {
+        var m = nodes[j];
+        var dx = n.x - m.x, dy = n.y - m.y;
+        var d = Math.sqrt(dx * dx + dy * dy);
+        if (d < 130) {
+          ctx.globalAlpha = (1 - d / 130) * 0.22;
+          ctx.strokeStyle = n.c;
+          ctx.lineWidth = 0.6;
+          ctx.beginPath();
+          ctx.moveTo(n.x, n.y);
+          ctx.lineTo(m.x, m.y);
+          ctx.stroke();
+        }
+      }
+    }
+    ctx.globalAlpha = 1;
+    window.requestAnimationFrame(frame);
+  }
+  window.addEventListener("resize", resize);
+  resize();
+  frame();
+})();
+</script>
 {% endblock %}
