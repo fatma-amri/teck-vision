@@ -3,78 +3,152 @@
 {% block stylesheets %}
 {{ super() }}
 <style>
-  .tv-score-header { padding: 1.5rem 0 0; }
-  .tv-rank-1 td:first-child::before { content: "🥇 "; }
-  .tv-rank-2 td:first-child::before { content: "🥈 "; }
-  .tv-rank-3 td:first-child::before { content: "🥉 "; }
-  #score-chart-canvas { max-height: 320px; }
-  .tv-tabs { display:flex; gap:0; border-bottom: 1px solid rgba(255,255,255,.07); margin-bottom:1.5rem; }
-  .tv-tab { background:none; border:none; border-bottom:2px solid transparent; color:#64748b;
-            cursor:pointer; font-size:.9rem; font-weight:600; padding:.6rem 1.2rem; transition:all .2s; }
-  .tv-tab.active  { border-bottom-color:#00d4ff; color:#00d4ff; }
-  .tv-tab:hover   { color:#e2e8f0; }
-  .tv-graph-card  { background:#111827; border:1px solid rgba(255,255,255,.07); border-radius:10px; padding:1.5rem; margin-bottom:2rem; }
-  .tv-graph-title { color:#94a3b8; font-size:.8rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; margin-bottom:1rem; }
+  #score-chart-canvas { max-height: 340px; }
+  .tv-graph-panel { padding: 1.6rem; margin-bottom: 1.8rem; }
+  .tv-graph-panel .tv-panel-title { margin-bottom: 1.2rem; }
+  .tv-graph-loading { text-align: center; padding: 2rem; }
+  .tv-graph-loading i { color: var(--tv-neon); }
+  .tv-board { padding: 0; }
+  .tv-board-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.05rem 1.4rem;
+    border-bottom: 1px solid var(--tv-line);
+    background: rgba(0, 0, 0, 0.35);
+  }
+  .tv-board-head-title {
+    color: var(--tv-text);
+    font-family: var(--tv-mono);
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    margin: 0;
+    text-transform: uppercase;
+  }
+  .tv-board-head-title::before {
+    content: "▸ ";
+    color: var(--tv-magenta);
+  }
+  .tv-board-head-tag {
+    color: var(--tv-muted);
+    font-family: var(--tv-mono);
+    font-size: 0.74rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .tv-board .tv-data-table {
+    width: 100%;
+  }
+  .tv-board .tv-data-table thead th {
+    background: rgba(0, 0, 0, 0.4);
+  }
+  .tv-board .tv-data-table tbody td {
+    padding: 0.95rem 1.2rem;
+  }
+  .tv-rank-medal {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+  .tv-rank-medal-icon {
+    font-size: 1rem;
+  }
+  .tv-solves-pill {
+    background: rgba(255, 46, 136, 0.08);
+    border: 1px solid rgba(255, 46, 136, 0.3);
+    border-radius: 4px;
+    color: var(--tv-magenta);
+    font-family: var(--tv-mono);
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 0.16rem 0.55rem;
+  }
 </style>
 {% endblock %}
 
 {% block content %}
-  <div class="jumbotron">
-    <div class="container">
-      <h1>
-        <i class="fas fa-trophy me-3"></i>{% trans %}Scoreboard{% endtrans %}
-      </h1>
+<section class="tv-page">
+  <header class="tv-page-head">
+    <div>
+      <div class="tv-page-kicker">live rankings · range telemetry</div>
+      <h1 class="tv-page-title">Scoreboard <span class="grad">·&nbsp;leaderboard</span></h1>
+      <p class="tv-page-subtitle">Real-time standings, updated as flags drop. Top three burn brightest.</p>
     </div>
+    <div class="tv-page-meta" x-data="ScoreboardList">
+      <span class="dot"></span>
+      <span>operators · <b x-text="standings.length || 0">0</b></span>
+    </div>
+  </header>
+
+  {% include "components/errors.html" %}
+
+  <!-- Score progression graph -->
+  <div class="tv-panel tv-graph-panel" id="score-graph" x-data="ScoreboardDetail" x-ref="scoregraph">
+    <div class="tv-panel-title">score progression · last interval</div>
+    <div class="tv-graph-loading" x-show="!loaded">
+      <i class="fas fa-circle-notch fa-spin fa-2x fa-fw spinner"></i>
+    </div>
+    <canvas id="score-chart-canvas" x-show="loaded"></canvas>
   </div>
 
-  <div class="container">
-    {% include "components/errors.html" %}
-
-    <!-- ── Score progression graph ── -->
-    <div class="tv-graph-card" id="score-graph" x-data="ScoreboardDetail" x-ref="scoregraph">
-      <div class="tv-graph-title">&#128200; Score Progression</div>
-      <div class="text-center" x-show="!loaded">
-        <i class="fas fa-circle-notch fa-spin fa-2x fa-fw spinner"></i>
+  <!-- Standings -->
+  <div id="scoreboard" x-data="ScoreboardList">
+    <div class="tv-panel tv-board" x-show="standings.length">
+      <div class="tv-board-head">
+        <h2 class="tv-board-head-title">standings · {{ get_mode_as_word(capitalize=True) }}</h2>
+        <span class="tv-board-head-tag">// live</span>
       </div>
-      <canvas id="score-chart-canvas" x-show="loaded"></canvas>
-    </div>
-
-    <!-- ── Standings table ── -->
-    <div id="scoreboard" x-data="ScoreboardList">
-
-      <!-- Table -->
-      <div class="col-md-12" x-show="standings.length">
-        <table class="table table-striped align-middle">
-          <thead>
+      <table class="tv-data-table">
+        <thead>
+          <tr>
+            <th style="width: 90px;">rank</th>
+            <th>{{ get_mode_as_word(capitalize=True) }}</th>
+            <th style="width: 140px;">score</th>
+            <th class="d-none d-md-table-cell" style="width: 120px;">solves</th>
+          </tr>
+        </thead>
+        <tbody>
+          <template x-for="(standing, index) in standings">
             <tr>
-              <th style="width:50px;">{% trans %}Place{% endtrans %}</th>
-              <th class="text-start ps-3">{{ get_mode_as_word(capitalize=True) }}</th>
-              <th>{% trans %}Score{% endtrans %}</th>
-              <th class="d-none d-md-table-cell">{% trans %}Solves{% endtrans %}</th>
+              <td>
+                <span
+                  class="tv-rank"
+                  :class="{
+                    'tv-rank-1': index === 0,
+                    'tv-rank-2': index === 1,
+                    'tv-rank-3': index === 2
+                  }"
+                >
+                  <span x-show="index === 0">🥇</span>
+                  <span x-show="index === 1">🥈</span>
+                  <span x-show="index === 2">🥉</span>
+                  <span x-show="index > 2" x-text="'#' + (index + 1)"></span>
+                </span>
+              </td>
+              <td>
+                <a :href="standing.account_url" x-text="standing.name"></a>
+              </td>
+              <td>
+                <span class="tv-score-value" x-text="standing.score"></span>
+              </td>
+              <td class="d-none d-md-table-cell">
+                <span class="tv-solves-pill" x-text="standing.solves || '—'"></span>
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            <template x-for="(standing, index) in standings">
-              <tr :class="{ 'tv-rank-1': index===0, 'tv-rank-2': index===1, 'tv-rank-3': index===2 }">
-                <th scope="row" class="text-center" x-text="index + 1"></th>
-                <td class="text-start ps-3">
-                  <a :href="standing.account_url" x-text="standing.name"></a>
-                </td>
-                <td><strong x-text="standing.score" style="color:#00d4ff;"></strong></td>
-                <td class="d-none d-md-table-cell" x-text="standing.solves || '—'"></td>
-              </tr>
-            </template>
-          </tbody>
-        </table>
-      </div>
+          </template>
+        </tbody>
+      </table>
+    </div>
 
-      <div class="col-md-12 text-center py-4" x-show="!standings.length">
-        <i class="fas fa-trophy fa-2x mb-3" style="color:#64748b;"></i>
-        <h5 class="text-muted">{% trans %}Scoreboard is empty{% endtrans %}</h5>
-        <p class="text-muted" style="font-size:.9rem;">Be the first to solve a challenge!</p>
-      </div>
+    <div class="tv-empty" x-show="!standings.length">
+      <i class="fas fa-trophy" aria-hidden="true"></i>
+      <h5>Scoreboard is empty</h5>
+      <p>No flags captured yet. Be the first operator to drop one.</p>
     </div>
   </div>
+</section>
 {% endblock %}
 
 {% block scripts %}

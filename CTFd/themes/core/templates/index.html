@@ -2,41 +2,43 @@
 
 {% block stylesheets %}
 {{ super() }}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --tv-bg: #07111f;
-    --tv-panel: #0d1b2e;
-    --tv-panel-2: #10233a;
-    --tv-border: rgba(148, 163, 184, 0.18);
-    --tv-text: #edf5ff;
-    --tv-muted: #9fb0c6;
-    --tv-cyan: #22d3ee;
-    --tv-green: #7ddc3f;
-    --tv-red: #ff5f57;
-    --tv-amber: #f2b84b;
+    --tv-void: #05060a;
+    --tv-panel: #0d1018;
+    --tv-line: rgba(0, 240, 255, 0.14);
+    --tv-line-strong: rgba(0, 240, 255, 0.32);
+    --tv-neon: #00f0ff;
+    --tv-magenta: #ff2e88;
+    --tv-lime: #b6ff3c;
+    --tv-violet: #a855f7;
+    --tv-amber: #ffb800;
+    --tv-text: #e6f1ff;
+    --tv-muted: #7d8aa6;
+    --tv-mono: "JetBrains Mono", "Fira Code", "Space Mono", ui-monospace, monospace;
+    --tv-display: "Space Grotesk", "JetBrains Mono", ui-sans-serif, system-ui;
   }
 
-  body {
-    background: var(--tv-bg) !important;
-    color: var(--tv-text);
-  }
-
+  /* ============================== HERO ============================== */
   .tv-hero {
     position: relative;
-    min-height: calc(100vh - 138px);
+    overflow: hidden;
+    border-bottom: 1px solid var(--tv-line);
+    min-height: calc(100vh - 140px);
     display: flex;
     align-items: center;
-    overflow: hidden;
-    border-bottom: 1px solid var(--tv-border);
   }
 
-  #matrix-canvas {
+  #tv-grid-canvas {
     position: absolute;
     inset: 0;
     width: 100%;
     height: 100%;
-    opacity: 0.12;
-    pointer-events: none;
+    z-index: 0;
+    opacity: 0.85;
   }
 
   .tv-hero::after {
@@ -44,450 +46,1106 @@
     position: absolute;
     inset: 0;
     background:
-      radial-gradient(circle at 75% 25%, rgba(34, 211, 238, 0.12), transparent 34%),
-      linear-gradient(90deg, rgba(7, 17, 31, 0.96), rgba(7, 17, 31, 0.68));
+      radial-gradient(circle at 18% 30%, rgba(0, 240, 255, 0.16), transparent 35%),
+      radial-gradient(circle at 82% 78%, rgba(255, 46, 136, 0.16), transparent 38%),
+      linear-gradient(180deg, transparent 0%, var(--tv-void) 100%);
     pointer-events: none;
+    z-index: 1;
   }
 
   .tv-hero-inner {
     position: relative;
-    z-index: 1;
-    width: min(1120px, calc(100% - 40px));
+    z-index: 2;
+    width: min(1240px, calc(100% - 48px));
     margin: 0 auto;
-    padding: 72px 0;
+    padding: 80px 0 120px;
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 3rem;
+    align-items: center;
   }
 
+  /* Status banner */
+  .tv-status-banner {
+    position: absolute;
+    top: 20px;
+    left: 0;
+    right: 0;
+    z-index: 3;
+    display: flex;
+    justify-content: center;
+    pointer-events: none;
+  }
+
+  .tv-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    background: rgba(13, 16, 24, 0.85);
+    border: 1px solid var(--tv-line-strong);
+    border-radius: 999px;
+    padding: 0.42rem 1.1rem;
+    color: var(--tv-text);
+    font-family: var(--tv-mono);
+    font-size: 0.74rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    backdrop-filter: blur(8px);
+    pointer-events: auto;
+  }
+
+  .tv-status-pill .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--tv-lime);
+    box-shadow: 0 0 12px var(--tv-lime);
+    animation: tv-pulse 1.6s infinite;
+  }
+
+  @keyframes tv-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.75); }
+  }
+
+  /* Kicker line */
   .tv-kicker {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    color: var(--tv-cyan);
+    gap: 0.6rem;
+    color: var(--tv-neon);
+    font-family: var(--tv-mono);
     font-size: 0.78rem;
-    font-weight: 800;
-    letter-spacing: 0.08em;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    margin-bottom: 1.4rem;
     text-transform: uppercase;
-    margin-bottom: 1.15rem;
+    text-shadow: 0 0 12px rgba(0, 240, 255, 0.4);
   }
 
   .tv-kicker::before {
     content: "";
-    width: 9px;
-    height: 9px;
-    border-radius: 999px;
-    background: var(--tv-green);
-    box-shadow: 0 0 18px rgba(125, 220, 63, 0.7);
+    width: 28px;
+    height: 1px;
+    background: linear-gradient(90deg, var(--tv-neon), transparent);
   }
 
-  .tv-hero-title {
-    max-width: 760px;
-    margin: 0 0 1.1rem;
-    font-size: clamp(2.4rem, 6vw, 5.1rem);
-    font-weight: 900;
-    line-height: 1.02;
-    letter-spacing: 0;
+  .tv-kicker .blink {
+    animation: tv-blink 1s steps(2) infinite;
+    color: var(--tv-magenta);
   }
 
-  .tv-accent {
-    color: var(--tv-cyan);
+  @keyframes tv-blink {
+    50% { opacity: 0; }
+  }
+
+  /* GLITCH TITLE */
+  .tv-glitch {
+    color: var(--tv-text);
+    font-family: var(--tv-display);
+    font-size: clamp(2.4rem, 7vw, 5.8rem);
+    font-weight: 700;
+    letter-spacing: -0.035em;
+    line-height: 1;
+    margin: 0 0 1.3rem;
+    position: relative;
+  }
+
+  .tv-glitch .line {
+    display: block;
+    position: relative;
+  }
+
+  .tv-glitch .row-2 {
+    background: linear-gradient(90deg, var(--tv-neon), var(--tv-magenta) 60%, var(--tv-violet));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .tv-glitch .line[data-text]::before,
+  .tv-glitch .line[data-text]::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    pointer-events: none;
+    opacity: 0;
+    mix-blend-mode: screen;
+  }
+
+  @media (min-width: 720px) {
+    .tv-glitch .line[data-text]::before,
+    .tv-glitch .line[data-text]::after {
+      opacity: 0.5;
+    }
+
+    .tv-glitch .line[data-text]::before {
+      color: var(--tv-neon);
+      clip-path: polygon(0 0, 100% 0, 100% 42%, 0 42%);
+      animation: tv-glitch-1 4s infinite linear alternate-reverse;
+    }
+
+    .tv-glitch .line.row-2[data-text]::before {
+      color: var(--tv-neon);
+      -webkit-text-fill-color: var(--tv-neon);
+      background: none;
+    }
+
+    .tv-glitch .line[data-text]::after {
+      color: var(--tv-magenta);
+      clip-path: polygon(0 58%, 100% 58%, 100% 100%, 0 100%);
+      animation: tv-glitch-2 3.5s infinite linear alternate-reverse;
+    }
+
+    .tv-glitch .line.row-2[data-text]::after {
+      color: var(--tv-magenta);
+      -webkit-text-fill-color: var(--tv-magenta);
+      background: none;
+    }
+  }
+
+  @keyframes tv-glitch-1 {
+    0% { transform: translate(0, 0); }
+    20% { transform: translate(-3px, 1px); }
+    40% { transform: translate(2px, -1px); }
+    60% { transform: translate(-2px, 2px); }
+    80% { transform: translate(1px, 0); }
+    100% { transform: translate(0, 0); }
+  }
+
+  @keyframes tv-glitch-2 {
+    0% { transform: translate(0, 0); }
+    25% { transform: translate(3px, -1px); }
+    50% { transform: translate(-2px, 1px); }
+    75% { transform: translate(2px, 2px); }
+    100% { transform: translate(0, 0); }
   }
 
   .tv-hero-copy {
-    max-width: 620px;
-    color: var(--tv-muted);
-    font-size: 1.08rem;
-    line-height: 1.65;
-    margin-bottom: 2rem;
+    color: #c5d1e6;
+    font-family: var(--tv-mono);
+    font-size: 1rem;
+    line-height: 1.7;
+    margin-bottom: 2.2rem;
+    max-width: 540px;
   }
 
+  .tv-hero-copy .hl {
+    color: var(--tv-neon);
+    background: rgba(0, 240, 255, 0.08);
+    padding: 0 0.3rem;
+    border-radius: 3px;
+  }
+
+  /* CTAs */
   .tv-actions {
     display: flex;
     flex-wrap: wrap;
     gap: 0.8rem;
-    margin-bottom: 2.4rem;
+    margin-bottom: 2.8rem;
   }
 
-  .tv-btn {
+  .tv-cta {
+    --shine: 0deg;
+    position: relative;
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    gap: 0.55rem;
-    min-height: 46px;
-    padding: 0.72rem 1.15rem;
-    border-radius: 8px;
-    font-weight: 800;
+    gap: 0.6rem;
+    padding: 0.95rem 1.5rem;
+    font-family: var(--tv-mono);
+    font-size: 0.86rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
     text-decoration: none;
-    transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+    isolation: isolate;
   }
 
-  .tv-btn:hover {
+  .tv-cta::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(135deg, var(--tv-neon), var(--tv-magenta));
+    transition: transform 0.4s ease;
+  }
+
+  .tv-cta:hover {
     transform: translateY(-2px);
     text-decoration: none;
+    box-shadow: 0 12px 30px rgba(0, 240, 255, 0.28), 0 0 22px rgba(255, 46, 136, 0.25);
   }
 
-  .tv-btn-primary {
-    color: #07111f;
-    background: var(--tv-green);
-    border: 1px solid var(--tv-green);
+  .tv-cta-primary {
+    color: #05060a;
   }
 
-  .tv-btn-primary:hover {
-    color: #07111f;
-    background: #8df04a;
+  .tv-cta-primary:hover {
+    color: #05060a;
   }
 
-  .tv-btn-secondary {
+  .tv-cta-ghost {
+    background: transparent;
+    border: 1px solid var(--tv-line-strong);
     color: var(--tv-text);
-    background: rgba(16, 35, 58, 0.78);
-    border: 1px solid var(--tv-border);
   }
 
-  .tv-btn-secondary:hover {
-    color: var(--tv-text);
-    border-color: rgba(34, 211, 238, 0.55);
+  .tv-cta-ghost::before {
+    display: none;
   }
 
-  .tv-status-row {
+  .tv-cta-ghost:hover {
+    background: rgba(0, 240, 255, 0.06);
+    border-color: var(--tv-neon);
+    box-shadow: 0 0 22px rgba(0, 240, 255, 0.25);
+    color: var(--tv-neon);
+  }
+
+  /* Tag row under CTAs */
+  .tv-tag-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.65rem;
-    color: #c9d5e6;
-    font-size: 0.86rem;
+    gap: 0.7rem;
+    color: var(--tv-muted);
+    font-family: var(--tv-mono);
+    font-size: 0.78rem;
   }
 
-  .tv-status-row span {
+  .tv-tag-row span {
     display: inline-flex;
     align-items: center;
-    gap: 0.45rem;
-    padding: 0.42rem 0.65rem;
-    border: 1px solid var(--tv-border);
-    border-radius: 8px;
-    background: rgba(13, 27, 46, 0.62);
+    gap: 0.4rem;
+    border: 1px solid var(--tv-line);
+    border-radius: 4px;
+    padding: 0.35rem 0.65rem;
+    background: rgba(13, 16, 24, 0.6);
   }
 
-  .tv-stats {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    width: min(1120px, calc(100% - 40px));
-    margin: -42px auto 0;
+  .tv-tag-row span::before {
+    content: "::";
+    color: var(--tv-neon);
+  }
+
+  /* ============================== TERMINAL CARD ============================== */
+  .tv-terminal {
     position: relative;
-    z-index: 2;
-    border: 1px solid var(--tv-border);
-    border-radius: 8px;
+    background: linear-gradient(180deg, rgba(13, 16, 24, 0.95), rgba(8, 10, 16, 0.95));
+    border: 1px solid var(--tv-line-strong);
+    border-radius: 6px;
     overflow: hidden;
-    background: rgba(13, 27, 46, 0.96);
-    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.24);
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 46, 136, 0.12) inset;
   }
 
-  .tv-stat {
-    padding: 1.25rem 1rem;
-    border-right: 1px solid var(--tv-border);
+  .tv-terminal::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--tv-neon), var(--tv-magenta), transparent);
   }
 
-  .tv-stat:last-child {
-    border-right: 0;
-  }
-
-  .tv-stat-number {
-    color: var(--tv-cyan);
-    font-size: 1.9rem;
-    font-weight: 900;
-    line-height: 1;
-  }
-
-  .tv-stat-label {
+  .tv-term-head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.7rem 1rem;
+    background: rgba(0, 0, 0, 0.4);
+    border-bottom: 1px solid var(--tv-line);
+    font-family: var(--tv-mono);
+    font-size: 0.74rem;
     color: var(--tv-muted);
-    font-size: 0.78rem;
-    font-weight: 800;
-    letter-spacing: 0.06em;
-    margin-top: 0.45rem;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
   }
 
+  .tv-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    margin-right: 0.18rem;
+  }
+
+  .tv-dot.r { background: #ff5f56; box-shadow: 0 0 8px rgba(255, 95, 86, 0.6); }
+  .tv-dot.y { background: #ffbd2e; box-shadow: 0 0 8px rgba(255, 189, 46, 0.5); }
+  .tv-dot.g { background: #27c93f; box-shadow: 0 0 8px rgba(39, 201, 63, 0.6); }
+
+  .tv-term-title {
+    margin-left: 0.8rem;
+    color: var(--tv-text);
+  }
+
+  .tv-term-tag {
+    margin-left: auto;
+    color: var(--tv-magenta);
+    text-shadow: 0 0 10px rgba(255, 46, 136, 0.5);
+  }
+
+  .tv-term-body {
+    padding: 1.3rem 1.2rem;
+    font-family: var(--tv-mono);
+    font-size: 0.86rem;
+    color: var(--tv-text);
+    min-height: 280px;
+  }
+
+  .tv-line {
+    display: flex;
+    gap: 0.55rem;
+    line-height: 1.7;
+  }
+
+  .tv-line .prompt {
+    color: var(--tv-magenta);
+  }
+
+  .tv-line .cmd {
+    color: var(--tv-neon);
+  }
+
+  .tv-line .out {
+    color: #c5d1e6;
+  }
+
+  .tv-line .ok {
+    color: var(--tv-lime);
+  }
+
+  .tv-line .warn {
+    color: var(--tv-amber);
+  }
+
+  .tv-typing {
+    border-right: 2px solid var(--tv-neon);
+    animation: tv-caret 0.9s steps(1) infinite;
+  }
+
+  @keyframes tv-caret {
+    50% { border-color: transparent; }
+  }
+
+  .tv-progress {
+    margin-top: 0.6rem;
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    overflow: hidden;
+    position: relative;
+  }
+
+  .tv-progress::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    width: 78%;
+    background: linear-gradient(90deg, var(--tv-neon), var(--tv-magenta));
+    box-shadow: 0 0 14px rgba(0, 240, 255, 0.55);
+    animation: tv-progress 3.5s ease-in-out infinite alternate;
+  }
+
+  @keyframes tv-progress {
+    0% { width: 12%; }
+    100% { width: 92%; }
+  }
+
+  /* ============================== STATS RAIL ============================== */
+  .tv-rail {
+    position: relative;
+    z-index: 3;
+    width: min(1240px, calc(100% - 48px));
+    margin: -70px auto 0;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    background: rgba(13, 16, 24, 0.92);
+    border: 1px solid var(--tv-line-strong);
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.55);
+  }
+
+  .tv-rail::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, var(--tv-neon), var(--tv-magenta));
+  }
+
+  .tv-stat {
+    padding: 1.7rem 1.4rem;
+    border-right: 1px solid var(--tv-line);
+    position: relative;
+  }
+
+  .tv-stat:last-child { border-right: 0; }
+
+  .tv-stat-key {
+    color: var(--tv-muted);
+    font-family: var(--tv-mono);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    margin-bottom: 0.65rem;
+  }
+
+  .tv-stat-key::before {
+    content: "// ";
+    color: var(--tv-magenta);
+  }
+
+  .tv-stat-num {
+    font-family: var(--tv-display);
+    font-size: clamp(2rem, 3.5vw, 2.7rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    background: linear-gradient(180deg, var(--tv-text), var(--tv-neon));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .tv-stat-trend {
+    margin-top: 0.5rem;
+    color: var(--tv-lime);
+    font-family: var(--tv-mono);
+    font-size: 0.74rem;
+  }
+
+  /* ============================== SECTIONS ============================== */
   .tv-section {
-    width: min(1120px, calc(100% - 40px));
+    position: relative;
+    width: min(1240px, calc(100% - 48px));
     margin: 0 auto;
-    padding: 76px 0 0;
+    padding: 90px 0 0;
   }
 
   .tv-section-head {
-    max-width: 650px;
-    margin-bottom: 1.8rem;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin-bottom: 2.4rem;
+    max-width: 100%;
+  }
+
+  .tv-eyebrow {
+    color: var(--tv-magenta);
+    font-family: var(--tv-mono);
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    margin-bottom: 0.65rem;
+    text-transform: uppercase;
+  }
+
+  .tv-eyebrow::before {
+    content: "[";
+    color: var(--tv-neon);
+    margin-right: 0.3rem;
+  }
+
+  .tv-eyebrow::after {
+    content: "]";
+    color: var(--tv-neon);
+    margin-left: 0.3rem;
   }
 
   .tv-section-title {
     color: var(--tv-text);
-    font-size: 1.75rem;
-    font-weight: 900;
-    margin-bottom: 0.45rem;
+    font-family: var(--tv-display);
+    font-size: clamp(1.85rem, 3.6vw, 2.8rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin: 0 0 0.4rem;
+    max-width: 720px;
   }
 
   .tv-section-copy {
     color: var(--tv-muted);
+    font-family: var(--tv-mono);
+    font-size: 0.94rem;
     line-height: 1.65;
+    max-width: 520px;
   }
 
-  .tv-card-grid {
+  /* ============================== FEATURE GRID ============================== */
+  .tv-feature-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 1rem;
   }
 
-  .tv-card {
-    min-height: 190px;
-    padding: 1.2rem;
-    border: 1px solid var(--tv-border);
-    border-radius: 8px;
-    background: var(--tv-panel);
-    transition: transform 0.18s ease, border-color 0.18s ease;
+  .tv-feature {
+    position: relative;
+    padding: 1.4rem 1.3rem;
+    background: linear-gradient(180deg, rgba(13, 16, 24, 0.92), rgba(8, 10, 16, 0.92));
+    border: 1px solid var(--tv-line);
+    border-radius: 6px;
+    overflow: hidden;
+    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
   }
 
-  .tv-card:hover {
-    transform: translateY(-3px);
-    border-color: rgba(34, 211, 238, 0.45);
+  .tv-feature::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, var(--tv-neon), var(--tv-magenta));
+    transform: scaleX(0.18);
+    transform-origin: left;
+    transition: transform 0.35s ease;
   }
 
-  .tv-card-icon {
-    color: var(--tv-green);
-    font-size: 1.35rem;
-    margin-bottom: 0.95rem;
+  .tv-feature:hover {
+    transform: translateY(-4px);
+    border-color: var(--tv-line-strong);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(0, 240, 255, 0.1);
   }
 
-  .tv-card-title {
-    color: var(--tv-text);
-    font-size: 1rem;
-    font-weight: 850;
-    margin-bottom: 0.45rem;
+  .tv-feature:hover::before {
+    transform: scaleX(1);
   }
 
-  .tv-card-text {
+  .tv-feature-id {
     color: var(--tv-muted);
-    font-size: 0.9rem;
-    line-height: 1.55;
+    font-family: var(--tv-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    margin-bottom: 1rem;
   }
 
-  .tv-category-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.7rem;
+  .tv-feature-id span {
+    color: var(--tv-magenta);
+  }
+
+  .tv-feature-icon {
+    width: 44px;
+    height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--tv-neon);
+    background: rgba(0, 240, 255, 0.06);
+    border: 1px solid var(--tv-line-strong);
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+    transition: background 0.3s, color 0.3s, transform 0.3s;
+  }
+
+  .tv-feature:hover .tv-feature-icon {
+    background: rgba(255, 46, 136, 0.08);
+    color: var(--tv-magenta);
+    transform: rotate(-4deg);
+  }
+
+  .tv-feature-title {
+    color: var(--tv-text);
+    font-family: var(--tv-mono);
+    font-size: 1.02rem;
+    font-weight: 700;
+    margin-bottom: 0.45rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .tv-feature-text {
+    color: var(--tv-muted);
+    font-family: var(--tv-mono);
+    font-size: 0.84rem;
+    line-height: 1.6;
+  }
+
+  /* ============================== CATEGORIES ============================== */
+  .tv-cat-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
   }
 
   .tv-cat {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
+    position: relative;
+    display: block;
+    padding: 1.4rem;
+    background: linear-gradient(135deg, rgba(13, 16, 24, 0.95), rgba(11, 13, 20, 0.95));
+    border: 1px solid var(--tv-line);
+    border-radius: 6px;
     color: var(--tv-text);
-    padding: 0.58rem 0.85rem;
-    border: 1px solid var(--tv-border);
-    border-radius: 8px;
-    background: var(--tv-panel);
-    font-weight: 800;
     text-decoration: none;
+    overflow: hidden;
+    transition: transform 0.25s ease, border-color 0.25s ease;
+  }
+
+  .tv-cat::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(0, 240, 255, 0.18), transparent 55%);
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
   }
 
   .tv-cat:hover {
-    color: var(--tv-cyan);
-    border-color: rgba(34, 211, 238, 0.45);
+    border-color: var(--tv-line-strong);
+    color: var(--tv-text);
     text-decoration: none;
+    transform: translateY(-3px);
   }
 
-  .tv-final {
-    margin-top: 76px;
-    padding: 52px 0;
-    border-top: 1px solid var(--tv-border);
-    background: var(--tv-panel-2);
+  .tv-cat:hover::before {
+    opacity: 1;
   }
 
-  .tv-final-inner {
-    width: min(1120px, calc(100% - 40px));
-    margin: 0 auto;
+  .tv-cat-row1 {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1.5rem;
+    margin-bottom: 0.9rem;
   }
 
-  .tv-final h2 {
+  .tv-cat-icon {
+    font-size: 1.2rem;
+    color: var(--tv-neon);
+    width: 38px;
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--tv-line-strong);
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.4);
+  }
+
+  .tv-cat-id {
+    color: var(--tv-muted);
+    font-family: var(--tv-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .tv-cat-name {
     color: var(--tv-text);
-    font-size: 1.7rem;
-    font-weight: 900;
+    font-family: var(--tv-mono);
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
     margin-bottom: 0.35rem;
   }
 
-  .tv-final p {
+  .tv-cat-meta {
     color: var(--tv-muted);
-    margin: 0;
+    font-family: var(--tv-mono);
+    font-size: 0.78rem;
   }
 
-  footer.footer {
-    background: #07111f;
-    border-top: 1px solid var(--tv-border);
+  .tv-cat-arrow {
+    color: var(--tv-magenta);
+    font-family: var(--tv-mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.15em;
+    margin-top: 1rem;
+    text-transform: uppercase;
+    transition: transform 0.2s;
   }
 
-  @media (max-width: 900px) {
-    .tv-stats,
-    .tv-card-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .tv-stat:nth-child(2) {
-      border-right: 0;
-    }
-
-    .tv-stat:nth-child(-n + 2) {
-      border-bottom: 1px solid var(--tv-border);
-    }
-
-    .tv-final-inner {
-      align-items: flex-start;
-      flex-direction: column;
-    }
+  .tv-cat:hover .tv-cat-arrow {
+    transform: translateX(6px);
   }
 
-  @media (max-width: 560px) {
-    .tv-hero-inner,
-    .tv-section,
-    .tv-stats,
-    .tv-final-inner {
-      width: min(100% - 28px, 1120px);
-    }
+  /* ============================== CTA BLOCK ============================== */
+  .tv-finale {
+    position: relative;
+    margin: 110px 0 0;
+    padding: 90px 0;
+    overflow: hidden;
+    border-top: 1px solid var(--tv-line);
+    border-bottom: 1px solid var(--tv-line);
+    background:
+      radial-gradient(circle at 20% 50%, rgba(0, 240, 255, 0.14), transparent 40%),
+      radial-gradient(circle at 80% 50%, rgba(255, 46, 136, 0.14), transparent 45%),
+      var(--tv-void);
+  }
 
-    .tv-hero {
-      min-height: auto;
-    }
+  .tv-finale::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: linear-gradient(rgba(0, 240, 255, 0.05) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(0, 240, 255, 0.05) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: linear-gradient(180deg, transparent, #000 30%, #000 70%, transparent);
+    -webkit-mask-image: linear-gradient(180deg, transparent, #000 30%, #000 70%, transparent);
+  }
 
-    .tv-hero-inner {
-      padding: 56px 0 82px;
-    }
+  .tv-finale-inner {
+    position: relative;
+    width: min(1100px, calc(100% - 48px));
+    margin: 0 auto;
+    text-align: center;
+  }
 
-    .tv-stats,
-    .tv-card-grid {
-      grid-template-columns: 1fr;
-    }
+  .tv-finale h2 {
+    color: var(--tv-text);
+    font-family: var(--tv-display);
+    font-size: clamp(2.4rem, 6.4vw, 4.8rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    margin: 0 0 1.2rem;
+  }
 
-    .tv-stat,
-    .tv-stat:nth-child(2) {
-      border-right: 0;
-      border-bottom: 1px solid var(--tv-border);
-    }
+  .tv-finale h2 .grad {
+    background: linear-gradient(90deg, var(--tv-neon), var(--tv-magenta));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
 
-    .tv-stat:last-child {
-      border-bottom: 0;
-    }
+  .tv-finale p {
+    color: #c5d1e6;
+    font-family: var(--tv-mono);
+    font-size: 1rem;
+    max-width: 640px;
+    margin: 0 auto 2rem;
+  }
 
-    .tv-btn {
-      width: 100%;
-    }
+  /* ============================== TICKER ============================== */
+  .tv-ticker {
+    margin-top: 90px;
+    border-top: 1px solid var(--tv-line);
+    border-bottom: 1px solid var(--tv-line);
+    background: rgba(13, 16, 24, 0.6);
+    overflow: hidden;
+    position: relative;
+  }
+
+  .tv-ticker-track {
+    display: flex;
+    gap: 3rem;
+    padding: 1rem 0;
+    white-space: nowrap;
+    animation: tv-ticker 32s linear infinite;
+    color: var(--tv-muted);
+    font-family: var(--tv-mono);
+    font-size: 0.86rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .tv-ticker-track span { color: var(--tv-muted); }
+  .tv-ticker-track span b {
+    color: var(--tv-neon);
+    font-weight: 700;
+    margin-right: 0.3rem;
+  }
+  .tv-ticker-track .sep {
+    color: var(--tv-magenta);
+  }
+
+  @keyframes tv-ticker {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  /* ============================== RESPONSIVE ============================== */
+  @media (max-width: 1024px) {
+    .tv-hero-inner { grid-template-columns: 1fr; gap: 2.5rem; padding: 70px 0 110px; }
+    .tv-rail, .tv-feature-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .tv-stat:nth-child(-n+2) { border-bottom: 1px solid var(--tv-line); }
+    .tv-stat:nth-child(2) { border-right: 0; }
+    .tv-cat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .tv-section-head { flex-direction: column; align-items: flex-start; }
+  }
+
+  @media (max-width: 720px) {
+    .tv-hero { min-height: auto; }
+    .tv-hero-inner { padding: 60px 0 90px; gap: 2rem; }
+    .tv-glitch { font-size: clamp(2.1rem, 9vw, 3.4rem); line-height: 1.02; }
+    .tv-status-banner { position: relative; top: 0; margin: 0 auto 1.6rem; }
+    .tv-rail { margin-top: -50px; }
+    .tv-stat { padding: 1.3rem 1rem; }
+    .tv-section { padding-top: 70px; }
+    .tv-rail, .tv-feature-grid, .tv-cat-grid { grid-template-columns: 1fr; }
+    .tv-stat { border-right: 0; border-bottom: 1px solid var(--tv-line); }
+    .tv-stat:last-child { border-bottom: 0; }
+    .tv-actions .tv-cta { width: 100%; justify-content: center; }
+    .tv-terminal .tv-term-body { font-size: 0.78rem; min-height: 240px; }
+    .tv-finale { padding: 70px 0; }
+    .tv-finale h2 { font-size: clamp(2rem, 9vw, 3rem); }
   }
 </style>
 {% endblock %}
 
 {% block content %}
 <section class="tv-hero">
-  <canvas id="matrix-canvas" aria-hidden="true"></canvas>
-  <div class="tv-hero-inner">
-    <div class="tv-kicker">DevSecOps CTF platform</div>
-    <h1 class="tv-hero-title">Train in real attack labs with <span class="tv-accent">Teck-Vision</span>.</h1>
-    <p class="tv-hero-copy">
-      Launch rooms, solve challenges, track progress, and compete with a cleaner workflow built for practical security training.
-    </p>
-    <div class="tv-actions">
-      <a href="{{ url_for('rooms.rooms_listing') }}" class="tv-btn tv-btn-primary">
-        <i class="fas fa-terminal" aria-hidden="true"></i>
-        Browse Rooms
-      </a>
-      <a href="{{ url_for('challenges.listing') }}" class="tv-btn tv-btn-secondary">
-        <i class="fas fa-flag" aria-hidden="true"></i>
-        View Challenges
-      </a>
+  <canvas id="tv-grid-canvas" aria-hidden="true"></canvas>
+
+  <div class="tv-status-banner" aria-hidden="true">
+    <div class="tv-status-pill">
+      <span class="dot"></span>
+      System Online · Range Active · Live Scoring
     </div>
-    <div class="tv-status-row">
-      <span><i class="fas fa-circle" aria-hidden="true"></i> Platform online</span>
-      <span><i class="fas fa-server" aria-hidden="true"></i> On-demand machines</span>
-      <span><i class="fas fa-chart-line" aria-hidden="true"></i> Live scoring</span>
+  </div>
+
+  <div class="tv-hero-inner">
+    <div>
+      <div class="tv-kicker">
+        <span>// Teck-Vision CTF Range v2.6</span>
+        <span class="blink">_</span>
+      </div>
+
+      <h1 class="tv-glitch">
+        <span class="line row-1" data-text="Hack the system.">Hack the system.</span>
+        <span class="line row-2" data-text="Own the flag.">Own the flag.</span>
+      </h1>
+
+      <p class="tv-hero-copy">
+        Teck-Vision is a <span class="hl">live cyber range</span> for adversarial training.
+        Spin up isolated machines, exploit realistic targets, and climb the leaderboard
+        in a workflow built for serious operators.
+      </p>
+
+      <div class="tv-actions">
+        <a href="{{ url_for('rooms.rooms_listing') }}" class="tv-cta tv-cta-primary">
+          <i class="fas fa-terminal" aria-hidden="true"></i>
+          Launch Rooms
+          <span aria-hidden="true">→</span>
+        </a>
+        <a href="{{ url_for('challenges.listing') }}" class="tv-cta tv-cta-ghost">
+          <i class="fas fa-flag" aria-hidden="true"></i>
+          Solve Challenges
+        </a>
+      </div>
+
+      <div class="tv-tag-row">
+        <span>nmap</span>
+        <span>burp</span>
+        <span>ghidra</span>
+        <span>wireshark</span>
+        <span>metasploit</span>
+        <span>volatility</span>
+      </div>
+    </div>
+
+    <aside class="tv-terminal" aria-hidden="true">
+      <div class="tv-term-head">
+        <span class="tv-dot r"></span>
+        <span class="tv-dot y"></span>
+        <span class="tv-dot g"></span>
+        <span class="tv-term-title">root@teck-vision:~</span>
+        <span class="tv-term-tag">// secure-shell</span>
+      </div>
+      <div class="tv-term-body" id="tv-terminal-body">
+        <div class="tv-line"><span class="prompt">root@tv:~$</span> <span class="cmd">ssh operator@range.teckvision.io</span></div>
+        <div class="tv-line"><span class="out">Authenticating with key fingerprint <em style="color:var(--tv-neon);font-style:normal">SHA256:7f3a…b91d</em></span></div>
+        <div class="tv-line"><span class="out">Connection established. Welcome, <em style="color:var(--tv-magenta);font-style:normal">{{ User.name or 'operator' }}</em>.</span></div>
+        <div class="tv-line"><span class="prompt">root@tv:~$</span> <span class="cmd">range --list</span></div>
+        <div class="tv-line"><span class="out">› <em style="color:var(--tv-amber);font-style:normal">{{ stats.rooms|default(12) }}</em> rooms · <em style="color:var(--tv-amber);font-style:normal">{{ stats.challenges|default(86) }}</em> challenges · <em style="color:var(--tv-amber);font-style:normal">{{ stats.players|default(140) }}</em> operators online</span></div>
+        <div class="tv-line"><span class="prompt">root@tv:~$</span> <span class="cmd">launch web/sql-injection-101</span></div>
+        <div class="tv-line"><span class="out">Provisioning container <em style="color:var(--tv-neon);font-style:normal">tv-lab-7e21</em>…</span></div>
+        <div class="tv-progress"></div>
+        <div class="tv-line" style="margin-top:0.7rem"><span class="ok">[ok]</span> <span class="out">Target ready at <em style="color:var(--tv-neon);font-style:normal">10.66.12.84:8080</em></span></div>
+        <div class="tv-line"><span class="prompt">root@tv:~$</span> <span class="cmd tv-typing" id="tv-typing"></span></div>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<section class="tv-rail" aria-label="Platform metrics">
+  <div class="tv-stat">
+    <div class="tv-stat-key">challenges</div>
+    <div class="tv-stat-num" data-count="{{ stats.challenges|default(86) }}">0</div>
+    <div class="tv-stat-trend">▲ live arsenal</div>
+  </div>
+  <div class="tv-stat">
+    <div class="tv-stat-key">rooms</div>
+    <div class="tv-stat-num" data-count="{{ stats.rooms|default(12) }}">0</div>
+    <div class="tv-stat-trend">▲ ready to deploy</div>
+  </div>
+  <div class="tv-stat">
+    <div class="tv-stat-key">operators</div>
+    <div class="tv-stat-num" data-count="{{ stats.players|default(140) }}">0</div>
+    <div class="tv-stat-trend">▲ active 24/7</div>
+  </div>
+  <div class="tv-stat">
+    <div class="tv-stat-key">flags captured</div>
+    <div class="tv-stat-num" data-count="{{ stats.solves|default(2480) }}">0</div>
+    <div class="tv-stat-trend">▲ all-time</div>
+  </div>
+</section>
+
+<section class="tv-section">
+  <div class="tv-section-head">
+    <div>
+      <div class="tv-eyebrow">core capabilities</div>
+      <h2 class="tv-section-title">A full attack surface, controlled from one console.</h2>
+    </div>
+    <p class="tv-section-copy">
+      Every Teck-Vision feature is built for hands-on learning — provision, exploit,
+      report, and progress without leaving the platform.
+    </p>
+  </div>
+
+  <div class="tv-feature-grid">
+    <div class="tv-feature">
+      <div class="tv-feature-id">FEATURE <span>// 01</span></div>
+      <div class="tv-feature-icon"><i class="fas fa-laptop-code" aria-hidden="true"></i></div>
+      <div class="tv-feature-title">Guided rooms</div>
+      <div class="tv-feature-text">Launch isolated machines with task lists, hints, and a target IP pinned to the workspace.</div>
+    </div>
+    <div class="tv-feature">
+      <div class="tv-feature-id">FEATURE <span>// 02</span></div>
+      <div class="tv-feature-icon"><i class="fas fa-shield-alt" aria-hidden="true"></i></div>
+      <div class="tv-feature-title">Realistic targets</div>
+      <div class="tv-feature-text">Web, crypto, reverse engineering, forensics, and infra — each scenario emulates real-world stacks.</div>
+    </div>
+    <div class="tv-feature">
+      <div class="tv-feature-id">FEATURE <span>// 03</span></div>
+      <div class="tv-feature-icon"><i class="fas fa-users" aria-hidden="true"></i></div>
+      <div class="tv-feature-title">Team ready</div>
+      <div class="tv-feature-text">Compete solo or by squad with role permissions, clean rankings, and shared workspaces.</div>
+    </div>
+    <div class="tv-feature">
+      <div class="tv-feature-id">FEATURE <span>// 04</span></div>
+      <div class="tv-feature-icon"><i class="fas fa-chart-bar" aria-hidden="true"></i></div>
+      <div class="tv-feature-title">Operator telemetry</div>
+      <div class="tv-feature-text">Track uploads, machine state, and submission activity from a single admin command deck.</div>
     </div>
   </div>
 </section>
 
-<div class="tv-stats">
-  <div class="tv-stat">
-    <div class="tv-stat-number" id="stat-challenges">{{ stats.challenges|default(0) }}</div>
-    <div class="tv-stat-label">Challenges</div>
+<section class="tv-section">
+  <div class="tv-section-head">
+    <div>
+      <div class="tv-eyebrow">attack vectors</div>
+      <h2 class="tv-section-title">Pick a track. Sharpen the weapon you came for.</h2>
+    </div>
+    <p class="tv-section-copy">
+      Six core domains, all live, all scored. Each chip below routes straight to its
+      challenge index.
+    </p>
   </div>
-  <div class="tv-stat">
-    <div class="tv-stat-number" id="stat-rooms">{{ stats.rooms|default(0) }}</div>
-    <div class="tv-stat-label">Rooms</div>
+
+  <div class="tv-cat-grid">
+    <a href="{{ url_for('challenges.listing') }}" class="tv-cat" data-tilt>
+      <div class="tv-cat-row1">
+        <span class="tv-cat-icon"><i class="fas fa-globe" aria-hidden="true"></i></span>
+        <span class="tv-cat-id">// 01</span>
+      </div>
+      <div class="tv-cat-name">Web</div>
+      <div class="tv-cat-meta">SQLi · XSS · SSRF · IDOR</div>
+      <div class="tv-cat-arrow">enter →</div>
+    </a>
+    <a href="{{ url_for('challenges.listing') }}" class="tv-cat" data-tilt>
+      <div class="tv-cat-row1">
+        <span class="tv-cat-icon"><i class="fas fa-key" aria-hidden="true"></i></span>
+        <span class="tv-cat-id">// 02</span>
+      </div>
+      <div class="tv-cat-name">Cryptography</div>
+      <div class="tv-cat-meta">RSA · AES · Hash · ECC</div>
+      <div class="tv-cat-arrow">enter →</div>
+    </a>
+    <a href="{{ url_for('challenges.listing') }}" class="tv-cat" data-tilt>
+      <div class="tv-cat-row1">
+        <span class="tv-cat-icon"><i class="fas fa-cogs" aria-hidden="true"></i></span>
+        <span class="tv-cat-id">// 03</span>
+      </div>
+      <div class="tv-cat-name">Reverse Eng.</div>
+      <div class="tv-cat-meta">ELF · PE · Ghidra · IDA</div>
+      <div class="tv-cat-arrow">enter →</div>
+    </a>
+    <a href="{{ url_for('challenges.listing') }}" class="tv-cat" data-tilt>
+      <div class="tv-cat-row1">
+        <span class="tv-cat-icon"><i class="fas fa-bolt" aria-hidden="true"></i></span>
+        <span class="tv-cat-id">// 04</span>
+      </div>
+      <div class="tv-cat-name">Pwn</div>
+      <div class="tv-cat-meta">Stack · Heap · ROP · Format</div>
+      <div class="tv-cat-arrow">enter →</div>
+    </a>
+    <a href="{{ url_for('challenges.listing') }}" class="tv-cat" data-tilt>
+      <div class="tv-cat-row1">
+        <span class="tv-cat-icon"><i class="fas fa-search" aria-hidden="true"></i></span>
+        <span class="tv-cat-id">// 05</span>
+      </div>
+      <div class="tv-cat-name">Forensics</div>
+      <div class="tv-cat-meta">PCAP · Memory · Disk · OSINT</div>
+      <div class="tv-cat-arrow">enter →</div>
+    </a>
+    <a href="{{ url_for('challenges.listing') }}" class="tv-cat" data-tilt>
+      <div class="tv-cat-row1">
+        <span class="tv-cat-icon"><i class="fas fa-puzzle-piece" aria-hidden="true"></i></span>
+        <span class="tv-cat-id">// 06</span>
+      </div>
+      <div class="tv-cat-name">Misc</div>
+      <div class="tv-cat-meta">Steganography · Programming</div>
+      <div class="tv-cat-arrow">enter →</div>
+    </a>
   </div>
-  <div class="tv-stat">
-    <div class="tv-stat-number" id="stat-players">{{ stats.players|default(0) }}</div>
-    <div class="tv-stat-label">Players</div>
-  </div>
-  <div class="tv-stat">
-    <div class="tv-stat-number" id="stat-solves">{{ stats.solves|default(0) }}</div>
-    <div class="tv-stat-label">Solves</div>
+</section>
+
+<div class="tv-ticker" aria-hidden="true">
+  <div class="tv-ticker-track">
+    <span><b>SCAN</b> port 443 open</span><span class="sep">/</span>
+    <span><b>EXPLOIT</b> sqli-101 captured</span><span class="sep">/</span>
+    <span><b>FLAG</b> teck-vision&#123;0p3r4t0r&#125; submitted</span><span class="sep">/</span>
+    <span><b>ROOM</b> kernel-jail spinning up</span><span class="sep">/</span>
+    <span><b>RANK</b> team alpha entered top 10</span><span class="sep">/</span>
+    <span><b>NEW</b> reverse-elf-03 deployed</span><span class="sep">/</span>
+    <span><b>SCAN</b> port 443 open</span><span class="sep">/</span>
+    <span><b>EXPLOIT</b> sqli-101 captured</span><span class="sep">/</span>
+    <span><b>FLAG</b> teck-vision&#123;0p3r4t0r&#125; submitted</span><span class="sep">/</span>
+    <span><b>ROOM</b> kernel-jail spinning up</span><span class="sep">/</span>
+    <span><b>RANK</b> team alpha entered top 10</span><span class="sep">/</span>
+    <span><b>NEW</b> reverse-elf-03 deployed</span><span class="sep">/</span>
   </div>
 </div>
 
-<section class="tv-section">
-  <div class="tv-section-head">
-    <h2 class="tv-section-title">Built for focused practice</h2>
-    <p class="tv-section-copy">A simple path from room selection to machine launch, challenge solve, and scoreboard progress.</p>
-  </div>
-  <div class="tv-card-grid">
-    <div class="tv-card">
-      <div class="tv-card-icon"><i class="fas fa-laptop-code" aria-hidden="true"></i></div>
-      <div class="tv-card-title">Guided Rooms</div>
-      <div class="tv-card-text">Start a lab machine, follow the tasks, and keep the target IP visible while you work.</div>
+<section class="tv-finale">
+  <div class="tv-finale-inner">
+    <div class="tv-eyebrow">// terminal locked &amp; loaded</div>
+    <h2>Ready to <span class="grad">break&nbsp;in</span>?</h2>
+    <p>
+      Connect to the range, pick a target, drop your first flag. The terminal is open —
+      the only thing missing is your payload.
+    </p>
+    <div class="tv-actions" style="justify-content:center;display:inline-flex;margin-bottom:0;">
+      {% if not authed() %}
+        <a href="{{ url_for('auth.register') }}" class="tv-cta tv-cta-primary">
+          <i class="fas fa-user-plus" aria-hidden="true"></i>
+          Create Operator
+          <span aria-hidden="true">→</span>
+        </a>
+        <a href="{{ url_for('auth.login') }}" class="tv-cta tv-cta-ghost">
+          <i class="fas fa-sign-in-alt" aria-hidden="true"></i>
+          Sign In
+        </a>
+      {% else %}
+        <a href="{{ url_for('rooms.rooms_listing') }}" class="tv-cta tv-cta-primary">
+          <i class="fas fa-arrow-right" aria-hidden="true"></i>
+          Enter Rooms
+        </a>
+        <a href="{{ url_for('scoreboard.listing') }}" class="tv-cta tv-cta-ghost">
+          <i class="fas fa-trophy" aria-hidden="true"></i>
+          Scoreboard
+        </a>
+      {% endif %}
     </div>
-    <div class="tv-card">
-      <div class="tv-card-icon"><i class="fas fa-shield-alt" aria-hidden="true"></i></div>
-      <div class="tv-card-title">Realistic Targets</div>
-      <div class="tv-card-text">Practice web, crypto, reverse engineering, forensics, and infrastructure scenarios.</div>
-    </div>
-    <div class="tv-card">
-      <div class="tv-card-icon"><i class="fas fa-users" aria-hidden="true"></i></div>
-      <div class="tv-card-title">Team Ready</div>
-      <div class="tv-card-text">Compete solo or as a team with clean rankings and progress tracking.</div>
-    </div>
-    <div class="tv-card">
-      <div class="tv-card-icon"><i class="fas fa-chart-bar" aria-hidden="true"></i></div>
-      <div class="tv-card-title">Admin Visibility</div>
-      <div class="tv-card-text">Monitor uploads, machine status, and challenge activity from one administration area.</div>
-    </div>
-  </div>
-</section>
-
-<section class="tv-section">
-  <div class="tv-section-head">
-    <h2 class="tv-section-title">Challenge categories</h2>
-    <p class="tv-section-copy">Pick a track and start sharpening the exact skill you want to improve.</p>
-  </div>
-  <div class="tv-category-grid">
-    <a href="{{ url_for('challenges.listing') }}" class="tv-cat"><i class="fas fa-globe" aria-hidden="true"></i> Web</a>
-    <a href="{{ url_for('challenges.listing') }}" class="tv-cat"><i class="fas fa-key" aria-hidden="true"></i> Cryptography</a>
-    <a href="{{ url_for('challenges.listing') }}" class="tv-cat"><i class="fas fa-cogs" aria-hidden="true"></i> Reverse Engineering</a>
-    <a href="{{ url_for('challenges.listing') }}" class="tv-cat"><i class="fas fa-bolt" aria-hidden="true"></i> Binary Exploitation</a>
-    <a href="{{ url_for('challenges.listing') }}" class="tv-cat"><i class="fas fa-search" aria-hidden="true"></i> Forensics</a>
-    <a href="{{ url_for('challenges.listing') }}" class="tv-cat"><i class="fas fa-puzzle-piece" aria-hidden="true"></i> Misc</a>
-  </div>
-</section>
-
-<section class="tv-final">
-  <div class="tv-final-inner">
-    <div>
-      <h2>Ready to start?</h2>
-      <p>Enter a room, launch the machine, and submit your first flag.</p>
-    </div>
-    {% if not authed() %}
-      <a href="{{ url_for('auth.register') }}" class="tv-btn tv-btn-primary">
-        <i class="fas fa-user-plus" aria-hidden="true"></i>
-        Register
-      </a>
-    {% else %}
-      <a href="{{ url_for('rooms.rooms_listing') }}" class="tv-btn tv-btn-primary">
-        <i class="fas fa-arrow-right" aria-hidden="true"></i>
-        Open Rooms
-      </a>
-    {% endif %}
   </div>
 </section>
 {% endblock %}
@@ -496,77 +1154,164 @@
 {{ super() }}
 <script>
 (function () {
-  var canvas = document.getElementById("matrix-canvas");
-  if (!canvas || !canvas.getContext) {
-    return;
-  }
+  /* ===== Animated grid + drifting particles in hero ===== */
+  var canvas = document.getElementById("tv-grid-canvas");
+  if (canvas && canvas.getContext) {
+    var ctx = canvas.getContext("2d");
+    var w = 0, h = 0, dpr = Math.max(1, window.devicePixelRatio || 1);
+    var nodes = [];
+    var NODES_COUNT = 64;
 
-  var ctx = canvas.getContext("2d");
-  if (!ctx) {
-    return;
-  }
-
-  var chars = "010101{}[]<>/\\$#ctfroot";
-  var cols = 0;
-  var drops = [];
-  var step = 18;
-
-  function resize() {
-    canvas.width = canvas.offsetWidth || window.innerWidth;
-    canvas.height = canvas.offsetHeight || window.innerHeight;
-    cols = Math.max(1, Math.floor(canvas.width / step));
-    drops = Array.from({ length: cols }, function () {
-      return Math.floor(Math.random() * -40);
-    });
-  }
-
-  function draw() {
-    ctx.fillStyle = "rgba(7, 17, 31, 0.08)";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "#22d3ee";
-    ctx.font = "13px monospace";
-
-    for (var i = 0; i < drops.length; i++) {
-      var ch = chars[(Math.random() * chars.length) | 0];
-      ctx.fillText(ch, i * step, drops[i] * step);
-      if (drops[i] * step > canvas.height && Math.random() > 0.975) {
-        drops[i] = 0;
-      }
-      drops[i]++;
-    }
-  }
-
-  function animateCount(el, target) {
-    var current = 0;
-    var increment = Math.max(1, Math.ceil(target / 50));
-    var timer = window.setInterval(function () {
-      current = Math.min(current + increment, target);
-      el.textContent = current;
-      if (current >= target) {
-        window.clearInterval(timer);
-      }
-    }, 20);
-  }
-
-  resize();
-  window.addEventListener("resize", resize);
-  window.setInterval(draw, 60);
-
-  var statsSection = document.querySelector(".tv-stats");
-  var observed = false;
-  if (statsSection && "IntersectionObserver" in window) {
-    new IntersectionObserver(function (entries) {
-      if (entries[0].isIntersecting && !observed) {
-        observed = true;
-        ["stat-challenges", "stat-rooms", "stat-players", "stat-solves"].forEach(function (id) {
-          var el = document.getElementById(id);
-          if (el) {
-            animateCount(el, parseInt(el.textContent, 10) || 0);
-          }
+    function resize() {
+      var rect = canvas.getBoundingClientRect();
+      w = rect.width;
+      h = rect.height;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      nodes = [];
+      for (var i = 0; i < NODES_COUNT; i++) {
+        nodes.push({
+          x: Math.random() * w,
+          y: Math.random() * h,
+          vx: (Math.random() - 0.5) * 0.25,
+          vy: (Math.random() - 0.5) * 0.25,
+          r: Math.random() * 1.6 + 0.6,
+          c: Math.random() > 0.55 ? "#00f0ff" : "#ff2e88"
         });
       }
-    }, { threshold: 0.25 }).observe(statsSection);
+    }
+
+    function frame() {
+      ctx.clearRect(0, 0, w, h);
+
+      ctx.strokeStyle = "rgba(0, 240, 255, 0.06)";
+      ctx.lineWidth = 1;
+      var step = 60;
+      for (var x = 0; x < w; x += step) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, h);
+        ctx.stroke();
+      }
+      for (var y = 0; y < h; y += step) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(w, y);
+        ctx.stroke();
+      }
+
+      for (var i = 0; i < nodes.length; i++) {
+        var n = nodes[i];
+        n.x += n.vx;
+        n.y += n.vy;
+        if (n.x < 0 || n.x > w) n.vx *= -1;
+        if (n.y < 0 || n.y > h) n.vy *= -1;
+
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+        ctx.fillStyle = n.c;
+        ctx.globalAlpha = 0.7;
+        ctx.fill();
+
+        for (var j = i + 1; j < nodes.length; j++) {
+          var m = nodes[j];
+          var dx = n.x - m.x;
+          var dy = n.y - m.y;
+          var d = Math.sqrt(dx * dx + dy * dy);
+          if (d < 140) {
+            ctx.globalAlpha = (1 - d / 140) * 0.22;
+            ctx.strokeStyle = n.c === m.c ? n.c : "#00f0ff";
+            ctx.lineWidth = 0.7;
+            ctx.beginPath();
+            ctx.moveTo(n.x, n.y);
+            ctx.lineTo(m.x, m.y);
+            ctx.stroke();
+          }
+        }
+      }
+      ctx.globalAlpha = 1;
+      window.requestAnimationFrame(frame);
+    }
+
+    window.addEventListener("resize", resize);
+    resize();
+    frame();
   }
+
+  /* ===== Stat counters ===== */
+  function animateCount(el, target) {
+    var duration = 1400;
+    var startTime = null;
+    function step(ts) {
+      if (!startTime) startTime = ts;
+      var p = Math.min((ts - startTime) / duration, 1);
+      var eased = 1 - Math.pow(1 - p, 3);
+      el.textContent = Math.floor(target * eased).toLocaleString();
+      if (p < 1) window.requestAnimationFrame(step);
+      else el.textContent = target.toLocaleString();
+    }
+    window.requestAnimationFrame(step);
+  }
+
+  var nums = document.querySelectorAll(".tv-stat-num[data-count]");
+  if (nums.length && "IntersectionObserver" in window) {
+    var done = new WeakSet();
+    var obs = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting && !done.has(e.target)) {
+          done.add(e.target);
+          var target = parseInt(e.target.getAttribute("data-count"), 10) || 0;
+          animateCount(e.target, target);
+        }
+      });
+    }, { threshold: 0.35 });
+    nums.forEach(function (n) { obs.observe(n); });
+  }
+
+  /* ===== Terminal typing ===== */
+  var typingEl = document.getElementById("tv-typing");
+  if (typingEl) {
+    var commands = [
+      "scan --top-ports 1000 10.66.12.84",
+      "burp -p 8080 --intercept",
+      "sqlmap -u http://10.66.12.84/?id=1 --dbs",
+      "submit flag teck-vision{0p3r4t0r}"
+    ];
+    var ci = 0, chi = 0, deleting = false;
+    function tick() {
+      var cmd = commands[ci];
+      if (!deleting) {
+        chi++;
+        typingEl.textContent = cmd.slice(0, chi);
+        if (chi === cmd.length) {
+          deleting = true;
+          window.setTimeout(tick, 1400);
+          return;
+        }
+      } else {
+        chi--;
+        typingEl.textContent = cmd.slice(0, chi);
+        if (chi === 0) {
+          deleting = false;
+          ci = (ci + 1) % commands.length;
+        }
+      }
+      window.setTimeout(tick, deleting ? 28 : 58);
+    }
+    tick();
+  }
+
+  /* ===== Category tilt + pointer glow ===== */
+  document.querySelectorAll("[data-tilt]").forEach(function (el) {
+    el.addEventListener("mousemove", function (e) {
+      var r = el.getBoundingClientRect();
+      var x = ((e.clientX - r.left) / r.width) * 100;
+      var y = ((e.clientY - r.top) / r.height) * 100;
+      el.style.setProperty("--mx", x + "%");
+      el.style.setProperty("--my", y + "%");
+    });
+  });
 })();
 </script>
 {% endblock %}

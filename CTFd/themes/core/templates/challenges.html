@@ -1,179 +1,107 @@
 {% extends "base.html" %}
 
 {% block content %}
-  <style>
-    .tv-challenges-hero {
-      background: linear-gradient(100deg, #111a2d 0%, #17243b 58%, #071026 100%);
-      color: #fff;
-      padding: 2.6rem 0;
-      border-bottom: 1px solid rgba(255,255,255,.08);
-    }
-    .tv-challenges-wrap { max-width: 1180px; margin: 0 auto; padding: 0 1.25rem; }
-    .tv-kicker { color: #9af04d; font-size: .78rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; margin-bottom: .65rem; }
-    .tv-page-title { font-size: clamp(2rem, 4vw, 3.4rem); font-weight: 850; letter-spacing: 0; line-height: 1.05; margin: 0; }
-    .tv-page-subtitle { color: #cbd5e1; margin: .85rem 0 0; max-width: 760px; font-size: 1rem; }
-    .tv-room-section { margin-top: -1.8rem; margin-bottom: 2.5rem; }
-    .tv-section-head { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1rem; }
-    .tv-section-title { color:#f1f5f9; font-weight:850; margin:0; font-size:1.35rem; }
-    .tv-section-note { color:#94a3b8; margin:0; font-size:.9rem; }
-    .tv-room-card {
-      display:block;
-      height:100%;
-      color:inherit;
-      text-decoration:none;
-      background:#111827;
-      border:1px solid rgba(255,255,255,.08);
-      border-radius:8px;
-      box-shadow:0 16px 38px rgba(0,0,0,.3);
-      overflow:hidden;
-      transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
-    }
-    .tv-room-card:hover {
-      color:inherit;
-      text-decoration:none;
-      transform:translateY(-3px);
-      border-color:#9af04d;
-      box-shadow:0 22px 48px rgba(0,0,0,.4);
-    }
-    .tv-room-top {
-      background:linear-gradient(135deg,#0f1421,#1a2035);
-      color:#fff;
-      padding:1.2rem;
-      min-height:130px;
-      display:flex;
-      flex-direction:column;
-      justify-content:space-between;
-    }
-    .tv-room-title { font-weight:850; font-size:1.2rem; margin:0 0 .35rem; color:#fff; }
-    .tv-room-desc { color:#94a3b8; font-size:.9rem; margin:0; line-height:1.5; }
-    .tv-diff-pill { border-radius:6px; padding:.28rem .55rem; font-weight:800; font-size:.75rem; border:1px solid rgba(255,255,255,.18); width:max-content; }
-    .tv-diff-easy { background:rgba(154,240,77,.18); color:#9af04d; }
-    .tv-diff-medium { background:rgba(251,191,36,.16); color:#fbbf24; }
-    .tv-diff-hard { background:rgba(248,113,113,.16); color:#f87171; }
-    .tv-room-body { padding:1rem 1.2rem 1.2rem; }
-    .tv-meta-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:.6rem; margin-bottom:1rem; }
-    .tv-meta-item { background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08); border-radius:6px; padding:.55rem; text-align:center; min-width:0; }
-    .tv-meta-value { color:#f1f5f9; font-weight:850; line-height:1; }
-    .tv-meta-label { color:#64748b; font-size:.72rem; margin-top:.25rem; }
-    .tv-room-progress { background:rgba(255,255,255,.1); border-radius:999px; height:8px; overflow:hidden; }
-    .tv-room-progress span { display:block; height:8px; background:#9af04d; }
-    .tv-enter { display:flex; align-items:center; justify-content:space-between; margin-top:.9rem; color:#f1f5f9; font-weight:800; }
-    .tv-board-panel { background:#111827; border:1px solid rgba(255,255,255,.08); border-radius:8px; box-shadow:0 16px 38px rgba(0,0,0,.25); padding:1.25rem; }
-    .challenge-button {
-      box-shadow:0 12px 26px rgba(15,23,42,.07);
-      transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
-    }
-    .challenge-button:hover { transform:translateY(-2px); box-shadow:0 18px 36px rgba(15,23,42,.12); }
-    @media (max-width: 768px) {
-      .tv-section-head { align-items:flex-start; flex-direction:column; }
-      .tv-meta-grid { grid-template-columns:1fr; }
-    }
-  </style>
-
-  <div class="tv-challenges-hero">
-    <div class="tv-challenges-wrap">
-      <div class="tv-kicker">Learning Arena</div>
-      <h1 class="tv-page-title">{% trans %}Challenges{% endtrans %}</h1>
-      <p class="tv-page-subtitle">Browse challenges by category and track your solve progress.</p>
+<section class="tv-page">
+  <header class="tv-page-head">
+    <div>
+      <div class="tv-page-kicker">attack vectors · live arsenal</div>
+      <h1 class="tv-page-title">Challenges <span class="grad">·&nbsp;target list</span></h1>
+      <p class="tv-page-subtitle">Filter by category, pick a target, drop the flag. Solved challenges glow lime.</p>
     </div>
-  </div>
+    <div class="tv-page-meta">
+      <span class="dot"></span>
+      <span>arsenal · <b>live</b></span>
+    </div>
+  </header>
 
-  <div class="tv-challenges-wrap py-4">
-    <div class="row">
-      <div class="col-md-12">
-        {% include "components/errors.html" %}
+  {% include "components/errors.html" %}
+
+  <div class="tv-panel"
+    x-data="ChallengeBoard"
+    @load-challenges.window="loadChallenges()"
+    @load-challenge.window="loadChallenge($event.detail)"
+  >
+    <div
+      x-ref="challengeWindow" id="challenge-window" class="modal fade" tabindex="-1" role="dialog" x-data=""
+      x-html="$store.challenge.data.view"
+    ></div>
+
+    <div x-show="!loaded">
+      <div class="min-vh-50 d-flex align-items-center">
+        <div class="text-center w-100">
+          <i class="fas fa-circle-notch fa-spin fa-3x fa-fw spinner"></i>
+        </div>
       </div>
     </div>
 
-    <div class="tv-board-panel"
-      x-data="ChallengeBoard"
-      @load-challenges.window="loadChallenges()"
-      @load-challenge.window="loadChallenge($event.detail)"
-    >
-      <div
-        x-ref="challengeWindow" id="challenge-window" class="modal fade" tabindex="-1" role="dialog" x-data=""
-        x-html="$store.challenge.data.view"
-      ></div>
-
-      <div x-show="!loaded">
-        <div class="min-vh-50 d-flex align-items-center">
-          <div class="text-center w-100">
-            <i class="fas fa-circle-notch fa-spin fa-3x fa-fw spinner"></i>
-          </div>
-        </div>
-      </div>
-
-      <div x-show="loaded">
-        <!-- ── Category filter bar ── -->
-        <div class="tv-filter-bar mb-4" id="tv-filter-bar" style="display:none!important;" x-show="loaded">
-          <button
-            class="tv-filter-btn active"
-            data-filter="all"
-            onclick="tvFilter(this,'all')"
-          >All</button>
-          <template x-for="(category, idx) in getCategories()" :key="idx">
-            <button
-              class="tv-filter-btn"
-              :data-filter="category"
-              @click="tvFilter($el, category)"
-              x-text="category"
-            ></button>
-          </template>
-        </div>
-
+    <div x-show="loaded">
+      <!-- Category filter bar -->
+      <div class="tv-filter-bar mb-4" id="tv-filter-bar" style="display:none!important;" x-show="loaded">
+        <button
+          class="tv-filter-btn active"
+          data-filter="all"
+          onclick="tvFilter(this,'all')"
+        >all</button>
         <template x-for="(category, idx) in getCategories()" :key="idx">
-          <div class="pt-4 tv-category-section" :data-category="category">
-            <div class="category-header mb-3">
-              <h3 x-text="category"></h3>
-            </div>
-
-            <div class="category-challenges d-flex flex-column">
-              <div class="challenges-row row">
-                <template x-for="(c, idx) in getChallenges(category)" :key="c.id">
-                  <div class="col-sm-6 col-md-4 col-lg-3 my-3">
-                    <button
-                      class="challenge-button btn btn-dark w-100 h-100"
-                      :class="[
-                        c.solved_by_me ? 'challenge-solved' : '',
-                        ...c.tags.map((tag) => 'tag-' + tag.value.replace(/ /g, '-')),
-                      ]"
-                      :value="c.id"
-                      @click="loadChallenge(c.id)"
-                    >
-                      <div class="challenge-inner my-3">
-                        <p x-text="c.name"></p>
-                        <span x-text="c.value"></span>
-                      </div>
-                    </button>
-                  </div>
-                </template>
-              </div>
-            </div>
-          </div>
+          <button
+            class="tv-filter-btn"
+            :data-filter="category"
+            @click="tvFilter($el, category)"
+            x-text="category"
+          ></button>
         </template>
       </div>
+
+      <template x-for="(category, idx) in getCategories()" :key="idx">
+        <div class="pt-3 tv-category-section" :data-category="category">
+          <div class="category-header mb-3">
+            <h3 x-text="category"></h3>
+          </div>
+
+          <div class="category-challenges d-flex flex-column">
+            <div class="challenges-row row">
+              <template x-for="(c, idx) in getChallenges(category)" :key="c.id">
+                <div class="col-sm-6 col-md-4 col-lg-3 my-3">
+                  <button
+                    class="challenge-button btn btn-dark w-100 h-100"
+                    :class="[
+                      c.solved_by_me ? 'challenge-solved' : '',
+                      ...c.tags.map((tag) => 'tag-' + tag.value.replace(/ /g, '-')),
+                    ]"
+                    :value="c.id"
+                    @click="loadChallenge(c.id)"
+                  >
+                    <div class="challenge-inner my-3">
+                      <p x-text="c.name"></p>
+                      <span x-text="c.value"></span>
+                    </div>
+                  </button>
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+      </template>
     </div>
   </div>
+</section>
 {% endblock %}
 
 {% block scripts %}
   {{ Assets.js("assets/js/challenges.js") }}
   <script>
   (function () {
-    /* Show filter bar once Alpine has rendered categories */
     document.addEventListener("alpine:initialized", function () {
       var bar = document.getElementById("tv-filter-bar");
       if (bar) bar.style.removeProperty("display");
     });
 
     window.tvFilter = function (btn, category) {
-      /* Update active button */
       document.querySelectorAll(".tv-filter-btn").forEach(function (b) {
         b.classList.remove("active");
       });
       btn.classList.add("active");
 
-      /* Show / hide category sections */
       document.querySelectorAll(".tv-category-section").forEach(function (sec) {
         var cat = sec.getAttribute("data-category");
         if (category === "all" || cat === category) {
