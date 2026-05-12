@@ -207,10 +207,14 @@ nav.tv-navbar.fixed-top ~ main {
 }
 
 .tv-navbar {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   background: #05060a !important;
   border-bottom: 1px solid rgba(0, 240, 255, 0.12) !important;
   box-shadow: 0 10px 36px rgba(0, 0, 0, 0.45);
   padding: 0.55rem 0;
+  /* Align with Bootstrap .fixed-top so overlays stack predictably */
+  z-index: 1030;
 }
 
 .tv-navbar::after {
@@ -221,21 +225,70 @@ nav.tv-navbar.fixed-top ~ main {
 }
 
 .tv-navbar .navbar-brand .brand-teck {
-  color: #ff7a8c;
+  background: none !important;
+  background-clip: border-box !important;
+  color: #ff7a8c !important;
+  -webkit-background-clip: border-box !important;
+  /* Le SCSS met -webkit-text-fill-color: transparent + dégradé : sans remplissage visible le texte disparaît */
+  -webkit-text-fill-color: #ff7a8c !important;
   text-shadow: 0 0 14px rgba(255, 122, 140, 0.45);
 }
 
 .tv-navbar .navbar-brand .brand-vision {
-  background: none;
-  -webkit-background-clip: border-box;
-  background-clip: border-box;
-  color: var(--tv-neon);
-  text-shadow: 0 0 12px rgba(0, 240, 255, 0.45);
+  background: none !important;
+  background-clip: border-box !important;
+  -webkit-background-clip: border-box !important;
+  /* Dégradé teal SCSS invisible sur fond sombre + fill transparent = « VISION » introuvable */
+  color: #9fefff !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-fill-color: #9fefff !important;
+  text-rendering: geometricPrecision;
+  text-shadow: none;
 }
 
 .tv-navbar .tv-nav-main,
 .tv-navbar .tv-nav-actions {
   gap: 0.08rem;
+}
+
+/* md+: keep all primary links on one horizontal row (avoid Rooms/Educate stacking) */
+@media (min-width: 768px) {
+  .tv-navbar > .container {
+    flex-wrap: nowrap;
+  }
+
+  .tv-navbar .navbar-collapse {
+    align-items: center;
+    flex-basis: auto;
+    flex-grow: 1;
+    flex-wrap: nowrap;
+    min-width: 0;
+  }
+
+  .tv-navbar .tv-nav-main.navbar-nav,
+  .tv-navbar .tv-nav-actions.navbar-nav {
+    align-items: center;
+    flex-direction: row !important;
+    flex-wrap: nowrap;
+  }
+
+  .tv-navbar .tv-nav-main .nav-item,
+  .tv-navbar .tv-nav-actions .nav-item {
+    flex-shrink: 0;
+  }
+
+  .tv-navbar .navbar-nav .nav-link {
+    font-size: 0.8rem;
+  }
+}
+
+/* One link per .nav-item; keep icon + label on a single row */
+.tv-navbar .navbar-nav .nav-link {
+  align-items: center;
+  display: inline-flex;
+  flex-direction: row;
+  white-space: nowrap;
 }
 
 @media (min-width: 768px) {
@@ -282,6 +335,70 @@ nav.tv-navbar.fixed-top ~ main {
   margin-left: 0.35em;
   opacity: 0.6;
   vertical-align: 0.1em;
+}
+
+/* Console dropdown (notifications · team · profile — pas d’icône hamburger) */
+.tv-navbar .tv-nav-ops-trigger::before {
+  content: none !important;
+}
+
+.tv-navbar .tv-nav-ops-trigger.dropdown-toggle::after {
+  margin-left: 0.25em;
+  opacity: 0.55;
+}
+
+.tv-ops-dropdown {
+  max-height: min(70vh, 28rem);
+  min-width: 15rem;
+  overflow-y: auto;
+}
+
+.tv-ops-dropdown .tv-ops-dropdown-header {
+  color: var(--tv-lime) !important;
+  font-family: var(--tv-mono) !important;
+  font-size: 0.68rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.12em !important;
+}
+
+.tv-ops-dropdown .dropdown-item.theme-switch {
+  cursor: pointer;
+}
+
+.tv-navbar .tv-console-lang-toggle {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0;
+  cursor: pointer;
+  font-family: var(--tv-mono);
+  font-size: 0.82rem;
+}
+
+.tv-navbar .tv-console-lang-toggle:hover,
+.tv-navbar .tv-console-lang-toggle:focus {
+  background: rgba(0, 240, 255, 0.08) !important;
+  color: var(--tv-neon) !important;
+}
+
+.tv-navbar .tv-console-lang-toggle:not(.collapsed) .tv-console-lang-chevron {
+  transform: rotate(180deg);
+}
+
+.tv-navbar .tv-console-lang-chevron {
+  opacity: 0.7;
+  transition: transform 0.18s ease;
+}
+
+.tv-navbar .tv-console-lang-list {
+  border-top: 1px solid var(--tv-line);
+  max-height: 14rem;
+  overflow-y: auto;
+}
+
+.tv-navbar .tv-console-lang-item {
+  font-size: 0.8rem !important;
+  padding-left: 1.35rem !important;
+  padding-right: 0.7rem !important;
 }
 
 .tv-navbar .tv-nav-notify {
@@ -590,6 +707,24 @@ nav.tv-navbar.fixed-top ~ main {
   font-family: var(--tv-mono);
 }
 
+/* Match inputs — Bootstrap defaults leave selects washed-out / wrong hue */
+.form-select {
+  --bs-form-select-bg-img: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+  background-color: rgba(13, 16, 24, 0.8) !important;
+  border: 1px solid var(--tv-line-strong) !important;
+  border-radius: var(--tv-radius) !important;
+  color: var(--tv-text) !important;
+  font-family: var(--tv-mono);
+  padding: 0.55rem 2.25rem 0.55rem 0.95rem !important;
+  transition: border-color 0.18s, box-shadow 0.18s !important;
+}
+
+.form-select:focus {
+  border-color: var(--tv-neon) !important;
+  box-shadow: 0 0 0 3px rgba(0, 240, 255, 0.18) !important;
+  outline: none !important;
+}
+
 .btn-primary {
   background: linear-gradient(90deg, var(--tv-neon), var(--tv-magenta)) !important;
   background-size: 200% 100% !important;
@@ -713,6 +848,58 @@ nav.tv-navbar.fixed-top ~ main {
 .bg-warning {
   background: rgba(255, 184, 0, 0.14) !important;
   color: var(--tv-amber) !important;
+}
+
+/* Modals under fixed navbar: clear TECK-VISION bar + avoid dialog hugging top */
+.tv-challenge-modal.modal,
+.tv-team-modal.modal {
+  padding-bottom: 1rem;
+  padding-top: 4.75rem;
+}
+
+.tv-challenge-modal.modal .modal-dialog,
+.tv-team-modal.modal .modal-dialog {
+  margin-top: 0;
+}
+
+.modal-content .modal-body {
+  color: var(--tv-text);
+}
+
+.modal-content .modal-body .form-text,
+.modal-content .modal-body small.text-muted {
+  color: var(--tv-muted) !important;
+  display: block;
+  font-family: var(--tv-mono);
+  font-size: 0.8rem;
+  line-height: 1.45;
+  margin-top: 0.35rem;
+}
+
+.modal-content .modal-body label,
+.modal-content .modal-body .form-label {
+  color: var(--tv-text) !important;
+  font-family: var(--tv-mono);
+}
+
+.modal-content .modal-body .mb-3 > b,
+.modal-content .modal-body .mb-2 > b {
+  color: var(--tv-text);
+  display: inline-block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.35rem;
+  text-transform: uppercase;
+}
+
+.modal-footer .btn-primary {
+  box-shadow: none !important;
+}
+
+.modal-footer .btn-primary:hover {
+  box-shadow: 0 0 14px rgba(0, 240, 255, 0.35) !important;
+  transform: translateY(-1px) !important;
 }
 
 .modal-content {
@@ -1532,4 +1719,256 @@ nav.tv-navbar.fixed-top ~ main {
     padding: 0.7rem 0.7rem;
     font-size: 0.82rem;
   }
+}
+
+/* ----- Rooms / Educate listing (same shell as challenges · scoreboard) ----- */
+.tv-rooms-panel {
+  padding: 1.35rem !important;
+}
+
+.tv-room-link {
+  color: inherit;
+  display: block;
+  height: 100%;
+  text-decoration: none !important;
+}
+
+.tv-room-link:hover {
+  color: inherit;
+}
+
+.tv-room-card {
+  background: linear-gradient(180deg, rgba(13, 16, 24, 0.97), rgba(8, 10, 16, 0.98));
+  border: 1px solid var(--tv-line);
+  border-radius: 6px;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 248px;
+  overflow: hidden;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.tv-room-link:hover .tv-room-card {
+  border-color: var(--tv-line-strong);
+  box-shadow: var(--tv-glow-cyan);
+  transform: translateY(-3px);
+}
+
+.tv-room-card-top {
+  border-bottom: 1px solid var(--tv-line);
+  padding: 1.15rem 1.15rem 0.95rem;
+}
+
+.tv-room-card-icon {
+  align-items: center;
+  background: linear-gradient(135deg, var(--tv-lime), var(--tv-neon));
+  border-radius: 8px;
+  color: var(--tv-void);
+  display: grid;
+  height: 44px;
+  margin-bottom: 0.9rem;
+  place-items: center;
+  width: 44px;
+}
+
+.tv-room-card-title {
+  color: var(--tv-text);
+  font-family: "Space Grotesk", var(--tv-mono);
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0 0 0.4rem;
+}
+
+.tv-room-card-desc {
+  color: var(--tv-muted);
+  font-family: var(--tv-mono);
+  font-size: 0.82rem;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.tv-room-card-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 1rem 1.15rem 1.15rem;
+}
+
+.tv-room-meta {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 0.9rem;
+}
+
+.tv-room-meta-item {
+  background: rgba(0, 240, 255, 0.04);
+  border: 1px solid var(--tv-line);
+  border-radius: 6px;
+  padding: 0.5rem 0.35rem;
+  text-align: center;
+}
+
+.tv-room-meta-value {
+  color: var(--tv-text);
+  font-family: var(--tv-mono);
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.tv-room-meta-label {
+  color: var(--tv-dim);
+  font-family: var(--tv-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  margin-top: 0.22rem;
+  text-transform: uppercase;
+}
+
+.tv-room-footer {
+  align-items: center;
+  display: flex;
+  gap: 0.65rem;
+  justify-content: space-between;
+}
+
+.tv-room-pill {
+  border: 1px solid var(--tv-line-strong);
+  border-radius: 4px;
+  display: inline-flex;
+  font-family: var(--tv-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0.3rem 0.55rem;
+  text-transform: uppercase;
+}
+
+.tv-room-pill-easy {
+  background: rgba(182, 255, 60, 0.12);
+  border-color: rgba(182, 255, 60, 0.35);
+  color: var(--tv-lime);
+}
+
+.tv-room-pill-medium {
+  background: rgba(255, 184, 0, 0.12);
+  border-color: rgba(255, 184, 0, 0.35);
+  color: var(--tv-amber);
+}
+
+.tv-room-pill-hard {
+  background: rgba(255, 56, 96, 0.12);
+  border-color: rgba(255, 56, 96, 0.35);
+  color: var(--tv-danger);
+}
+
+.tv-room-enter {
+  color: var(--tv-neon);
+  font-family: var(--tv-mono);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: lowercase;
+}
+
+.tv-rooms-empty {
+  background: rgba(5, 6, 10, 0.35) !important;
+  border: 1px dashed var(--tv-line-strong) !important;
+  border-radius: 8px !important;
+}
+
+/* ----- Team / enrollment pages (align with Rooms · Educate) ----- */
+.tv-kicker-lime {
+  color: var(--tv-lime) !important;
+  text-shadow: 0 0 14px rgba(182, 255, 60, 0.45);
+}
+
+.tv-kicker-lime::before {
+  color: var(--tv-lime) !important;
+}
+
+.tv-team-enroll-panel {
+  background: rgba(5, 6, 10, 0.45);
+  border: 1px dashed var(--tv-line-strong);
+  border-radius: 8px;
+  padding: 2rem 1.5rem;
+  text-align: center;
+}
+
+.tv-team-enroll-cta {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  margin: 1.75rem auto 0;
+  max-width: 720px;
+}
+
+.tv-team-enroll-cta .btn {
+  font-family: var(--tv-mono);
+  letter-spacing: 0.06em;
+  padding: 0.85rem 1.25rem;
+  text-transform: lowercase;
+}
+
+.tv-team-toolbar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 0 0 1.5rem;
+}
+
+.tv-team-toolbar a {
+  align-items: center;
+  background: rgba(13, 16, 24, 0.85);
+  border: 1px solid var(--tv-line-strong);
+  border-radius: 8px;
+  color: var(--tv-muted);
+  display: inline-flex;
+  height: 48px;
+  justify-content: center;
+  text-decoration: none !important;
+  transition: border-color 0.15s, box-shadow 0.15s, color 0.15s;
+  width: 48px;
+}
+
+.tv-team-toolbar a:hover {
+  border-color: var(--tv-neon);
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.22);
+  color: var(--tv-neon);
+}
+
+.tv-team-toolbar a.edit-team,
+.tv-team-toolbar a.edit-captain,
+.tv-team-toolbar a.invite-members,
+.tv-team-toolbar a.disband-team {
+  color: inherit;
+}
+
+.tv-team-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.tv-team-chips .badge {
+  background: rgba(0, 240, 255, 0.1) !important;
+  border: 1px solid var(--tv-line-strong);
+  border-radius: 4px;
+  color: var(--tv-neon) !important;
+  font-family: var(--tv-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 0.35rem 0.65rem;
+}
+
+.tv-team-private .tv-panel + .tv-panel {
+  margin-top: 1.25rem;
 }

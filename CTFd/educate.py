@@ -3,6 +3,7 @@
 import logging
 
 from flask import Blueprint, redirect, render_template, request, url_for
+from flask_babel import gettext as _
 from sqlalchemy import func
 
 from CTFd.constants.config import ChallengeVisibilityTypes, Configs
@@ -80,9 +81,12 @@ def educate_listing():
     return render_template(
         "rooms.html",
         rooms=room_list,
-        section_title="Educate",
-        section_kicker="Learning Paths",
-        section_subtitle="Choose an education room, launch the environment, and learn step-by-step.",
+        section_title=_("Educate"),
+        section_kicker=_("Learning paths"),
+        section_grad=_("paths"),
+        section_subtitle=_(
+            "Choose an education room, launch the environment, and learn step-by-step."
+        ),
         room_detail_endpoint="educate.educate_detail",
     )
 

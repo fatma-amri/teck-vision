@@ -19,11 +19,24 @@ Alpine.data("TeamEditModal", () => ({
   errors: [],
 
   init() {
-    this.initial = serializeJSON(this.$el.querySelector("form"));
+    const formEl = this.$el.querySelector("form");
+    if (!formEl) {
+      return;
+    }
+    this.initial = serializeJSON(formEl);
   },
 
   async updateProfile() {
-    let data = serializeJSON(this.$el, this.initial, true);
+    this.success = null;
+    this.error = null;
+    this.errors = [];
+
+    const formEl = this.$el.querySelector("form");
+    if (!formEl) {
+      return;
+    }
+
+    let data = serializeJSON(formEl, this.initial, true);
 
     data.fields = [];
 

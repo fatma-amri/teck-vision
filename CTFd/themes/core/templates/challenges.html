@@ -1,7 +1,12 @@
 {% extends "base.html" %}
 
 {% block content %}
-<section class="tv-page">
+<section
+  class="tv-page"
+  x-data="ChallengeBoard"
+  @load-challenges.window="loadChallenges()"
+  @load-challenge.window="loadChallenge($event.detail)"
+>
   <header class="tv-page-head">
     <div>
       <div class="tv-page-kicker">attack vectors · live arsenal</div>
@@ -16,16 +21,7 @@
 
   {% include "components/errors.html" %}
 
-  <div class="tv-panel"
-    x-data="ChallengeBoard"
-    @load-challenges.window="loadChallenges()"
-    @load-challenge.window="loadChallenge($event.detail)"
-  >
-    <div
-      x-ref="challengeWindow" id="challenge-window" class="modal fade" tabindex="-1" role="dialog" x-data=""
-      x-html="$store.challenge.data.view"
-    ></div>
-
+  <div class="tv-panel">
     <div x-show="!loaded">
       <div class="min-vh-50 d-flex align-items-center">
         <div class="text-center w-100">
@@ -85,6 +81,20 @@
     </div>
   </div>
 </section>
+{% endblock %}
+
+{% block modals %}
+  {{ super() }}
+  <div
+    x-ref="challengeWindow"
+    id="challenge-window"
+    class="modal fade tv-challenge-modal"
+    tabindex="-1"
+    role="dialog"
+    aria-modal="true"
+    x-data=""
+    x-html="$store.challenge.data.view"
+  ></div>
 {% endblock %}
 
 {% block scripts %}

@@ -1,37 +1,43 @@
 {% extends "base.html" %}
 
 {% block content %}
-  <div class="jumbotron">
-    <div class="container">
-      <h1>{% trans %}Join Team{% endtrans %}</h1>
+<section class="tv-page">
+  <header class="tv-page-head">
+    <div>
+      <div class="tv-page-kicker tv-kicker-lime">{% trans %}Unit setup{% endtrans %}</div>
+      <h1 class="tv-page-title">
+        {% trans %}Join team{% endtrans %} <span class="grad">{% trans %}· access{% endtrans %}</span>
+      </h1>
+      <p class="tv-page-subtitle">
+        {% trans %}Enter the team name and passphrase shared by your captain.{% endtrans %}
+      </p>
     </div>
+  </header>
+
+  <div class="tv-panel" style="max-width: 560px; margin: 0 auto;">
+    {% include "components/errors.html" %}
+
+    {% with form = Forms.teams.TeamJoinForm() %}
+      <form method="POST">
+        <div class="mb-3">
+          {{ form.name.label(class="form-label") }}
+          {{ form.name(class="form-control") }}
+        </div>
+
+        <div class="mb-4">
+          {{ form.password.label(class="form-label") }}
+          {{ form.password(class="form-control") }}
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <a href="{{ url_for('teams.private') }}" class="small" style="font-family: var(--tv-mono); color: var(--tv-muted);">
+            {% trans %}← Back{% endtrans %}
+          </a>
+          {{ form.submit(class="btn btn-primary px-4") }}
+        </div>
+        {{ form.nonce() }}
+      </form>
+    {% endwith %}
   </div>
-  <div class="container">
-    <div class="row">
-      <div class="col-md-8 col-lg-6 offset-md-2 offset-lg-3">
-        {% include "components/errors.html" %}
-
-        {% with form = Forms.teams.TeamJoinForm() %}
-          <form method="POST">
-            <div class="mb-3">
-              {{ form.name.label(class="form-label") }}
-              {{ form.name(class="form-control") }}
-            </div>
-
-            <div class="mb-3">
-              {{ form.password.label(class="form-label") }}
-              {{ form.password(class="form-control") }}
-            </div>
-
-            <div class="row pt-3">
-              <div class="col-md-12">
-                {{ form.submit(class="btn btn-success float-end px-4") }}
-              </div>
-            </div>
-            {{ form.nonce() }}
-          </form>
-        {% endwith %}
-      </div>
-    </div>
-  </div>
+</section>
 {% endblock %}

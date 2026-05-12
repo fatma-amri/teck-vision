@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="tv-page">
+  <header class="tv-page-head">
+    <div>
+      <div class="tv-page-kicker tv-kicker-lime">{% trans %}Squad roster{% endtrans %}</div>
+      <h1 class="tv-page-title">
+        {% trans %}Teammates{% endtrans %} <span class="grad">· {{ team.name | truncate(40) }}</span>
+      </h1>
+      <p class="tv-page-subtitle">
+        {% trans %}Operators in your unit only. Open Team to manage invites, captain, and settings.{% endtrans %}
+      </p>
+    </div>
+    <div class="tv-page-meta">
+      <span class="dot"></span>
+      <span>{% trans %}operators{% endtrans %} · <b>{{ teammates|length }}</b></span>
+    </div>
+  </header>
+
+  {% include "components/errors.html" %}
+
+  <div class="tv-panel">
+    <p class="mb-3" style="font-family: var(--tv-mono); font-size: 0.85rem;">
+      <a href="{{ url_for('teams.private') }}">{% trans %}← Team command{% endtrans %}</a>
+    </p>
+
+    {% if teammates %}
+      <table class="tv-data-table">
+        <thead>
+          <tr>
+            <th>{% trans %}operator{% endtrans %}</th>
+            <th style="width: 80px;" class="d-none d-md-table-cell">{% trans %}site{% endtrans %}</th>
+            <th class="d-none d-md-table-cell">{% trans %}affiliation{% endtrans %}</th>
+            <th class="d-none d-md-table-cell" style="width: 200px;">{% trans %}country{% endtrans %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for user in teammates %}
+            <tr>
+              <td>
+                {% if scores_visible() %}
+                  <a href="{{ url_for('users.public', user_id=user.id) }}">@{{ user.name | truncate(50) }}</a>
+                {% else %}
+                  <span>@{{ user.name | truncate(50) }}</span>
+                {% endif %}
+                {% if user.id == team.captain_id %}
+                  <span class="badge ms-2" style="background: rgba(0, 240, 255, 0.15); border: 1px solid var(--tv-line-strong); color: var(--tv-neon); font-family: var(--tv-mono); font-size: 0.65rem;">{% trans %}captain{% endtrans %}</span>
+                {% endif %}
+              </td>
+
+              <td class="d-none d-md-table-cell text-center">
+                {% if user.website and (user.website.startswith('http://') or user.website.startswith('https://')) %}
+                  <a href="{{ user.website }}" target="_blank" rel="noopener" title="{{ user.website }}">
+                    <i class="fas fa-external-link-alt"></i>
+                  </a>
+                {% else %}
+                  <span style="color: var(--tv-dim);">—</span>
+                {% endif %}
+              </td>
+
+              <td class="d-none d-md-table-cell">
+                {% if user.affiliation %}
+                  <span title="{{ user.affiliation }}">{{ user.affiliation | truncate(50) }}</span>
+                {% else %}
+                  <span style="color: var(--tv-dim);">—</span>
+                {% endif %}
+              </td>
+
+              <td class="d-none d-md-table-cell">
+                {% if user.country %}
+                  <i class="flag-{{ user.country.lower() }}"></i>
+                  <span style="margin-left: 0.4rem;">{{ lookup_country_code(user.country) }}</span>
+                {% else %}
+                  <span style="color: var(--tv-dim);">—</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div class="tv-empty" style="border: 1px dashed var(--tv-line-strong); border-radius: 8px; background: rgba(5, 6, 10, 0.35);">
+        <i class="fas fa-user-friends" aria-hidden="true"></i>
+        <h5>{% trans %}No teammates yet{% endtrans %}</h5>
+        <p>{% trans %}You are the only member listed on this team.{% endtrans %}</p>
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
