@@ -1,12 +1,36 @@
 {% extends "base.html" %}
 
 {% block content %}
+<style>
+  .tv-team-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .38rem;
+    padding: .22rem .65rem;
+    background: rgba(0,240,255,0.06);
+    border: 1px solid rgba(0,240,255,0.22);
+    border-radius: 4px;
+    color: var(--tv-neon) !important;
+    font-family: var(--tv-mono);
+    font-size: .78rem;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-decoration: none !important;
+    transition: background .18s, border-color .18s, box-shadow .18s;
+    white-space: nowrap;
+  }
+  .tv-team-chip:hover {
+    background: rgba(0,240,255,0.14);
+    border-color: rgba(0,240,255,0.45);
+    box-shadow: 0 0 10px rgba(0,240,255,0.18);
+  }
+</style>
 <section class="tv-page">
   <header class="tv-page-head">
     <div>
       <div class="tv-page-kicker">network · operator registry</div>
       <h1 class="tv-page-title">Operators <span class="grad">·&nbsp;directory</span></h1>
-      <p class="tv-page-subtitle">Browse every registered operator on the range. Search by handle, email, affiliation, or country.</p>
+      <p class="tv-page-subtitle">Browse every registered operator on the range. Search by handle or name.</p>
     </div>
     <div class="tv-page-meta">
       <span class="dot"></span>
@@ -41,9 +65,7 @@
         <thead>
           <tr>
             <th>operator</th>
-            <th style="width: 80px;" class="d-none d-md-table-cell">site</th>
-            <th class="d-none d-md-table-cell">affiliation</th>
-            <th class="d-none d-md-table-cell" style="width: 200px;">country</th>
+            <th>team</th>
           </tr>
         </thead>
         <tbody>
@@ -55,36 +77,20 @@
                 {% else %}
                   <span>@{{ user.name | truncate(50) }}</span>
                 {% endif %}
-
                 {% if user.oauth_id %}
                   <a href="https://majorleaguecyber.org/u/{{ user.name }}">
                     <span class="badge bg-primary ms-2">official</span>
                   </a>
                 {% endif %}
               </td>
-
-              <td class="d-none d-md-table-cell text-center">
-                {% if user.website and (user.website.startswith('http://') or user.website.startswith('https://')) %}
-                  <a href="{{ user.website }}" target="_blank" rel="noopener" title="{{ user.website }}">
-                    <i class="fas fa-external-link-alt"></i>
+              <td>
+                {% if user.team %}
+                  <a href="{{ url_for('teams.public', team_id=user.team.id) }}" class="tv-team-chip">
+                    <i class="fas fa-users" style="font-size:.7rem;"></i>
+                    {{ user.team.name | truncate(40) }}
                   </a>
-                {% endif %}
-              </td>
-
-              <td class="d-none d-md-table-cell">
-                {% if user.affiliation %}
-                  <span title="{{ user.affiliation }}">{{ user.affiliation | truncate(50) }}</span>
                 {% else %}
-                  <span style="color: var(--tv-dim);">—</span>
-                {% endif %}
-              </td>
-
-              <td class="d-none d-md-table-cell">
-                {% if user.country %}
-                  <i class="flag-{{ user.country.lower() }}"></i>
-                  <span style="margin-left: 0.4rem;">{{ lookup_country_code(user.country) }}</span>
-                {% else %}
-                  <span style="color: var(--tv-dim);">—</span>
+                  <span style="color: var(--tv-dim); font-family: var(--tv-mono); font-size:.82rem;">—</span>
                 {% endif %}
               </td>
             </tr>

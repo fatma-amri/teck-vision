@@ -6,7 +6,7 @@
     <div>
       <div class="tv-page-kicker">squads · team registry</div>
       <h1 class="tv-page-title">Teams <span class="grad">·&nbsp;squads</span></h1>
-      <p class="tv-page-subtitle">Every squad operating on the Teck-Vision range. Search by name, affiliation, or country.</p>
+      <p class="tv-page-subtitle">Every squad operating on the Teck-Vision range. Search by name.</p>
     </div>
     <div class="tv-page-meta">
       <span class="dot"></span>
@@ -39,9 +39,7 @@
         <thead>
           <tr>
             <th>squad</th>
-            <th style="width: 80px;" class="d-none d-md-table-cell">site</th>
-            <th class="d-none d-md-table-cell">affiliation</th>
-            <th class="d-none d-md-table-cell" style="width: 200px;">country</th>
+            <th>members</th>
           </tr>
         </thead>
         <tbody>
@@ -53,37 +51,16 @@
                 {% else %}
                   <span>{{ team.name | truncate(50) }}</span>
                 {% endif %}
-
                 {% if team.oauth_id %}
                   <a href="https://majorleaguecyber.org/t/{{ team.name }}">
                     <span class="badge bg-primary ms-2">official</span>
                   </a>
                 {% endif %}
               </td>
-
-              <td class="d-none d-md-table-cell text-center">
-                {% if team.website and (team.website.startswith('http://') or team.website.startswith('https://')) %}
-                  <a href="{{ team.website }}" target="_blank" rel="noopener" title="{{ team.website }}">
-                    <i class="fas fa-external-link-alt"></i>
-                  </a>
-                {% endif %}
-              </td>
-
-              <td class="d-none d-md-table-cell">
-                {% if team.affiliation %}
-                  <span title="{{ team.affiliation }}">{{ team.affiliation | truncate(50) }}</span>
-                {% else %}
-                  <span style="color: var(--tv-dim);">—</span>
-                {% endif %}
-              </td>
-
-              <td class="d-none d-md-table-cell">
-                {% if team.country %}
-                  <i class="flag-{{ team.country.lower() }}"></i>
-                  <span style="margin-left: 0.4rem;">{{ lookup_country_code(team.country) }}</span>
-                {% else %}
-                  <span style="color: var(--tv-dim);">—</span>
-                {% endif %}
+              <td>
+                <span style="font-family: var(--tv-mono); font-size: .82rem; color: var(--tv-muted);">
+                  <i class="fas fa-users" style="font-size:.7rem; margin-right:.35rem;"></i>{{ team.members | length }}
+                </span>
               </td>
             </tr>
           {% endfor %}
