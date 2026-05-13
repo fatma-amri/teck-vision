@@ -15,6 +15,7 @@ KEY_NAME = os.environ.get("KEY_NAME", "ctf")
 SUBNET_ID = os.environ.get("SUBNET_ID", "subnet-0ef9bef6cbe3b556b")
 SECURITY_GROUP_ID = os.environ.get("SECURITY_GROUP_ID", "sg-00926707e3e049019")
 SESSION_SECONDS = int(os.environ.get("SESSION_SECONDS", "3600"))
+INSTANCE_PROFILE_ARN = os.environ.get("INSTANCE_PROFILE_ARN", "")
 
 USER_DATA = """#!/bin/bash
 # Install CloudWatch Agent
@@ -67,15 +68,15 @@ def lambda_handler(event, context):
         now = int(time.time())
         expires_at = now + SESSION_SECONDS
 
-        instance = ec2.run_instances(
-            ImageId=ami_id,
-            InstanceType=INSTANCE_TYPE,
-            MinCount=1,
-            MaxCount=1,
-            KeyName=KEY_NAME,
-            SubnetId=SUBNET_ID,
-            SecurityGroupIds=[SECURITY_GROUP_ID],
-            TagSpecifications=[
+        run_params = {
+            "ImageId": ami_id,
+            "InstanceType": INSTANCE_TYPE,
+            "MinCount": 1,
+            "MaxCount": 1,
+            "KeyName": KEY_NAME,
+            "SubnetId": SUBNET_ID,
+            "SecurityGroupIds": [SECURITY_GROUP_ID],
+            "TagSpecifications": [
                 {
                     "ResourceType": "instance",
                     "Tags": [
@@ -85,8 +86,13 @@ def lambda_handler(event, context):
                     ],
                 }
             ],
-            UserData=USER_DATA,
-        )
+            "UserData": USER_DATA,
+        }
+
+        if INSTANCE_PROFILE_ARN:
+            run_params["IamInstanceProfile"] = {"Arn": INSTANCE_PROFILE_ARN}
+
+        instance = ec2.run_instances(**run_params)
 
         instance_id = instance["Instances"][0]["InstanceId"]
         ec2.get_waiter("instance_running").wait(InstanceIds=[instance_id])
