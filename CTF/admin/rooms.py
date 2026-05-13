@@ -109,9 +109,7 @@ def create_ctf():
             flash("CTF name is required.", "error")
             return render_template("admin/create_ctf.html")
 
-        if not ova_location and (not ova_file or not ova_file.filename):
-            flash("Drop Your OVA Image is required.", "error")
-            return render_template("admin/create_ctf.html")
+        # OVA image is optional
 
         flag_rows = []
         for index, answer in enumerate(answers):
@@ -149,7 +147,7 @@ def create_ctf():
         except (ValueError, TypeError):
             duration = 30
 
-        if not ova_location:
+        if not ova_location and ova_file and ova_file.filename:
             try:
                 ova_location = _upload_ova_file(ova_file, slug)
             except ValueError as e:

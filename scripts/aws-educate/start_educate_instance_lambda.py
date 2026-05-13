@@ -16,6 +16,20 @@ INSTANCE_TYPE = os.environ.get("INSTANCE_TYPE", "t3.micro")
 KEY_NAME = os.environ.get("KEY_NAME", "")
 INSTANCE_PROFILE_ARN = os.environ.get("EC2_INSTANCE_PROFILE_ARN", "")
 WAIT_FOR_RUNNING_SECONDS = int(os.environ.get("WAIT_FOR_RUNNING_SECONDS", "30"))
+USER_DATA = """#!/bin/bash
+# Install CloudWatch Agent
+if [ -f /etc/redhat-release ]; then
+    yum install -y amazon-cloudwatch-agent
+elif [ -f /etc/debian_version ]; then
+    apt-get update
+    apt-get install -y wget
+    wget https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
+    dpkg -i -E ./amazon-cloudwatch-agent.deb
+fi
+
+# Start CloudWatch Agent with default config
+/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c default
+"""
 
 
 def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
@@ -52,6 +66,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     ],
                 }
             ],
+            "UserData": USER_DATA,
         }
 
         if KEY_NAME:

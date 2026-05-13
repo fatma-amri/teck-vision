@@ -16,6 +16,21 @@ SUBNET_ID = os.environ.get("SUBNET_ID", "subnet-0ef9bef6cbe3b556b")
 SECURITY_GROUP_ID = os.environ.get("SECURITY_GROUP_ID", "sg-00926707e3e049019")
 SESSION_SECONDS = int(os.environ.get("SESSION_SECONDS", "3600"))
 
+USER_DATA = """#!/bin/bash
+# Install CloudWatch Agent
+if [ -f /etc/redhat-release ]; then
+    yum install -y amazon-cloudwatch-agent
+elif [ -f /etc/debian_version ]; then
+    apt-get update
+    apt-get install -y wget
+    wget https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
+    dpkg -i -E ./amazon-cloudwatch-agent.deb
+fi
+
+# Start CloudWatch Agent with default config
+/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c default
+"""
+
 session_table = dynamodb.Table(SESSION_TABLE_NAME)
 ova_table = dynamodb.Table(OVA_TABLE_NAME)
 
@@ -70,6 +85,7 @@ def lambda_handler(event, context):
                     ],
                 }
             ],
+            UserData=USER_DATA,
         )
 
         instance_id = instance["Instances"][0]["InstanceId"]
