@@ -1,8 +1,317 @@
 {% extends "base.html" %}
 
 {% block content %}
-  <div id="team-edit-modal" class="modal fade">
-    <div class="modal-dialog modal-lg">
+<style>
+  .tv-awards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-top: .5rem;
+  }
+  .tv-award-card {
+    background: rgba(0,0,0,0.35);
+    border: 1px solid var(--tv-line-strong);
+    border-radius: 6px;
+    padding: 1.2rem 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .5rem;
+    text-align: center;
+    transition: border-color .2s, box-shadow .2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .tv-award-card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--tv-neon), var(--tv-magenta));
+    opacity: 0;
+    transition: opacity .2s;
+  }
+  .tv-award-card:hover {
+    border-color: rgba(0,240,255,0.35);
+    box-shadow: 0 0 18px rgba(0,240,255,0.1);
+  }
+  .tv-award-card:hover::before { opacity: 1; }
+  .tv-award-icon {
+    font-size: 1.6rem;
+    color: var(--tv-amber);
+    text-shadow: 0 0 12px rgba(255,184,0,0.5);
+  }
+  .tv-award-name {
+    color: var(--tv-text);
+    font-family: var(--tv-mono);
+    font-size: .88rem;
+    font-weight: 700;
+    letter-spacing: .02em;
+    line-height: 1.3;
+  }
+  .tv-award-meta {
+    color: var(--tv-neon);
+    font-family: var(--tv-mono);
+    font-size: .72rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+  .tv-award-desc {
+    color: var(--tv-muted);
+    font-family: var(--tv-mono);
+    font-size: .78rem;
+    line-height: 1.4;
+  }
+  .tv-award-pts {
+    color: var(--tv-lime);
+    font-family: var(--tv-mono);
+    font-size: 1.1rem;
+    font-weight: 800;
+    text-shadow: 0 0 10px rgba(182,255,60,0.4);
+    margin-top: .25rem;
+  }
+  .tv-award-pts span { font-size: .72rem; color: var(--tv-muted); font-weight: 400; }
+  .tv-progress {
+    background: rgba(0,240,255,0.08) !important;
+    border-radius: 2px !important;
+    height: 6px !important;
+    margin-bottom: .6rem;
+  }
+  .tv-graph-legend {
+    color: var(--tv-muted);
+    font-family: var(--tv-mono);
+    font-size: .78rem;
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+  }
+</style>
+  <section class="tv-page tv-team-private">
+    <header class="tv-page-head">
+      <div>
+        <div class="tv-page-kicker tv-kicker-lime">{% trans %}Squad command{% endtrans %}</div>
+        <h1 class="tv-page-title" id="team-id" team-id="{{ team.id }}">
+          {{ team.name }} <span class="grad">{% trans %}· briefing{% endtrans %}</span>
+        </h1>
+        <p class="tv-page-subtitle">
+          {% trans %}Roster, solves, and team tools for your unit on the range.{% endtrans %}
+        </p>
+        <div class="tv-team-chips">
+          {% if team.oauth_id %}
+            <a href="https://majorleaguecyber.org/t/{{ team.name }}" class="text-decoration-none">
+              <span class="badge">{% trans %}Official{% endtrans %}</span>
+            </a>
+          {% endif %}
+          {% if team.affiliation %}
+            <span class="badge">{{ team.affiliation }}</span>
+          {% endif %}
+          {% if team.country %}
+            <span class="badge">
+              <i class="flag-{{ team.country.lower() }}"></i> {{ lookup_country_code(team.country) }}
+            </span>
+          {% endif %}
+          {% for field in team.fields %}
+            <span class="badge">{{ field.name }}: {{ field.value }}</span>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="d-flex flex-column align-items-end gap-2">
+        {% if scores_visible() and (place or score) %}
+          <div class="tv-page-meta">
+            <span class="dot"></span>
+            <span>
+              {% if place %}
+                <span id="team-place">{{ place }}</span> <small>{% trans %}place{% endtrans %}</small>
+                {% if score %} · {% endif %}
+              {% endif %}
+              {% if score %}
+                <span id="team-score">{{ score }}</span> <small>{% trans %}points{% endtrans %}</small>
+              {% endif %}
+            </span>
+          </div>
+        {% endif %}
+      </div>
+    </header>
+
+    <div class="tv-team-toolbar" x-data="CaptainMenu">
+      <a class="edit-team" href="#" @click.prevent="editTeam()" title="{% trans %}Edit Team{% endtrans %}">
+        <i class="fas fa-cogs" aria-hidden="true"></i>
+      </a>
+      <a class="edit-captain" href="#" @click.prevent="chooseCaptain()" title="{% trans %}Choose Captain{% endtrans %}">
+        <i class="fas fa-user-tag" aria-hidden="true"></i>
+      </a>
+      <a class="invite-members" href="#" @click.prevent="inviteMembers()" title="{% trans %}Invite Users{% endtrans %}">
+        <i class="fas fa-ticket-alt" aria-hidden="true"></i>
+      </a>
+      <a class="disband-team" href="#" @click.prevent="disbandTeam()" title="{% trans %}Disband Team{% endtrans %}">
+        <i class="fas fa-trash-alt" aria-hidden="true"></i>
+      </a>
+      {% if team.website and (team.website.startswith('http://') or team.website.startswith('https://')) %}
+        <a class="ms-md-auto" href="{{ team.website }}" target="_blank" rel="noopener" title="{{ team.website }}">
+          <i class="fas fa-external-link-alt" aria-hidden="true"></i>
+        </a>
+      {% endif %}
+    </div>
+
+    {% include "components/errors.html" %}
+
+    <div class="tv-panel">
+      <h2 class="tv-panel-title">{% trans %}Members{% endtrans %}</h2>
+      <table class="tv-data-table">
+        <thead>
+          <tr>
+            <th>{% trans %}User Name{% endtrans %}</th>
+            <th>{% trans %}Score{% endtrans %}</th>
+          </tr>
+        </thead>
+        <tbody>
+
+          {% for member in team.members %}
+            <tr>
+              <td>
+                <a href="{{ url_for('users.public', user_id=member.id) }}">
+                  {{ member.name }}
+                </a>
+                {% if team.captain_id == member.id %}
+                  <span class="badge bg-primary ms-2">{% trans %}Captain{% endtrans %}</span>
+                {% endif %}
+              </td>
+              <td>{{ member.score }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if solves or awards %}
+      {% if awards %}
+        <div class="tv-panel">
+          <h2 class="tv-panel-title">{% trans %}Awards{% endtrans %}</h2>
+          <div class="tv-awards-grid">
+          {% for award in awards %}
+            <div class="tv-award-card">
+              <div class="tv-award-icon">
+                <i class="award-icon award-{{ award.icon }} fas fa-trophy"></i>
+              </div>
+              <div class="tv-award-name">{{ award.name }}</div>
+              {% if award.category %}
+                <div class="tv-award-meta"><i class="fas fa-tag"></i> {{ award.category }}</div>
+              {% endif %}
+              {% if award.description %}
+                <div class="tv-award-desc">{{ award.description }}</div>
+              {% endif %}
+              <div class="tv-award-pts">+{{ award.value }} <span>pts</span></div>
+            </div>
+          {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+
+      <div class="tv-panel">
+        <h2 class="tv-panel-title">{% trans %}Solves{% endtrans %}</h2>
+        <table class="tv-data-table">
+            <thead>
+            <tr>
+              <th>{% trans %}Challenge{% endtrans %}</th>
+              <th class="d-none d-md-table-cell">{% trans %}Category{% endtrans %}</th>
+              <th>{% trans %}Value{% endtrans %}</th>
+              <th>{% trans %}Time{% endtrans %}</th>
+            </tr>
+            </thead>
+            <tbody>
+
+            {% for solve in solves %}
+              <tr>
+                <td>
+                  <a href="{{ url_for('challenges.listing') }}#{{ solve.challenge.name }}-{{ solve.challenge.id }}">
+                    {{ solve.challenge.name }}
+                  </a>
+                </td>
+                <td class="d-none d-md-table-cell">{{ solve.challenge.category }}</td>
+                <td>{{ solve.challenge.value }}</td>
+                <td class="solve-time">
+                  <span data-time="{{ solve.date | isoformat }}">{{ solve.date }}</span>
+                </td>
+              </tr>
+            {% endfor %}
+
+            </tbody>
+          </table>
+      </div>
+
+      <div class="tv-panel">
+      <div class="row" x-data="TeamGraphs">
+        <div class="col-md-6 d-none d-md-block d-lg-block py-4">
+          <div class="progress tv-progress">
+            <div
+              class="progress-bar"
+              role="progressbar"
+              :style="{ width: `${getSolvePercentage()}%`, background: 'var(--tv-lime)' }"
+            ></div>
+            <div
+              class="progress-bar"
+              role="progressbar"
+              :style="{ width: `${getFailPercentage()}%`, background: 'var(--tv-danger)' }"
+            ></div>
+          </div>
+          <div class="ps-2 float-start tv-graph-legend">
+            <svg height="12" width="12"><circle cx="6" cy="6" r="4" fill="var(--tv-lime)" /></svg>
+            <small x-text="`Solves (${getSolvePercentage()}%)`"></small>
+          </div>
+          <div class="ps-2 float-start tv-graph-legend">
+            <svg height="12" width="12"><circle cx="6" cy="6" r="4" fill="var(--tv-danger)" /></svg>
+            <small x-text="`Fails (${getFailPercentage()}%)`"></small>
+          </div>
+        </div>
+        <div class="col-md-6 d-none d-md-block d-lg-block py-4">
+          <div class="progress">
+            <template x-for="category in getCategoryBreakdown()" :key="category.name">
+              <div 
+                class="progress-bar" 
+                role="progressbar" 
+                :style="{ width: `${category.percent}%`, 'background-color': category.color }"
+              >
+              </div>
+            </template>
+          </div>
+          <template x-for="category in getCategoryBreakdown()" :key="category.name">
+            <div class="ps-2 float-start">
+              <svg height="16" width="16">
+                <circle cx="8" cy="8" r="5" :fill="category.color" />
+              </svg>
+              <small x-text="`${category.name} (${category.percent}%)`"></small>
+            </div>
+          </template>
+        </div>
+
+        <br class="clearfix">
+
+        <div class="col-md-12 d-none d-md-block d-lg-block">
+          <div id="score-graph" x-ref="scoregraph" class="w-100 d-flex align-items-center">
+            <div class="text-center w-100">
+              <i class="fas fa-circle-notch fa-spin fa-3x fa-fw spinner"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+      </div>
+
+    {% else %}
+      <div class="tv-panel">
+        <div class="tv-empty" style="border: 1px dashed var(--tv-line-strong); border-radius: 8px; background: rgba(5, 6, 10, 0.35);">
+          <i class="fas fa-flag-checkered" aria-hidden="true"></i>
+          <h5>{% trans %}No solves yet{% endtrans %}</h5>
+          <p>{% trans %}Complete challenges to populate this timeline.{% endtrans %}</p>
+        </div>
+      </div>
+    {% endif %}
+  </section>
+{% endblock %}
+
+{% block modals %}
+  {{ super() }}
+  <div id="team-edit-modal" class="modal fade tv-team-modal" tabindex="-1" role="dialog" aria-modal="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
       <div class="modal-content">
         <div class="modal-header">
           <h2 class="modal-action text-center w-100">{% trans %}Edit Team{% endtrans %}</h2>
@@ -13,9 +322,16 @@
         <div class="modal-body clearfix" x-data="TeamEditModal">
           {% with form = Forms.teams.TeamSettingsForm(obj=team) %}
             {% from "macros/forms.html" import render_extra_fields %}
-            <form id="team-info-form" method="POST" @submit.prevent="updateProfile()">
+            <form
+              id="team-info-form"
+              method="POST"
+              action="#"
+              autocomplete="off"
+              novalidate
+              @submit.prevent="updateProfile()"
+            >
 
-              <div class="mb-2">
+              <div class="mb-3">
                 <b>{{ form.name.label(class="mb-2") }}</b>
                 {{ form.name(class="form-control") }}
                 <small class="form-text text-muted">
@@ -23,7 +339,7 @@
                 </small>
               </div>
 
-              <div class="mb-2">
+              <div class="mb-3">
                 <b>{{ form.password.label(class="mb-2") }}</b>
                 {{ form.password(class="form-control") }}
                 <small class="form-text text-muted">
@@ -31,7 +347,7 @@
                 </small>
               </div>
 
-              <div class="mb-2">
+              <div class="mb-3">
                 <b>{{ form.confirm.label(class="mb-2") }}</b>
                 {{ form.confirm(class="form-control") }}
                 <small class="form-text text-muted">
@@ -39,7 +355,7 @@
                 </small>
               </div>
 
-              <div class="mb-2">
+              <div class="mb-3">
                 <b>{{ form.website.label(class="mb-2") }}</b>
                 {{ form.website(class="form-control") }}
                 <small class="form-text text-muted">
@@ -47,7 +363,7 @@
                 </small>
               </div>
 
-              <div class="mb-2">
+              <div class="mb-3">
                 <b>{{ form.affiliation.label(class="mb-2") }}</b>
                 {{ form.affiliation(class="form-control") }}
                 <small class="form-text text-muted">
@@ -55,7 +371,7 @@
                 </small>
               </div>
 
-              <div class="mb-2">
+              <div class="mb-3">
                 <b>{{ form.country.label(class="mb-2") }}</b>
                 {{ form.country(class="form-select") }}
                 <small class="form-text text-muted">
@@ -97,7 +413,7 @@
     </div>
   </div>
 
-  <div id="team-captain-modal" x-data="TeamCaptainModal" class="modal fade">
+  <div id="team-captain-modal" class="modal fade tv-team-modal" tabindex="-1" role="dialog" aria-modal="true" x-data="TeamCaptainModal">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
@@ -111,12 +427,11 @@
               <div class="mb-3">
                 {{ form.captain_id.label(class="form-label") }}
                 {% for member in team.members %}
-                  {# Append members to the select choices #}
                   {% set _ = form.captain_id.choices.append((member.id, member.name)) %}
                 {% endfor %}
                 {{ form.captain_id(class="form-select mb-2") }}
               </div>
-              <div id="results">
+              <div id="results-captain">
                 <div
                     class="alert alert-success alert-dismissible submit-row"
                     role="alert"
@@ -145,7 +460,7 @@
     </div>
   </div>
 
-  <div id="team-invite-modal" x-data="TeamInviteModal" class="modal fade">
+  <div id="team-invite-modal" class="modal fade tv-team-modal" tabindex="-1" role="dialog" aria-modal="true" x-data="TeamInviteModal">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
@@ -181,7 +496,7 @@
     </div>
   </div>
 
-  <div id="team-disband-modal" x-data="TeamDisbandModal" class="modal fade">
+  <div id="team-disband-modal" class="modal fade tv-team-modal" tabindex="-1" role="dialog" aria-modal="true" x-data="TeamDisbandModal">
     <div class="modal-dialog" role="document">
       <div class="modal-content">
         <div class="modal-header">
@@ -208,267 +523,6 @@
         </div>
       </div>
     </div>
-  </div>
-
-  <div class="jumbotron">
-    <div class="container">
-      <h1 id="team-id" team-id="{{ team.id }}">{{ team.name }}</h1>
-      {% if team.oauth_id %}
-        <a href="https://majorleaguecyber.org/t/{{ team.name }}">
-          <h3><span class="badge bg-primary">{% trans %}Official{% endtrans %}</span></h3>
-        </a>
-      {% endif %}
-
-      {% if team.affiliation %}
-        <h3 class="d-inline-block">
-          <span class="badge bg-primary">{{ team.affiliation }}</span>
-        </h3>
-      {% endif %}
-
-      {% if team.country %}
-        <h3 class="d-inline-block">
-          <span class="badge bg-primary">
-            <i class="flag-{{ team.country.lower() }}"></i>
-            {{ lookup_country_code(team.country) }}
-          </span>
-        </h3>
-      {% endif %}
-
-      {% for field in team.fields %}
-        <h3 class="d-block">
-          {{ field.name }}: {{ field.value }}
-        </h3>
-      {% endfor %}
-
-      <h2 id="team-place" class="text-center">
-        {# This intentionally hides the team's place when scores are hidden because this can be their internal profile
-           and we don't want to leak their place in the CTF. #}
-        {# Public page hiding is done at the route level #}
-        {% if scores_visible() %}
-          {% if place %}
-            {{ place }}
-            <small>{% trans %}place{% endtrans %}</small>
-          {% endif %}
-        {% endif %}
-      </h2>
-
-      <h2 id="team-score" class="text-center">
-        {% if score %}
-          {{ score }}
-          <small>{% trans %}points{% endtrans %}</small>
-        {% endif %}
-      </h2>
-
-      <div x-data="CaptainMenu">
-        <a class="edit-team text-white" @click="editTeam()">
-          <i
-              class="cursor-pointer fas fa-cogs fa-2x px-2 pt-3"
-              data-bs-toggle="tooltip" data-bs-placement="top"
-              title="Edit Team"
-          ></i>
-        </a>
-        <a class="edit-captain text-white" @click="chooseCaptain()">
-          <i
-              class="cursor-pointer fas fa-user-tag fa-2x px-2 pt-3"
-              data-bs-toggle="tooltip" data-bs-placement="top"
-              title="Choose Captain"
-          ></i>
-        </a>
-
-        <a class="invite-members text-white" @click="inviteMembers()">
-          <i
-              class="cursor-pointer fas fa-ticket-alt fa-2x px-2 pt-3"
-              data-bs-toggle="tooltip" data-bs-placement="top"
-              title="Invite Users"
-          ></i>
-        </a>
-        <a class="disband-team text-white" @click="disbandTeam()">
-          <i
-              class="cursor-pointer fas fa-trash-alt fa-2x px-2 pt-3"
-              data-bs-toggle="tooltip" data-bs-placement="top"
-              title="Disband Team"
-          ></i>
-        </a>
-      </div>
-
-      <div class="pt-3">{% if team.website and (team.website.startswith('http://') or team.website.startswith('https://')) %}
-          <a href="{{ team.website }}" target="_blank" style="color: inherit;" rel="noopener">
-            <i
-                class="fas fa-external-link-alt fa-2x px-2 pt-2"
-                data-toggle="tooltip" data-placement="top"
-                title="{{ team.website }}"
-            ></i>
-          </a>
-        {% endif %}
-        </div>
-      </div>
-
-  </div>
-
-  <div class="container">
-    {% include "components/errors.html" %}
-
-    <br>
-
-    <div class="row min-vh-25">
-      <div class="col-md-12">
-        <h3>{% trans %}Members{% endtrans %}</h3>
-        <table class="table table-striped align-middle">
-          <thead>
-          <tr>
-            <th>{% trans %}User Name{% endtrans %}</th>
-            <th>{% trans %}Score{% endtrans %}</th>
-          </tr>
-          </thead>
-          <tbody>
-
-          {% for member in team.members %}
-            <tr>
-              <td>
-                <a href="{{ url_for('users.public', user_id=member.id) }}">
-                  {{ member.name }}
-                </a>
-                {% if team.captain_id == member.id %}
-                  <span class="badge bg-primary ms-2">{% trans %}Captain{% endtrans %}</span>
-                {% endif %}
-              </td>
-              <td>{{ member.score }}</td>
-            </tr>
-          {% endfor %}
-
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    {% if solves or awards %}
-      {% if awards %}
-        <div class="row">
-          <div class="col-md-12">
-            <h3>{% trans %}Awards{% endtrans %}</h3>
-          </div>
-
-          {% for award in awards %}
-            <div class="col-md-3 col-sm-6">
-              <p class="text-center">
-                <i class="award-icon award-{{ award.icon }} fa-2x"></i>
-                <br>
-                <strong>{{ award.name }}</strong>
-              </p>
-              {% if award.category %}<p class="text-center">{{ award.category }}</p>{% endif %}
-              {% if award.description %}<p class="text-center">{{ award.description }}</p>{% endif %}
-              <p class="text-center">{{ award.value }}</p>
-            </div>
-          {% endfor %}
-
-        </div>
-
-        <br>
-      {% endif %}
-
-      <div class="row">
-        <div class="col-md-12">
-          <h3>{% trans %}Solves{% endtrans %}</h3>
-          <table class="table table-striped align-middle">
-            <thead>
-            <tr>
-              <th>{% trans %}Challenge{% endtrans %}</th>
-              <th class="d-none d-md-block d-lg-block">{% trans %}Category{% endtrans %}</th>
-              <th>{% trans %}Value{% endtrans %}</th>
-              <th>{% trans %}Time{% endtrans %}</th>
-            </tr>
-            </thead>
-            <tbody>
-
-            {% for solve in solves %}
-              <tr>
-                <td>
-                  <a href="{{ url_for('challenges.listing') }}#{{ solve.challenge.name }}-{{ solve.challenge.id }}">
-                    {{ solve.challenge.name }}
-                  </a>
-                </td>
-                <td class="d-none d-md-block d-lg-block">{{ solve.challenge.category }}</td>
-                <td>{{ solve.challenge.value }}</td>
-                <td class="solve-time">
-                  <span data-time="{{ solve.date | isoformat }}">{{ solve.date }}</span>
-                </td>
-              </tr>
-            {% endfor %}
-
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="clearfix"></div>
-
-      <div class="row" x-data="TeamGraphs">
-        <div class="col-md-6 d-none d-md-block d-lg-block py-4">
-          <div class="progress">
-            <div 
-              class="progress-bar" 
-              role="progressbar" 
-              :style="{ width: `${getSolvePercentage()}%`, 'background-color': 'rgb(0, 209, 64)' }" 
-            >
-            </div>
-            <div 
-              class="progress-bar" 
-              role="progressbar" 
-              :style="{ width: `${getFailPercentage()}%`, 'background-color': 'rgb(207, 38, 0)' }"
-            >
-            </div>
-          </div>
-          <div class="ps-2 float-start">
-            <svg height="16" width="16">
-              <circle cx="8" cy="8" r="5" fill="rgb(0, 209, 64)" />
-            </svg>
-            <small x-text="`Solves (${getSolvePercentage()}%)`"></small>
-          </div>
-          <div class="ps-2 float-start">
-            <svg height="16" width="16">
-              <circle cx="8" cy="8" r="5" fill="rgb(207, 38, 0)" />
-            </svg>
-            <small x-text="`Fails (${getFailPercentage()}%)`"></small>
-          </div>
-        </div>
-        <div class="col-md-6 d-none d-md-block d-lg-block py-4">
-          <div class="progress">
-            <template x-for="category in getCategoryBreakdown()" :key="category.name">
-              <div 
-                class="progress-bar" 
-                role="progressbar" 
-                :style="{ width: `${category.percent}%`, 'background-color': category.color }"
-              >
-              </div>
-            </template>
-          </div>
-          <template x-for="category in getCategoryBreakdown()" :key="category.name">
-            <div class="ps-2 float-start">
-              <svg height="16" width="16">
-                <circle cx="8" cy="8" r="5" :fill="category.color" />
-              </svg>
-              <small x-text="`${category.name} (${category.percent}%)`"></small>
-            </div>
-          </template>
-        </div>
-
-        <br class="clearfix">
-
-        <div class="col-md-12 d-none d-md-block d-lg-block">
-          <div id="score-graph" x-ref="scoregraph" class="w-100 d-flex align-items-center">
-            <div class="text-center w-100">
-              <i class="fas fa-circle-notch fa-spin fa-3x fa-fw spinner"></i>
-            </div>
-          </div>
-        </div>
-      </div>
-    {% else %}
-      <div class="row min-vh-25">
-        <h3 class="opacity-50 text-center w-100 justify-content-center align-self-center">
-          {% trans %}No solves yet{% endtrans %}
-        </h3>
-      </div>
-    {% endif %}
   </div>
 {% endblock %}
 
