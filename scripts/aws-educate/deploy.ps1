@@ -5,9 +5,11 @@ param(
     [string]$PublicSubnetCidr = "10.0.1.0/24",
     [string]$PrivateSubnetCidr = "10.0.2.0/24",
     [string]$VpcCidr = "10.0.0.0/16",
-    [string]$FunctionName = "teck-vision-educate-start-instance",
+    [string]$StartFunctionName = "teck-vision-educate-start-instance",
+    [string]$StopFunctionName = "teck-vision-educate-stop-instance",
     [string]$LambdaRoleName = "teck-vision-educate-lambda-role",
     [string]$ApiName = "teck-vision-educate-api",
+    [string]$SessionTableName = "EducateChallenges",
     [string]$InstanceType = "t3.micro",
     [string]$KeyName = "",
     [string]$Ec2InstanceProfileArn = "",
@@ -21,7 +23,8 @@ if (Get-Variable -Name PSNativeCommandUseErrorActionPreference -ErrorAction Sile
 
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $BuildDir = Join-Path $ScriptDir "build"
-$PackagePath = Join-Path $BuildDir "lambda.zip"
+$StartPackagePath = Join-Path $BuildDir "start-lambda.zip"
+$StopPackagePath = Join-Path $BuildDir "stop-lambda.zip"
 New-Item -ItemType Directory -Path $BuildDir -Force | Out-Null
 
 function Write-JsonFile {
@@ -264,7 +267,12 @@ function Ensure-LambdaRole {
     $Statements = @(
         @{
             Effect = "Allow"
-            Action = @("ec2:RunInstances", "ec2:DescribeInstances", "ec2:CreateTags")
+            Action = @("ec2:RunInstances", "ec2:DescribeInstances", "ec2:CreateTags", "ec2:TerminateInstances")
+            Resource = "*"
+        },
+        @{
+            Effect = "Allow"
+            Action = @("dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:UpdateItem")
             Resource = "*"
         }
     )
@@ -291,16 +299,44 @@ function Ensure-LambdaRole {
 }
 
 function Build-Package {
-    if (Test-Path $PackagePath) {
-        Remove-Item -Path $PackagePath -Force
+    if (Test-Path $StartPackagePath) {
+        Remove-Item -Path $StartPackagePath -Force
     }
     Compress-Archive `
         -Path (Join-Path $ScriptDir "start_educate_instance_lambda.py") `
-        -DestinationPath $PackagePath `
+        -DestinationPath $StartPackagePath `
+        -Force
+
+    if (Test-Path $StopPackagePath) {
+        Remove-Item -Path $StopPackagePath -Force
+    }
+    Compress-Archive `
+        -Path (Join-Path $ScriptDir "stop_educate_instance_lambda.py") `
+        -DestinationPath $StopPackagePath `
         -Force
 }
 
-function Ensure-Lambda {
+function Ensure-SessionTable {
+    $ExitCode = Invoke-OptionalAws {
+        aws dynamodb describe-table `
+            --region $Region `
+            --table-name $SessionTableName `
+            --query "Table.TableName" `
+            --output text
+    }
+
+    if ($ExitCode -ne 0) {
+        aws dynamodb create-table `
+            --region $Region `
+            --table-name $SessionTableName `
+            --attribute-definitions AttributeName=ChallengeID,AttributeType=S AttributeName=UserID,AttributeType=S `
+            --key-schema AttributeName=ChallengeID,KeyType=HASH AttributeName=UserID,KeyType=RANGE `
+            --billing-mode PAY_PER_REQUEST | Out-Null
+        aws dynamodb wait table-exists --region $Region --table-name $SessionTableName
+    }
+}
+
+function Ensure-StartLambda {
     param(
         [string]$RoleArn,
         [string]$PrivateSubnetId,
@@ -315,19 +351,20 @@ function Ensure-Lambda {
             INSTANCE_TYPE = $InstanceType
             KEY_NAME = $KeyName
             EC2_INSTANCE_PROFILE_ARN = $Ec2InstanceProfileArn
+            SESSION_TABLE_NAME = $SessionTableName
         }
     }
-    $EnvPath = Join-Path $BuildDir "lambda-environment.json"
+    $EnvPath = Join-Path $BuildDir "start-lambda-environment.json"
     Write-JsonFile -Path $EnvPath -Object $EnvObject
 
-    $ExitCode = Invoke-OptionalAws { aws lambda get-function --function-name $FunctionName --region $Region }
+    $ExitCode = Invoke-OptionalAws { aws lambda get-function --function-name $StartFunctionName --region $Region }
     if ($ExitCode -ne 0) {
         aws lambda create-function `
-            --function-name $FunctionName `
+            --function-name $StartFunctionName `
             --runtime python3.12 `
             --handler start_educate_instance_lambda.lambda_handler `
             --role $RoleArn `
-            --zip-file "fileb://$PackagePath" `
+            --zip-file "fileb://$StartPackagePath" `
             --timeout 90 `
             --memory-size 256 `
             --environment "file://$EnvPath" `
@@ -335,12 +372,12 @@ function Ensure-Lambda {
     }
     else {
         aws lambda update-function-code `
-            --function-name $FunctionName `
-            --zip-file "fileb://$PackagePath" `
+            --function-name $StartFunctionName `
+            --zip-file "fileb://$StartPackagePath" `
             --region $Region | Out-Null
-        aws lambda wait function-updated --function-name $FunctionName --region $Region
+        aws lambda wait function-updated --function-name $StartFunctionName --region $Region
         aws lambda update-function-configuration `
-            --function-name $FunctionName `
+            --function-name $StartFunctionName `
             --runtime python3.12 `
             --handler start_educate_instance_lambda.lambda_handler `
             --role $RoleArn `
@@ -350,16 +387,65 @@ function Ensure-Lambda {
             --region $Region | Out-Null
     }
 
-    aws lambda wait function-active --function-name $FunctionName --region $Region
-    $FunctionArn = aws lambda get-function --function-name $FunctionName --region $Region --query "Configuration.FunctionArn" --output text
+    aws lambda wait function-active --function-name $StartFunctionName --region $Region
+    $FunctionArn = aws lambda get-function --function-name $StartFunctionName --region $Region --query "Configuration.FunctionArn" --output text
     if (-not $FunctionArn -or $FunctionArn -eq "None") {
-        throw "Failed to resolve Lambda function ARN for $FunctionName"
+        throw "Failed to resolve Lambda function ARN for $StartFunctionName"
+    }
+    return $FunctionArn
+}
+
+function Ensure-StopLambda {
+    param([string]$RoleArn)
+
+    $EnvObject = @{
+        Variables = @{
+            SESSION_TABLE_NAME = $SessionTableName
+        }
+    }
+    $EnvPath = Join-Path $BuildDir "stop-lambda-environment.json"
+    Write-JsonFile -Path $EnvPath -Object $EnvObject
+
+    $ExitCode = Invoke-OptionalAws { aws lambda get-function --function-name $StopFunctionName --region $Region }
+    if ($ExitCode -ne 0) {
+        aws lambda create-function `
+            --function-name $StopFunctionName `
+            --runtime python3.12 `
+            --handler stop_educate_instance_lambda.lambda_handler `
+            --role $RoleArn `
+            --zip-file "fileb://$StopPackagePath" `
+            --timeout 60 `
+            --memory-size 256 `
+            --environment "file://$EnvPath" `
+            --region $Region | Out-Null
+    }
+    else {
+        aws lambda update-function-code `
+            --function-name $StopFunctionName `
+            --zip-file "fileb://$StopPackagePath" `
+            --region $Region | Out-Null
+        aws lambda wait function-updated --function-name $StopFunctionName --region $Region
+        aws lambda update-function-configuration `
+            --function-name $StopFunctionName `
+            --runtime python3.12 `
+            --handler stop_educate_instance_lambda.lambda_handler `
+            --role $RoleArn `
+            --timeout 60 `
+            --memory-size 256 `
+            --environment "file://$EnvPath" `
+            --region $Region | Out-Null
+    }
+
+    aws lambda wait function-active --function-name $StopFunctionName --region $Region
+    $FunctionArn = aws lambda get-function --function-name $StopFunctionName --region $Region --query "Configuration.FunctionArn" --output text
+    if (-not $FunctionArn -or $FunctionArn -eq "None") {
+        throw "Failed to resolve Lambda function ARN for $StopFunctionName"
     }
     return $FunctionArn
 }
 
 function Ensure-HttpApi {
-    param([string]$FunctionArn)
+    param([string]$StartFunctionArn, [string]$StopFunctionArn)
 
     $ApiId = aws apigatewayv2 get-apis --region $Region --query "Items[?Name=='$ApiName']|[0].ApiId" --output text
     if (-not $ApiId -or $ApiId -eq "None") {
@@ -372,22 +458,40 @@ function Ensure-HttpApi {
             --output text
     }
 
-    $IntegrationId = aws apigatewayv2 get-integrations --region $Region --api-id $ApiId --query "Items[0].IntegrationId" --output text
-    if (-not $IntegrationId -or $IntegrationId -eq "None") {
-        $IntegrationId = aws apigatewayv2 create-integration `
+    $StartIntegrationId = aws apigatewayv2 get-integrations --region $Region --api-id $ApiId --query "Items[?IntegrationUri=='$StartFunctionArn']|[0].IntegrationId" --output text
+    if (-not $StartIntegrationId -or $StartIntegrationId -eq "None") {
+        $StartIntegrationId = aws apigatewayv2 create-integration `
             --region $Region `
             --api-id $ApiId `
             --integration-type AWS_PROXY `
-            --integration-uri $FunctionArn `
+            --integration-uri $StartFunctionArn `
             --payload-format-version "2.0" `
             --query "IntegrationId" `
             --output text
     }
 
-    $RouteTarget = "integrations/$IntegrationId"
+    $StopIntegrationId = aws apigatewayv2 get-integrations --region $Region --api-id $ApiId --query "Items[?IntegrationUri=='$StopFunctionArn']|[0].IntegrationId" --output text
+    if (-not $StopIntegrationId -or $StopIntegrationId -eq "None") {
+        $StopIntegrationId = aws apigatewayv2 create-integration `
+            --region $Region `
+            --api-id $ApiId `
+            --integration-type AWS_PROXY `
+            --integration-uri $StopFunctionArn `
+            --payload-format-version "2.0" `
+            --query "IntegrationId" `
+            --output text
+    }
+
+    $StartRouteTarget = "integrations/$StartIntegrationId"
     $ExistingRoute = aws apigatewayv2 get-routes --region $Region --api-id $ApiId --query "Items[?RouteKey=='POST /start']|[0].RouteId" --output text
     if (-not $ExistingRoute -or $ExistingRoute -eq "None") {
-        aws apigatewayv2 create-route --region $Region --api-id $ApiId --route-key "POST /start" --target $RouteTarget | Out-Null
+        aws apigatewayv2 create-route --region $Region --api-id $ApiId --route-key "POST /start" --target $StartRouteTarget | Out-Null
+    }
+
+    $StopRouteTarget = "integrations/$StopIntegrationId"
+    $ExistingStopRoute = aws apigatewayv2 get-routes --region $Region --api-id $ApiId --query "Items[?RouteKey=='POST /stop']|[0].RouteId" --output text
+    if (-not $ExistingStopRoute -or $ExistingStopRoute -eq "None") {
+        aws apigatewayv2 create-route --region $Region --api-id $ApiId --route-key "POST /stop" --target $StopRouteTarget | Out-Null
     }
 
     $Stage = aws apigatewayv2 get-stages --region $Region --api-id $ApiId --query "Items[?StageName=='`$default']|[0].StageName" --output text
@@ -395,10 +499,10 @@ function Ensure-HttpApi {
         aws apigatewayv2 create-stage --region $Region --api-id $ApiId --stage-name '$default' --auto-deploy | Out-Null
     }
 
-    $StatementId = "AllowApiInvoke-$ApiId"
+    $StatementId = "AllowApiInvokeStart-$ApiId"
     $ExitCode = Invoke-OptionalAws {
         aws lambda add-permission `
-            --function-name $FunctionName `
+            --function-name $StartFunctionName `
             --statement-id $StatementId `
             --action lambda:InvokeFunction `
             --principal apigateway.amazonaws.com `
@@ -407,7 +511,22 @@ function Ensure-HttpApi {
     }
     $null = $ExitCode
 
-    return "https://$ApiId.execute-api.$Region.amazonaws.com/start"
+    $StopStatementId = "AllowApiInvokeStop-$ApiId"
+    $ExitCode2 = Invoke-OptionalAws {
+        aws lambda add-permission `
+            --function-name $StopFunctionName `
+            --statement-id $StopStatementId `
+            --action lambda:InvokeFunction `
+            --principal apigateway.amazonaws.com `
+            --source-arn "arn:aws:execute-api:$Region`:$(aws sts get-caller-identity --query Account --output text):$ApiId/*/*/stop" `
+            --region $Region
+    }
+    $null = $ExitCode2
+
+    return @{
+        Start = "https://$ApiId.execute-api.$Region.amazonaws.com/start"
+        Stop = "https://$ApiId.execute-api.$Region.amazonaws.com/stop"
+    }
 }
 
 Write-Host "Creating/validating VPC networking..."
@@ -418,9 +537,11 @@ $Sgs = Ensure-SecurityGroups -VpcId $VpcId -PublicSubnetCidr $PublicSubnetCidr
 
 Write-Host "Creating/validating Lambda + API Gateway..."
 $RoleArn = Ensure-LambdaRole
+Ensure-SessionTable
 Build-Package
-$FunctionArn = Ensure-Lambda -RoleArn $RoleArn -PrivateSubnetId $Subnets.PrivateSubnetId -PrivateSgId $Sgs.PrivateSgId
-$StartEndpoint = Ensure-HttpApi -FunctionArn $FunctionArn
+$StartFunctionArn = Ensure-StartLambda -RoleArn $RoleArn -PrivateSubnetId $Subnets.PrivateSubnetId -PrivateSgId $Sgs.PrivateSgId
+$StopFunctionArn = Ensure-StopLambda -RoleArn $RoleArn
+$Endpoints = Ensure-HttpApi -StartFunctionArn $StartFunctionArn -StopFunctionArn $StopFunctionArn
 
 Write-Host ""
 Write-Host "Deployment complete."
@@ -429,8 +550,11 @@ Write-Host "Public Subnet:      $($Subnets.PublicSubnetId) ($PublicSubnetCidr)"
 Write-Host "Private Subnet:     $($Subnets.PrivateSubnetId) ($PrivateSubnetCidr)"
 Write-Host "Public SG:          $($Sgs.PublicSgId)"
 Write-Host "Private SG:         $($Sgs.PrivateSgId)"
-Write-Host "Lambda:             $FunctionArn"
-Write-Host "Start endpoint:     $StartEndpoint"
+Write-Host "Session table:      $SessionTableName"
+Write-Host "Start Lambda:       $StartFunctionArn"
+Write-Host "Stop Lambda:        $StopFunctionArn"
+Write-Host "Start endpoint:     $($Endpoints.Start)"
+Write-Host "Stop endpoint:      $($Endpoints.Stop)"
 if ($EnableNat) {
     Write-Host "Private route table has NAT egress enabled."
 }

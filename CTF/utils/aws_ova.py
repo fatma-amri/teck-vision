@@ -11,6 +11,7 @@ from CTFd.utils import get_app_config
 
 
 DEFAULT_OVA_TABLE = "ctf-ova-imports"
+DEFAULT_EDUCATE_OVA_TABLE = "ctf-educate-ova-imports"
 DEFAULT_OVA_REGION = "eu-west-3"
 DEFAULT_SESSION_TABLE = "CTFChallenges"
 
@@ -72,8 +73,8 @@ def _parse_s3_location(location):
 
 
 def _find_ova_import(bucket, key):
-    table_name = _get_config("OVA_IMPORTS_TABLE", DEFAULT_OVA_TABLE)
-    region = _get_config("OVA_S3_REGION", _get_config("AWS_S3_REGION", DEFAULT_OVA_REGION))
+    table_name = _resolve_ova_table_name_from_s3(bucket=bucket, key=key)
+    region = _resolve_ova_region_from_s3(bucket=bucket, key=key)
 
     try:
         table = boto3.resource("dynamodb", region_name=region).Table(table_name)
@@ -90,3 +91,19 @@ def _find_ova_import(bucket, key):
 
 def _get_config(name, default=None):
     return current_app.config.get(name) or get_app_config(name) or os.environ.get(name) or default
+
+
+def _resolve_ova_table_name_from_s3(bucket, key):
+    educate_bucket = _get_config("EDUCATE_OVA_S3_BUCKET", "ctf-tekup-educate")
+    educate_prefix = _get_config("EDUCATE_OVA_S3_PREFIX", "educate_ovas").strip("/")
+    if bucket == educate_bucket and key.startswith(f"{educate_prefix}/"):
+        return _get_config("EDUCATE_OVA_IMPORTS_TABLE", DEFAULT_EDUCATE_OVA_TABLE)
+    return _get_config("OVA_IMPORTS_TABLE", DEFAULT_OVA_TABLE)
+
+
+def _resolve_ova_region_from_s3(bucket, key):
+    educate_bucket = _get_config("EDUCATE_OVA_S3_BUCKET", "ctf-tekup-educate")
+    educate_prefix = _get_config("EDUCATE_OVA_S3_PREFIX", "educate_ovas").strip("/")
+    if bucket == educate_bucket and key.startswith(f"{educate_prefix}/"):
+        return _get_config("EDUCATE_OVA_S3_REGION", DEFAULT_OVA_REGION)
+    return _get_config("OVA_S3_REGION", _get_config("AWS_S3_REGION", DEFAULT_OVA_REGION))

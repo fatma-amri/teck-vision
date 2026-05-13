@@ -1,14 +1,25 @@
 """Admin routes for educate room and challenge management."""
 
+import os
 import re
+import uuid
 
+import boto3
+from boto3.s3.transfer import TransferConfig
+from botocore.exceptions import BotoCoreError, ClientError
 from flask import flash, redirect, render_template, request, url_for
+from flask import current_app
+from werkzeug.utils import secure_filename
 
 from CTFd.admin import admin
 from CTFd.models import RoomChallenge, Rooms, db
+from CTFd.utils import get_app_config
 from CTFd.utils.decorators import admins_only
 
 EDUCATE_SLUG_PREFIX = "educate-"
+EDUCATE_OVA_S3_BUCKET = "ctf-tekup-educate"
+EDUCATE_OVA_S3_PREFIX = "educate_ovas"
+EDUCATE_OVA_S3_REGION = "eu-west-3"
 
 
 def _slugify(value):
@@ -18,6 +29,63 @@ def _slugify(value):
 
 def _educate_query():
     return Rooms.query.filter(Rooms.slug.like(f"{EDUCATE_SLUG_PREFIX}%"))
+
+
+def _get_upload_config(name, default=None):
+    return (
+        current_app.config.get(name)
+        or get_app_config(name)
+        or os.environ.get(name)
+        or default
+    )
+
+
+def _get_s3_client():
+    client_kwargs = {
+        "region_name": EDUCATE_OVA_S3_REGION,
+    }
+    endpoint_url = _get_upload_config("AWS_S3_ENDPOINT_URL")
+    if endpoint_url:
+        client_kwargs["endpoint_url"] = endpoint_url
+    access_key = _get_upload_config("AWS_ACCESS_KEY_ID")
+    secret_key = _get_upload_config("AWS_SECRET_ACCESS_KEY")
+    if access_key and secret_key:
+        client_kwargs["aws_access_key_id"] = access_key
+        client_kwargs["aws_secret_access_key"] = secret_key
+    return boto3.client("s3", **client_kwargs)
+
+
+def _upload_ova_file(file_storage, slug):
+    filename = secure_filename(file_storage.filename or "")
+    if not filename.lower().endswith(".ova"):
+        raise ValueError("Only .ova files are allowed.")
+
+    # Educate uploads must always go to the dedicated educate bucket.
+    bucket = EDUCATE_OVA_S3_BUCKET
+    if not bucket:
+        raise ValueError("Educate OVA S3 bucket is not configured.")
+
+    prefix = EDUCATE_OVA_S3_PREFIX.strip("/")
+    unique_name = f"{slug}-{uuid.uuid4().hex[:8]}-{filename}"
+    key = f"{prefix}/{unique_name}" if prefix else unique_name
+    file_storage.stream.seek(0)
+    try:
+        _get_s3_client().upload_fileobj(
+            file_storage.stream,
+            bucket,
+            key,
+            ExtraArgs={"ContentType": file_storage.mimetype or "application/octet-stream"},
+            Config=TransferConfig(
+                multipart_threshold=8 * 1024 * 1024,
+                multipart_chunksize=8 * 1024 * 1024,
+                max_concurrency=4,
+                use_threads=True,
+            ),
+        )
+    except (BotoCoreError, ClientError) as exc:
+        raise ValueError(f"Educate OVA upload failed: {exc}") from exc
+
+    return f"s3://{bucket}/{key}"
 
 
 @admin.route("/admin/educate/", methods=["GET"])
@@ -38,6 +106,8 @@ def educate_new():
         duration = request.form.get("duration", 30)
         target_ip = request.form.get("target_ip", "").strip()
         aws_challenge_id = request.form.get("aws_challenge_id", "").strip()
+        ova_file = request.files.get("ova_image")
+        ova_location = request.form.get("ova_location", "").strip()
 
         if not name:
             flash("Educate name is required.", "error")
@@ -53,10 +123,21 @@ def educate_new():
         except (ValueError, TypeError):
             duration = 30
 
+        if not ova_location and ova_file and ova_file.filename:
+            try:
+                ova_location = _upload_ova_file(ova_file, slug)
+            except ValueError as e:
+                flash(str(e), "error")
+                return render_template("admin/educate/new.html")
+
+        full_description = description
+        if ova_location:
+            full_description = f"{description}\n\nOVA Image: {ova_location}".strip()
+
         room = Rooms(
             name=name,
             slug=slug,
-            description=description,
+            description=full_description,
             difficulty=difficulty,
             duration=duration,
             target_ip=target_ip or None,
@@ -84,6 +165,8 @@ def educate_edit(room_id):
         target_ip = request.form.get("target_ip", "").strip()
         aws_challenge_id = request.form.get("aws_challenge_id", "").strip()
         is_active = request.form.get("is_active") == "1"
+        ova_file = request.files.get("ova_image")
+        ova_location = request.form.get("ova_location", "").strip()
 
         if not name:
             flash("Educate name is required.", "error")
@@ -94,8 +177,19 @@ def educate_edit(room_id):
         except (ValueError, TypeError):
             duration = 30
 
+        if not ova_location and ova_file and ova_file.filename:
+            try:
+                ova_location = _upload_ova_file(ova_file, room.slug)
+            except ValueError as e:
+                flash(str(e), "error")
+                return render_template("admin/educate/edit.html", room=room)
+
+        full_description = description
+        if ova_location:
+            full_description = f"{description}\n\nOVA Image: {ova_location}".strip()
+
         room.name = name
-        room.description = description
+        room.description = full_description
         room.difficulty = difficulty
         room.duration = duration
         room.target_ip = target_ip or None

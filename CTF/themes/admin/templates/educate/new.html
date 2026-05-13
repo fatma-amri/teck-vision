@@ -14,7 +14,7 @@
     {% endfor %}
   {% endwith %}
 
-  <form method="POST" action="{{ url_for('admin.educate_new') }}">
+  <form method="POST" action="{{ url_for('admin.educate_new') }}" enctype="multipart/form-data">
     <input type="hidden" name="nonce" value="{{ Session.nonce }}">
 
     <div class="form-group">
@@ -51,6 +51,17 @@
       <label>AWS Challenge ID</label>
       <input type="text" name="aws_challenge_id" class="form-control" placeholder="redis0002">
       <small class="form-text text-muted">Use the ID created by the OVA importer for this room's AMI.</small>
+    </div>
+
+    <div class="form-group">
+      <label>Upload Educate OVA</label>
+      <input type="file" name="ova_image" class="form-control-file" accept=".ova">
+      <small class="form-text text-muted">Uploads to dedicated Educate bucket.</small>
+    </div>
+
+    <div class="form-group">
+      <label>Or Enter Existing OVA S3 Location</label>
+      <input type="text" name="ova_location" class="form-control" placeholder="s3://ctf-tekup-educate/educate_ovas/example.ova">
     </div>
 
     <button type="submit" class="btn btn-success">Create Educate Room</button>
