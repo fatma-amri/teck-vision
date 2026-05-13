@@ -422,6 +422,163 @@
     .challenge-card { padding: 1.2rem 1.25rem; }
     .tv-room-main { width: calc(100% - 32px); }
   }
+
+  /* ── Congratulations modal ── */
+  .tv-congrats-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.88);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(6px);
+    animation: tv-fadein .35s ease;
+  }
+  @keyframes tv-fadein { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes tv-slideup {
+    from { opacity: 0; transform: translateY(40px) scale(.96); }
+    to   { opacity: 1; transform: translateY(0)   scale(1); }
+  }
+  @keyframes tv-trophy-glow {
+    0%,100% { text-shadow: 0 0 18px rgba(255,184,0,.7), 0 0 40px rgba(255,184,0,.3); }
+    50%      { text-shadow: 0 0 32px rgba(255,184,0,1),  0 0 70px rgba(255,184,0,.5); }
+  }
+  @keyframes tv-border-pulse {
+    0%,100% { box-shadow: 0 0 30px rgba(0,240,255,.15), 0 0 80px rgba(255,46,136,.08); }
+    50%      { box-shadow: 0 0 50px rgba(0,240,255,.3),  0 0 120px rgba(255,46,136,.18); }
+  }
+  .tv-congrats-box {
+    position: relative;
+    max-width: 460px;
+    width: calc(100% - 2rem);
+    background: linear-gradient(160deg, rgba(15,18,28,.99) 0%, rgba(5,6,10,.99) 100%);
+    border: 1px solid rgba(0,240,255,.45);
+    border-radius: 8px;
+    padding: 2.8rem 2.4rem 2.2rem;
+    text-align: center;
+    overflow: hidden;
+    animation: tv-slideup .45s cubic-bezier(.22,1,.36,1), tv-border-pulse 3s ease-in-out infinite;
+  }
+  .tv-congrats-box::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--tv-neon), var(--tv-magenta), transparent);
+    animation: tv-border-pulse 2s ease-in-out infinite;
+  }
+  .tv-congrats-box::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(90deg, rgba(0,240,255,.015) 0 1px, transparent 1px 80px);
+    pointer-events: none;
+  }
+  .tv-congrats-icon {
+    font-size: 3.2rem;
+    color: var(--tv-amber);
+    animation: tv-trophy-glow 2s ease-in-out infinite;
+    margin-bottom: 1rem;
+    position: relative;
+    z-index: 1;
+  }
+  .tv-congrats-kicker {
+    color: var(--tv-neon);
+    font-family: var(--tv-mono);
+    font-size: .72rem;
+    font-weight: 600;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    text-shadow: 0 0 10px rgba(0,240,255,.4);
+    margin-bottom: .6rem;
+    position: relative;
+    z-index: 1;
+  }
+  .tv-congrats-kicker::before { content: "// "; color: var(--tv-magenta); }
+  .tv-congrats-title {
+    font-family: var(--tv-mono);
+    font-size: clamp(1.6rem, 4vw, 2.1rem);
+    font-weight: 800;
+    color: var(--tv-text);
+    margin: 0 0 .5rem;
+    position: relative;
+    z-index: 1;
+  }
+  .tv-congrats-title .grad {
+    background: linear-gradient(90deg, var(--tv-neon), var(--tv-magenta));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .tv-congrats-room {
+    color: var(--tv-muted);
+    font-family: var(--tv-mono);
+    font-size: .88rem;
+    margin: 0 0 1.2rem;
+    position: relative;
+    z-index: 1;
+  }
+  .tv-congrats-score {
+    display: inline-block;
+    background: rgba(182,255,60,.08);
+    border: 1px solid rgba(182,255,60,.3);
+    border-radius: 4px;
+    padding: .5rem 1.4rem;
+    color: var(--tv-lime);
+    font-family: var(--tv-mono);
+    font-size: 1.5rem;
+    font-weight: 800;
+    text-shadow: 0 0 14px rgba(182,255,60,.5);
+    margin-bottom: 1.8rem;
+    position: relative;
+    z-index: 1;
+  }
+  .tv-congrats-score small {
+    font-size: .72rem;
+    color: var(--tv-muted);
+    font-weight: 400;
+    margin-left: .25rem;
+  }
+  .tv-congrats-actions {
+    display: flex;
+    gap: .75rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 1;
+  }
+  .tv-btn-congrats-primary {
+    background: linear-gradient(135deg, rgba(0,240,255,.14), rgba(0,240,255,.06));
+    border: 1px solid var(--tv-neon);
+    color: var(--tv-neon) !important;
+    font-family: var(--tv-mono);
+    font-weight: 700;
+    font-size: .82rem;
+    letter-spacing: .06em;
+    padding: .6rem 1.6rem;
+    border-radius: 4px;
+    box-shadow: 0 0 14px rgba(0,240,255,.18);
+    text-decoration: none;
+    transition: all .2s;
+  }
+  .tv-btn-congrats-primary:hover {
+    background: rgba(0,240,255,.22);
+    box-shadow: 0 0 26px rgba(0,240,255,.38);
+  }
+  .tv-btn-congrats-close {
+    background: transparent;
+    border: 1px solid var(--tv-line-strong);
+    color: var(--tv-muted);
+    font-family: var(--tv-mono);
+    font-size: .82rem;
+    font-weight: 600;
+    padding: .6rem 1.2rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .tv-btn-congrats-close:hover { color: var(--tv-text); border-color: rgba(255,255,255,.3); }
 </style>
 
 <section class="tv-room-hero">
@@ -568,6 +725,27 @@
     </div>
   </div>
 </section>
+{% endblock %}
+
+{% block modals %}
+{{ super() }}
+<div class="tv-congrats-overlay" id="congrats-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="congrats-title">
+  <div class="tv-congrats-box">
+    <div class="tv-congrats-icon"><i class="fas fa-trophy"></i></div>
+    <div class="tv-congrats-kicker">mission complete</div>
+    <h2 class="tv-congrats-title" id="congrats-title">All Flags <span class="grad">Captured</span></h2>
+    <p class="tv-congrats-room">{{ room.name }}</p>
+    <div class="tv-congrats-score" id="congrats-pts">0 <small>pts earned</small></div>
+    <div class="tv-congrats-actions">
+      <a href="{{ url_for('rooms.rooms_listing') }}" class="tv-btn-congrats-primary">
+        <i class="fas fa-th-list mr-2"></i>Back to Rooms
+      </a>
+      <button type="button" class="tv-btn-congrats-close" id="congrats-close">
+        <i class="fas fa-times mr-1"></i>Close
+      </button>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -856,6 +1034,15 @@
               progLabel.textContent = solvedCount + "/" + total + " completed (" + pct + "%)";
             }
           }
+          // Show congratulations popup when all flags solved
+          if (solvedCount === total && total > 0) {
+            var totalPts = 0;
+            document.querySelectorAll(".challenge-card").forEach(function(c) {
+              var pts = c.querySelector(".thm-badge-pts");
+              if (pts) { var m = pts.textContent.match(/(\d+)/); if (m) totalPts += parseInt(m[1]); }
+            });
+            setTimeout(function () { showCongratsModal(totalPts); }, 900);
+          }
         } else {
           if (errEl) {
             errEl.textContent = data.message || "Wrong flag, try again";
@@ -882,6 +1069,30 @@
       }
     });
   });
+
+  // Congratulations modal
+  function showCongratsModal(pts) {
+    var overlay = document.getElementById("congrats-overlay");
+    var ptsEl   = document.getElementById("congrats-pts");
+    if (ptsEl) ptsEl.innerHTML = pts + ' <small>pts earned</small>';
+    if (overlay) {
+      overlay.style.display = "flex";
+      document.body.style.overflow = "hidden";
+    }
+  }
+  function hideCongratsModal() {
+    var overlay = document.getElementById("congrats-overlay");
+    if (overlay) { overlay.style.display = "none"; }
+    document.body.style.overflow = "";
+  }
+  var closeBtn = document.getElementById("congrats-close");
+  if (closeBtn) closeBtn.addEventListener("click", hideCongratsModal);
+  var overlay = document.getElementById("congrats-overlay");
+  if (overlay) {
+    overlay.addEventListener("click", function(e) {
+      if (e.target === overlay) hideCongratsModal();
+    });
+  }
 })();
 </script>
 {% endblock %}
