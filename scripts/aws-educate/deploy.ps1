@@ -317,13 +317,15 @@ function Build-Package {
 }
 
 function Ensure-SessionTable {
-    $Table = aws dynamodb describe-table `
-        --region $Region `
-        --table-name $SessionTableName `
-        --query "Table.TableName" `
-        --output text 2>$null
+    $ExitCode = Invoke-OptionalAws {
+        aws dynamodb describe-table `
+            --region $Region `
+            --table-name $SessionTableName `
+            --query "Table.TableName" `
+            --output text
+    }
 
-    if (-not $Table -or $Table -eq "None") {
+    if ($ExitCode -ne 0) {
         aws dynamodb create-table `
             --region $Region `
             --table-name $SessionTableName `

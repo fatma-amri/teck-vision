@@ -42,7 +42,7 @@ def _get_upload_config(name, default=None):
 
 def _get_s3_client():
     client_kwargs = {
-        "region_name": _get_upload_config("EDUCATE_OVA_S3_REGION", EDUCATE_OVA_S3_REGION),
+        "region_name": EDUCATE_OVA_S3_REGION,
     }
     endpoint_url = _get_upload_config("AWS_S3_ENDPOINT_URL")
     if endpoint_url:
@@ -60,11 +60,12 @@ def _upload_ova_file(file_storage, slug):
     if not filename.lower().endswith(".ova"):
         raise ValueError("Only .ova files are allowed.")
 
-    bucket = _get_upload_config("EDUCATE_OVA_S3_BUCKET", EDUCATE_OVA_S3_BUCKET)
+    # Educate uploads must always go to the dedicated educate bucket.
+    bucket = EDUCATE_OVA_S3_BUCKET
     if not bucket:
         raise ValueError("Educate OVA S3 bucket is not configured.")
 
-    prefix = _get_upload_config("EDUCATE_OVA_S3_PREFIX", EDUCATE_OVA_S3_PREFIX).strip("/")
+    prefix = EDUCATE_OVA_S3_PREFIX.strip("/")
     unique_name = f"{slug}-{uuid.uuid4().hex[:8]}-{filename}"
     key = f"{prefix}/{unique_name}" if prefix else unique_name
     file_storage.stream.seek(0)
