@@ -15,6 +15,7 @@ users = Blueprint("users", __name__)
 
 
 @users.route("/users")
+@authed_only
 @check_account_visibility
 def listing():
     if get_config("user_mode") == USERS_MODE and not is_admin():
@@ -99,6 +100,7 @@ def private():
 
 
 @users.route("/users/<int:user_id>")
+@authed_only
 @check_account_visibility
 @check_score_visibility
 def public(user_id):
