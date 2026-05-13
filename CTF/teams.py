@@ -6,7 +6,11 @@ from CTFd.models import TeamFieldEntries, TeamFields, Teams, db
 from CTFd.utils import config, get_config, validators
 from CTFd.utils.crypto import verify_password
 from CTFd.utils.decorators import authed_only, ratelimit, registered_only
-from CTFd.utils.decorators.modes import require_team_mode
+from CTFd.utils.decorators.modes import (
+    require_team_enrollment_enabled,
+    require_team_mode,
+    require_team_private_page,
+)
 from CTFd.utils.decorators.visibility import (
     check_account_visibility,
     check_score_visibility,
@@ -20,6 +24,7 @@ teams = Blueprint("teams", __name__)
 
 
 @teams.route("/teams")
+@authed_only
 @check_account_visibility
 @require_team_mode
 def listing():
@@ -55,7 +60,7 @@ def listing():
 
 @teams.route("/teams/invite", methods=["GET", "POST"])
 @registered_only
-@require_team_mode
+@require_team_enrollment_enabled
 def invite():
     infos = get_infos()
     errors = get_errors()
@@ -123,7 +128,7 @@ def invite():
 
 @teams.route("/teams/join", methods=["GET", "POST"])
 @authed_only
-@require_team_mode
+@require_team_enrollment_enabled
 @ratelimit(method="POST", limit=10, interval=5)
 def join():
     infos = get_infos()
@@ -187,7 +192,7 @@ def join():
 
 @teams.route("/teams/new", methods=["GET", "POST"])
 @authed_only
-@require_team_mode
+@require_team_enrollment_enabled
 def new():
     infos = get_infos()
     errors = get_errors()
@@ -315,7 +320,7 @@ def new():
 
 @teams.route("/team")
 @authed_only
-@require_team_mode
+@require_team_private_page
 def private():
     infos = get_infos()
     errors = get_errors()
@@ -351,6 +356,7 @@ def private():
 
 
 @teams.route("/teams/<int:team_id>")
+@authed_only
 @check_account_visibility
 @check_score_visibility
 @require_team_mode
