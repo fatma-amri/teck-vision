@@ -4,7 +4,7 @@ from flask_restx import Namespace, Resource
 from sqlalchemy import select
 
 from CTFd.cache import cache, make_cache_key
-from CTFd.models import Users, db
+from CTFd.models import Solves, Users, db
 from CTFd.utils import get_config
 from CTFd.utils.decorators.visibility import (
     check_account_visibility,
@@ -29,6 +29,12 @@ class ScoreboardList(Resource):
         response = []
         mode = get_config("user_mode")
         account_type = get_mode_as_word()
+
+        solve_counts = dict(
+            db.session.query(Solves.account_id, db.func.count(Solves.id))
+            .group_by(Solves.account_id)
+            .all()
+        )
 
         if mode == TEAMS_MODE:
             r = db.session.execute(
@@ -69,6 +75,7 @@ class ScoreboardList(Resource):
                 "oauth_id": x.oauth_id,
                 "name": x.name,
                 "score": int(x.score),
+                "solves": solve_counts.get(x.account_id, 0),
             }
 
             if mode == TEAMS_MODE:
