@@ -87,14 +87,6 @@
               </a>
             </li>
           {% endif %}
-          {% if User.team_id %}
-            <li class="nav-item">
-              <a class="nav-link" href="{{ url_for('users.team_roster') }}">
-                <i class="fas fa-user-friends tv-nav-icon" aria-hidden="true"></i>
-                {% trans %}Teammates{% endtrans %}
-              </a>
-            </li>
-          {% endif %}
         {% endif %}
       </ul>
 
