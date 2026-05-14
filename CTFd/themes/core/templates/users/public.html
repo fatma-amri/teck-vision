@@ -1,120 +1,234 @@
 {% extends "base.html" %}
 
 {% block content %}
-  <div class="jumbotron">
-    <div class="container">
-      <h1>{{ user.name }}</h1>
+<style>
+  .tv-profile-hero {
+    background: rgba(0,0,0,0.5);
+    border: 1px solid var(--tv-line);
+    border-radius: 8px;
+    padding: 2.4rem 2rem;
+    margin-bottom: 1.6rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .7rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .tv-profile-hero::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--tv-neon), var(--tv-magenta), var(--tv-lime));
+  }
+  .tv-profile-name {
+    font-family: var(--tv-mono);
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: .08em;
+    color: var(--tv-text);
+    text-shadow: 0 0 24px rgba(0,240,255,0.2);
+    margin: 0;
+  }
+  .tv-profile-team-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .28rem .8rem;
+    background: rgba(0,240,255,0.07);
+    border: 1px solid rgba(0,240,255,0.25);
+    border-radius: 4px;
+    color: var(--tv-neon) !important;
+    font-family: var(--tv-mono);
+    font-size: .82rem;
+    font-weight: 600;
+    text-decoration: none !important;
+    transition: background .18s, box-shadow .18s;
+  }
+  .tv-profile-team-chip:hover {
+    background: rgba(0,240,255,0.14);
+    box-shadow: 0 0 12px rgba(0,240,255,0.2);
+  }
+  .tv-profile-badges { display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem; }
+  .tv-profile-badge {
+    padding: .22rem .7rem;
+    background: rgba(255,184,0,0.08);
+    border: 1px solid rgba(255,184,0,0.25);
+    border-radius: 4px;
+    color: var(--tv-amber);
+    font-family: var(--tv-mono);
+    font-size: .75rem;
+    letter-spacing: .06em;
+  }
+  .tv-profile-stats {
+    display: flex;
+    gap: 2.5rem;
+    margin-top: .4rem;
+    justify-content: center;
+  }
+  .tv-profile-stat-val {
+    font-family: var(--tv-mono);
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--tv-neon);
+    text-shadow: 0 0 14px rgba(0,240,255,0.4);
+    display: block;
+    line-height: 1;
+  }
+  .tv-profile-stat-lbl {
+    font-family: var(--tv-mono);
+    font-size: .7rem;
+    color: var(--tv-muted);
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
 
-      {% if user.team_id %}
-        <h2>
-          <a href="{{ url_for('teams.public', team_id=user.team_id) }}">
-            <span class="badge bg-secondary">
-              {{ user.team.name }}
-            </span>
-          </a>
-        </h2>
+  /* Awards */
+  .tv-awards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+    gap: 1rem;
+    margin-top: .5rem;
+  }
+  .tv-award-card {
+    background: rgba(0,0,0,0.35);
+    border: 1px solid var(--tv-line-strong);
+    border-radius: 6px;
+    padding: 1.2rem 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .5rem;
+    text-align: center;
+    transition: border-color .2s, box-shadow .2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .tv-award-card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--tv-neon), var(--tv-magenta));
+    opacity: 0;
+    transition: opacity .2s;
+  }
+  .tv-award-card:hover { border-color: rgba(0,240,255,0.35); box-shadow: 0 0 18px rgba(0,240,255,0.1); }
+  .tv-award-card:hover::before { opacity: 1; }
+  .tv-award-icon { font-size: 1.6rem; color: var(--tv-amber); text-shadow: 0 0 12px rgba(255,184,0,0.5); }
+  .tv-award-name { color: var(--tv-text); font-family: var(--tv-mono); font-size: .88rem; font-weight: 700; letter-spacing: .02em; line-height: 1.3; }
+  .tv-award-meta { color: var(--tv-neon); font-family: var(--tv-mono); font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; }
+  .tv-award-desc { color: var(--tv-muted); font-family: var(--tv-mono); font-size: .78rem; line-height: 1.4; }
+  .tv-award-pts { color: var(--tv-lime); font-family: var(--tv-mono); font-size: 1.1rem; font-weight: 800; text-shadow: 0 0 10px rgba(182,255,60,0.4); margin-top: .25rem; }
+  .tv-award-pts span { font-size: .72rem; color: var(--tv-muted); font-weight: 400; }
+
+  /* Graphs */
+  .tv-progress {
+    background: rgba(0,240,255,0.08) !important;
+    border-radius: 2px !important;
+    height: 6px !important;
+    margin-bottom: .6rem;
+  }
+  .tv-graph-legend { color: var(--tv-muted); font-family: var(--tv-mono); font-size: .78rem; display: inline-flex; align-items: center; gap: .3rem; }
+</style>
+
+<section class="tv-page">
+
+  {% include "components/errors.html" %}
+
+  <!-- Hero -->
+  <div class="tv-profile-hero">
+    <h1 class="tv-profile-name">{{ user.name }}</h1>
+
+    {% if user.team_id %}
+      <a href="{{ url_for('teams.public', team_id=user.team_id) }}" class="tv-profile-team-chip">
+        <i class="fas fa-users" style="font-size:.7rem;"></i>
+        {{ user.team.name }}
+      </a>
+    {% endif %}
+
+    <div class="tv-profile-badges">
+      {% if user.oauth_id %}
+        <a href="https://majorleaguecyber.org/u/{{ user.name }}" class="text-decoration-none">
+          <span class="tv-profile-badge">official</span>
+        </a>
       {% endif %}
-
-      <div class="pt-2">
-        {% if user.oauth_id %}
-          <a href="https://majorleaguecyber.org/u/{{ user.name }}">
-            <h3 class="d-inline-block mx-1"><span class="badge rounded-pill bg-primary">{% trans %}Official{% endtrans %}</span></h3>
-          </a>
-        {% endif %}
-
-        {% if user.affiliation %}
-          <h3 class="d-inline-block mx-1">
-            <span class="badge rounded-pill bg-primary">{{ user.affiliation }}</span>
-          </h3>
-        {% endif %}
-
-        {% if user.country %}
-          <h3 class="d-inline-block mx-1">
-            <span class="badge rounded-pill bg-primary">
-                <i class="flag-{{ user.country.lower() }}"></i>
-                {{ lookup_country_code(user.country) }}
-            </span>
-          </h3>
-        {% endif %}
-      </div>
-
-      <div class="pt-2">
-        {% for field in user.fields %}
-          <h3 class="d-block">
-            {{ field.name }}: {{ field.value }}
-          </h3>
-        {% endfor %}
-      </div>
-
-      {% if user.fields %}
-        <hr class="w-50 mx-auto">
+      {% if user.affiliation %}
+        <span class="tv-profile-badge">{{ user.affiliation }}</span>
       {% endif %}
-
-      <div>
-        <h2 class="text-center">
-          {% if account.place %}
-            {{ account.place }} <small>place</small>
-          {% endif %}
-        </h2>
-        <h2 class="text-center">
-          {{ user_score }} <small>points</small>
-        </h2>
-      </div>
-
-      <div class="pt-3">
-        {% if user.website %}
-          <a href="{{ user.website }}" target="_blank" style="color: inherit;" rel="noopener">
-            <i
-                class="fas fa-external-link-alt fa-2x px-2" data-toggle="tooltip" data-placement="top"
-                title="{{ user.website }}"
-            ></i>
-          </a>
-        {% endif %}
-      </div>
+      {% if user.country %}
+        <span class="tv-profile-badge">
+          <i class="flag-{{ user.country.lower() }}"></i> {{ lookup_country_code(user.country) }}
+        </span>
+      {% endif %}
+      {% for field in user.fields %}
+        <span class="tv-profile-badge">{{ field.name }}: {{ field.value }}</span>
+      {% endfor %}
     </div>
-  </div>
-  <div class="container">
-    {% include "components/errors.html" %}
 
-    {% set solves = user.solves %}
-    {% set awards = user.awards %}
-    {% if solves or awards %}
-
-      {% if awards %}
-        <div class="row">
-          <div class="col-md-12">
-            <h3>{% trans %}Awards{% endtrans %}</h3>
+    {% if scores_visible() %}
+      <div class="tv-profile-stats">
+        {% if account.place %}
+          <div>
+            <span class="tv-profile-stat-val">{{ account.place }}</span>
+            <span class="tv-profile-stat-lbl">place</span>
           </div>
+        {% endif %}
+        <div>
+          <span class="tv-profile-stat-val" style="color: var(--tv-magenta); text-shadow: 0 0 14px rgba(255,46,136,0.4);">{{ user_score }}</span>
+          <span class="tv-profile-stat-lbl">points</span>
+        </div>
+      </div>
+    {% endif %}
+
+    {% if user.website %}
+      <a href="{{ user.website }}" target="_blank" rel="noopener" class="tv-profile-badge" style="color: var(--tv-neon); border-color: rgba(0,240,255,0.25); background: rgba(0,240,255,0.06);">
+        <i class="fas fa-external-link-alt me-1"></i>{{ user.website | truncate(40) }}
+      </a>
+    {% endif %}
+  </div>
+
+  {% set solves = user.solves %}
+  {% set awards = user.awards %}
+
+  {% if solves or awards %}
+
+    {% if awards %}
+      <div class="tv-panel" style="padding: 1.4rem; margin-bottom: 1.6rem;">
+        <h2 class="tv-panel-title">awards</h2>
+        <div class="tv-awards-grid">
           {% for award in awards %}
-            <div class="col-md-3 col-sm-6">
-              <p class="text-center">
-                <i class="award-icon award-{{ award.icon }} fa-2x"></i>
-                <br>
-                <strong>{{ award.name }}</strong>
-              </p>
-              <p class="text-center">{{ award.category or "" }}</p>
-              <p class="text-center">{{ award.description or "" }}</p>
-              <p class="text-center">{{ award.value }}</p>
+            <div class="tv-award-card">
+              <i class="award-icon award-{{ award.icon }} tv-award-icon"></i>
+              <div class="tv-award-name">{{ award.name }}</div>
+              {% if award.category %}
+                <div class="tv-award-meta">{{ award.category }}</div>
+              {% endif %}
+              {% if award.description %}
+                <div class="tv-award-desc">{{ award.description }}</div>
+              {% endif %}
+              <div class="tv-award-pts">{{ award.value }} <span>pts</span></div>
             </div>
           {% endfor %}
         </div>
-      {% endif %}
+      </div>
+    {% endif %}
 
-      <br>
-
-      <div class="row">
-        <div class="col-md-12">
-          <h3>Solves</h3>
-          <table class="table table-striped align-middle">
-            <thead>
+    {% if solves %}
+      <div class="tv-panel" style="padding: 1.4rem; margin-bottom: 1.6rem;">
+        <h2 class="tv-panel-title">solves</h2>
+        <table class="tv-data-table">
+          <thead>
             <tr>
-              <th>{% trans %}Challenge{% endtrans %}</th>
-              <th class="d-none d-md-block d-lg-block">{% trans %}Category{% endtrans %}</th>
-              <th>{% trans %}Value{% endtrans %}</th>
-              <th>{% trans %}Time{% endtrans %}</th>
+              <th>challenge</th>
+              <th class="d-none d-md-table-cell">category</th>
+              <th style="width:90px;">value</th>
+              <th style="width:160px;">time</th>
             </tr>
-            </thead>
-            <tbody>
+          </thead>
+          <tbody>
             {% for solve in solves %}
               <tr>
                 <td>
@@ -122,99 +236,96 @@
                     {{ solve.challenge.name }}
                   </a>
                 </td>
-                <td class="d-none d-md-block d-lg-block">{{ solve.challenge.category }}</td>
-                <td>{{ solve.challenge.value }}</td>
+                <td class="d-none d-md-table-cell" style="color: var(--tv-muted); font-family: var(--tv-mono); font-size: .82rem;">
+                  {{ solve.challenge.category }}
+                </td>
+                <td>
+                  <span style="color: var(--tv-lime); font-family: var(--tv-mono); font-size: .85rem; font-weight: 700;">
+                    {{ solve.challenge.value }}
+                  </span>
+                </td>
                 <td class="solve-time">
-                  <span data-time="{{ solve.date | isoformat }}"></span>
+                  <span data-time="{{ solve.date | isoformat }}" style="color: var(--tv-muted); font-family: var(--tv-mono); font-size: .8rem;"></span>
                 </td>
               </tr>
             {% endfor %}
-            </tbody>
-          </table>
-        </div>
+          </tbody>
+        </table>
       </div>
+    {% endif %}
 
-      <div class="clearfix"></div>
-
-      <div class="row" x-data="UserGraphs">
-        <div class="col-md-6 d-none d-md-block d-lg-block py-4">
-          <div class="progress">
-            <div 
-              class="progress-bar" 
-              role="progressbar" 
-              :style="{ width: `${getSolvePercentage()}%`, 'background-color': 'rgb(0, 209, 64)' }" 
-            >
+    <div class="tv-panel" style="padding: 1.4rem;" x-data="UserGraphs">
+      <h2 class="tv-panel-title">activity</h2>
+      <div class="row">
+        <div class="col-md-6 py-2">
+          <div style="font-family: var(--tv-mono); font-size: .75rem; color: var(--tv-muted); margin-bottom: .4rem; letter-spacing: .08em; text-transform: uppercase;">solve ratio</div>
+          <div class="progress tv-progress">
+            <div class="progress-bar" role="progressbar"
+              :style="{ width: `${getSolvePercentage()}%`, background: 'var(--tv-lime)' }">
             </div>
-            <div 
-              class="progress-bar" 
-              role="progressbar" 
-              :style="{ width: `${getFailPercentage()}%`, 'background-color': 'rgb(207, 38, 0)' }"
-            >
+            <div class="progress-bar" role="progressbar"
+              :style="{ width: `${getFailPercentage()}%`, background: 'var(--tv-danger)' }">
             </div>
           </div>
-          <div class="ps-2 float-start">
-            <svg height="16" width="16">
-              <circle cx="8" cy="8" r="5" fill="rgb(0, 209, 64)" />
-            </svg>
-            <small x-text="`Solves (${getSolvePercentage()}%)`"></small>
-          </div>
-          <div class="ps-2 float-start">
-            <svg height="16" width="16">
-              <circle cx="8" cy="8" r="5" fill="rgb(207, 38, 0)" />
-            </svg>
-            <small x-text="`Fails (${getFailPercentage()}%)`"></small>
+          <div class="d-flex flex-wrap gap-3">
+            <span class="tv-graph-legend">
+              <svg height="10" width="10"><circle cx="5" cy="5" r="4" fill="var(--tv-lime)"/></svg>
+              <span x-text="`Solves (${getSolvePercentage()}%)`"></span>
+            </span>
+            <span class="tv-graph-legend">
+              <svg height="10" width="10"><circle cx="5" cy="5" r="4" fill="var(--tv-danger)"/></svg>
+              <span x-text="`Fails (${getFailPercentage()}%)`"></span>
+            </span>
           </div>
         </div>
-        <div class="col-md-6 d-none d-md-block d-lg-block py-4">
-          <div class="progress">
+        <div class="col-md-6 py-2">
+          <div style="font-family: var(--tv-mono); font-size: .75rem; color: var(--tv-muted); margin-bottom: .4rem; letter-spacing: .08em; text-transform: uppercase;">by category</div>
+          <div class="progress tv-progress">
             <template x-for="category in getCategoryBreakdown()" :key="category.name">
-              <div 
-                class="progress-bar" 
-                role="progressbar" 
-                :style="{ width: `${category.percent}%`, 'background-color': category.color }"
-              >
+              <div class="progress-bar" role="progressbar"
+                :style="{ width: `${category.percent}%`, background: category.color }">
               </div>
             </template>
           </div>
-          <template x-for="category in getCategoryBreakdown()" :key="category.name">
-            <div class="ps-2 float-start">
-              <svg height="16" width="16">
-                <circle cx="8" cy="8" r="5" :fill="category.color" />
-              </svg>
-              <small x-text="`${category.name} (${category.percent}%)`"></small>
-            </div>
-          </template>
-        </div>
-
-        <br class="clearfix">
-
-        <div class="col-md-12 d-none d-md-block d-lg-block py-4">
-          <div id="score-graph" x-ref="scoregraph" class="w-100 d-flex align-items-center">
-            <div class="text-center w-100">
-              <i class="fas fa-circle-notch fa-spin fa-3x fa-fw spinner"></i>
-            </div>
+          <div class="d-flex flex-wrap gap-3">
+            <template x-for="category in getCategoryBreakdown()" :key="category.name">
+              <span class="tv-graph-legend">
+                <svg height="10" width="10"><circle cx="5" cy="5" r="4" :fill="category.color"/></svg>
+                <span x-text="`${category.name} (${category.percent}%)`"></span>
+              </span>
+            </template>
           </div>
         </div>
       </div>
-    {% else %}
-      <div class="row min-vh-25">
-        <h3 class="opacity-50 text-center w-100 justify-content-center align-self-center">
-          {% trans %}No solves yet{% endtrans %}
-        </h3>
+
+      <div class="col-md-12 py-4">
+        <div id="score-graph" x-ref="scoregraph" class="w-100 d-flex align-items-center" style="min-height: 200px;">
+          <div class="text-center w-100">
+            <i class="fas fa-circle-notch fa-spin fa-2x fa-fw spinner" style="color: var(--tv-neon);"></i>
+          </div>
+        </div>
       </div>
-    {% endif %}
-  </div>
+    </div>
+
+  {% else %}
+    <div class="tv-empty">
+      <i class="fas fa-terminal" aria-hidden="true"></i>
+      <h5>No activity yet</h5>
+      <p>This operator hasn't captured any flags.</p>
+    </div>
+  {% endif %}
+
+</section>
 {% endblock %}
 
 {% block scripts %}
   <script>
-      window.USER = {{ {
+    window.USER = {{ {
       'type': 'user',
       'id': user.id,
       'name': user.name,
       'account_id': user.id,
     } | tojson }};
   </script>
-
   {{ Assets.js("assets/js/users/public.js") }}
 {% endblock %}
